@@ -1,14 +1,14 @@
-# PortSwigger Labs with Python
+# CurlSwiggerLabs
 
-This repository contains writeups and Python code solutions for PortSwigger Web Security Academy lab exercises.
-All labs are documented using curl and Python scripts for the sheer enjoyment of learning and understanding web security.
+This repository contains writeups and solutions for PortSwigger Web Security Academy lab exercises but using basic tools instead of Burp Suite for the sheer enjoyment of learning and understanding web security, I know it's terribly unpractical but it's also more fun and challenging.
 
-I'll also explain the developer approach to mitigate these vulnerabilities.
+Also at the end of the writeup, I'll also explain the developer approach to mitigate these vulnerabilities.
 
-## Lab Exercises
+## Documented Labs
 
 This section contains solutions and explanations for various PortSwigger Web Security Academy labs. Each lab includes a link to its detailed documentation in the `docs` directory.
 
-### Current Labs
+### SSRF Filter Bypass via Open Redirection Lab
 
-- [SSRF Filter Bypass via Open Redirection](docs/ssrf-filter-bypass-open-redirection.md)
+- [Writeup](docs/ssrf-filter-bypass-open-redirection.md)
+- [Lab Reference Link](https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection)
