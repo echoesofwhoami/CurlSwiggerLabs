@@ -11,4 +11,3 @@ This section contains solutions and explanations for various PortSwigger Web Sec
 ### SSRF Filter Bypass via Open Redirection Lab
 
 - [Writeup](docs/ssrf-filter-bypass-open-redirection.md)
-- [Lab Reference Link](https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection)
