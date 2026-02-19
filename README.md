@@ -2,7 +2,7 @@
 
 This repository contains writeups and solutions for PortSwigger Web Security Academy lab exercises but using basic tools instead of Burp Suite for the sheer enjoyment of learning and understanding web security, I know it's terribly unpractical but it's also more fun and challenging.
 
-Also at the end of the writeup, I'll also explain the developer approach to mitigate these vulnerabilities.
+At the end of the writeup, I'll explain the developer approach to mitigate these vulnerabilities.
 
 ## Documented Labs
 
