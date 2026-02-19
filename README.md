@@ -8,6 +8,10 @@ At the end of the writeup, I'll explain the developer approach to mitigate these
 
 This section contains solutions and explanations for various PortSwigger Web Security Academy labs. Each lab includes a link to its detailed documentation in the `docs` directory.
 
-### SSRF Filter Bypass via Open Redirection Lab
+## Writeups
 
-- [Writeup](docs/ssrf-filter-bypass-open-redirection.md)
+- SSRF
+    - [SSRF Filter Bypass via Open Redirection Lab](docs/ssrf-filter-bypass-open-redirection.md)
+
+- Object Injection (PHP)
+    - [Arbitrary Object Injection in PHP (Insecure Deserialization)](docs/php-deserialization-arbitrary-object-injection.md)
