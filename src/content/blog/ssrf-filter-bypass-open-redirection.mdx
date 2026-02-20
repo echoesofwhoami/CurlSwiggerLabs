@@ -26,7 +26,7 @@ curl -s "https://<lab-url>.web-security-academy.net/" | cat
 
 The main page is displayed on the root path, let's explore it
 
-![Home page](/images/ssrf-filter-bypass-open-redirection/01_home_page.png)
+![Home page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/01_home_page.png)
 
 In the main page html we can find the product detail link
 ```html
@@ -195,7 +195,7 @@ curl -s "https://<lab-url>.web-security-academy.net/product/nextProduct?currentP
 
 Response: `HTTP/2 302` with `location: http://portswigger.net`
 
-![Product detail page](/images/ssrf-filter-bypass-open-redirection/04_curl_open_redirect.png)
+![Product detail page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/04_curl_open_redirect.png)
 
 It redirects to portswigger.net, so the open redirect works. The application doesn't validate the `path` parameter and will redirect to any URL we provide. This is the key vulnerability we'll exploit to bypass the SSRF filter.
 
@@ -239,7 +239,7 @@ This works because:
 
 Response:
 
-![Product detail page](/images/ssrf-filter-bypass-open-redirection/05_admin_panel.png)
+![Product detail page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/05_admin_panel.png)
 
 With access to the admin panel, we can delete the user carlos:
 
@@ -251,7 +251,7 @@ curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
 
 Response:
 
-![Product detail page](/images/ssrf-filter-bypass-open-redirection/06_delete_carlos.png)
+![Product detail page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/06_delete_carlos.png)
 
 This last request obliterated the user carlos, solving the lab.
 
