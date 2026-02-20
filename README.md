@@ -15,3 +15,28 @@ This section contains solutions and explanations for various PortSwigger Web Sec
 
 - Object Injection (PHP)
     - [Arbitrary Object Injection in PHP (Insecure Deserialization)](docs/php-deserialization-arbitrary-object-injection.md)
+
+## Local Development Setup
+
+### One-time Setup
+```bash
+# Build Docker image with dependencies (first time only)
+docker-compose build
+```
+
+### Daily Development
+1. **Start development server**
+   ```bash
+   docker-compose up
+   ```
+   The site will be available at `http://localhost:4321`.
+
+2. **Stop server**
+   ```bash
+   docker-compose down
+   ```
+
+3. **Rebuild if dependencies change**
+   ```bash
+   docker-compose up --build
+   ```

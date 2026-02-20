@@ -1,0 +1,22 @@
+---
+import { languages } from '../i18n/ui';
+import { getLangFromUrl } from '../i18n/utils';
+
+const currentLang = getLangFromUrl(Astro.url);
+---
+
+<nav aria-label="Language selector">
+  <ul>
+    {Object.entries(languages).map(([lang, label]) => (
+      <li>
+        <a
+          href={`/${lang}/`}
+          aria-current={lang === currentLang ? 'page' : undefined}
+          hreflang={lang}
+        >
+          {label}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

