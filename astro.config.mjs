@@ -9,14 +9,6 @@ export default defineConfig({
   output: 'static',
   site: 'https://echoesofwhoami.github.io',
   base: '/CurlSwiggerLabs',
-  i18n: {
-    locales: ['en'],
-    defaultLocale: 'en',
-    routing: {
-      prefixDefaultLocale: true,
-      redirectToDefaultLocale: false,
-    },
-  },
   markdown: {
     shikiConfig: {
       theme: 'github-dark',
