@@ -7,7 +7,8 @@ import mdx from '@astrojs/mdx';
 export default defineConfig({
   integrations: [mdx()],
   output: 'static',
-  site: 'https://curlswiggerlabs.github.io',
+  site: 'https://echoesofwhoami.github.io/CurlSwiggerLabs',
+  base: '/CurlSwiggerLabs',
   i18n: {
     locales: ['en'],
     defaultLocale: 'en',
