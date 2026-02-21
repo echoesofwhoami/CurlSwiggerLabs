@@ -176,7 +176,7 @@ curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
   -d "stockApi=http://192.168.0.12:8080/admin" | cat
 ```
 
-```Response: `"Invalid external stock check url 'Invalid URL'"```
+```Response: "Invalid external stock check url 'Invalid URL'"```
 
 As expected by the name of this lab, the SSRF is blocked. The application has a filter that validates the `stockApi` parameter and prevents direct access to external URLs, particularly internal network addresses.
 

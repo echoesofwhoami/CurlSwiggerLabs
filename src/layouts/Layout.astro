@@ -1,6 +1,7 @@
 ---
 import { useTranslations } from '../i18n/utils';
 import '../styles/global.css';
+import CopyCodeButton from '../components/CopyCodeButton.astro';
 
 interface Props {
   title?: string;
@@ -46,5 +47,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <slot />
+    <CopyCodeButton />
   </body>
 </html>

@@ -17,11 +17,13 @@ h3 {
 }
 
 p {
+  font-weight: 500;
   margin: 8px 0;
   color: #94a3b8;
 }
 
 li {
+  font-weight: 500;
   color: #94a3b8;
 }
 
@@ -41,7 +43,7 @@ hr {
 
 blockquote {
   border-left: 3px solid #dc2626;
-  margin: 0;
+  margin: 18px 0;
   padding: 4px 16px;
   color: #64748b;
   font-style: italic;
@@ -52,31 +54,65 @@ img {
   border-radius: 6px;
   border: 1px solid #1e293b;
   display: block;
-  margin: 0 auto;
+  margin: 18px auto;
 }
 
 pre {
   outline: 1px solid #1e293b;
   background-color: #161b27 !important;
   color: #e1e4e8;
-  padding: 8px 16px;
-  display: inline-block;
-  margin: 8px 0;
+  padding: 28px 16px 8px 16px;
+  display: block;
   font-size: 14px;
   width: 100%;
+  box-sizing: border-box;
   position: relative;
   border-radius: 6px;
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  word-break: break-all;
+}
+
+.code-wrapper {
+  position: relative;
+  margin: 18px 0;
+}
+
+.code-wrapper pre {
+  margin: 0;
+}
+
+.copy-code {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 4px 8px;
+  background-color: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s, background-color 0.2s, color 0.2s;
+  z-index: 10;
+}
+
+.copy-code:hover {
+  background-color: #334155;
+  color: #f8fafc;
+}
+
+.copy-code:active {
+  background-color: #475569;
 }
 
 pre::before {
   content: attr(data-language);
   position: absolute;
   top: 4px;
-  right: 8px;
-  font-size: 12px;
+  left: 10px;
+  font-size: 14px;
   color: #64748b;
   font-weight: 500;
 }
