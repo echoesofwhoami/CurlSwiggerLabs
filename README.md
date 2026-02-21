@@ -16,6 +16,14 @@ This section contains solutions and explanations for various PortSwigger Web Sec
 - Object Injection (PHP)
     - [Arbitrary Object Injection in PHP (Insecure Deserialization)](docs/php-deserialization-arbitrary-object-injection.md)
 
+## Cool labs pending to solve
+
+- https://portswigger.net/web-security/jwt/algorithm-confusion/lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key
+
+- https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-race-condition
+
+- https://portswigger.net/web-security/websockets/lab-manipulating-handshake-to-exploit-vulnerabilities
+
 ## Local Development Setup
 
 ### One-time Setup
