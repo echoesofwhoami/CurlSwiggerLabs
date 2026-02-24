@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CurlSwiggerLabs</title>
+    <description>PortSwigger Web Security Academy labs solved with curl.</description>
+    <link>https://echoesofwhoami.github.io/CurlSwiggerLabs/</link>
+    <atom:link href="https://echoesofwhoami.github.io/CurlSwiggerLabs/rss.xml" rel="self" type="application/rss+xml"/>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 22 Feb 2026 00:00:00 GMT</lastBuildDate>
+    
+    <item>
+      <title>Arbitrary Object Injection in PHP (Insecure Deserialization)</title>
+      <description>How to exploit PHP insecure deserialization to inject arbitrary objects and trigger magic methods for remote file deletion.</description>
+      <link>https://echoesofwhoami.github.io/CurlSwiggerLabs/php-deserialization-arbitrary-object-injection/</link>
+      <guid>https://echoesofwhoami.github.io/CurlSwiggerLabs/php-deserialization-arbitrary-object-injection/</guid>
+      <pubDate>Tue, 24 Feb 2026 22:40:00 GMT</pubDate>
+      <category>Object Injection (PHP)</category>
+    </item>
+    
+    <item>
+      <title>SSRF Filter Bypass via Open Redirection</title>
+      <description>How to bypass SSRF filters using an open redirection vulnerability, exploiting a chained attack to access internal admin interfaces.</description>
+      <link>https://echoesofwhoami.github.io/CurlSwiggerLabs/ssrf-filter-bypass-open-redirection/</link>
+      <guid>https://echoesofwhoami.github.io/CurlSwiggerLabs/ssrf-filter-bypass-open-redirection/</guid>
+      <pubDate>Sun, 20 Feb 2026 00:00:00 GMT</pubDate>
+      <category>SSRF</category>
+    </item>
+    
+  </channel>
+</rss>
