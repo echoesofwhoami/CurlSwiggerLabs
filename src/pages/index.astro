@@ -28,7 +28,7 @@ const grouped = posts.reduce((acc, post) => {
         <ul>
           {categoryPosts.map((post) => (
             <li>
-              <a href={`${base}/${post.id.replace(/\.mdx$/, '')}/`}>
+              <a href={`${base}/${post.id.replace(/\.md$/, '')}/`}>
                 {post.data.title}
               </a>
             </li>
