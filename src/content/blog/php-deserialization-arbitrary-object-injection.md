@@ -3,7 +3,7 @@ title: "Arbitrary Object Injection in PHP (Insecure Deserialization)"
 description: "How to exploit PHP insecure deserialization to inject arbitrary objects and trigger magic methods for remote file deletion."
 labUrl: "https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-arbitrary-object-injection-in-php"
 category: "Object Injection (PHP)"
-date: "2025-01-02"
+date: "2025-02-22"
 ---
 
 ## Lab Description (contains spoilers)

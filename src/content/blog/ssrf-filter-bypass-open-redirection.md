@@ -3,7 +3,7 @@ title: "SSRF Filter Bypass via Open Redirection"
 description: "How to bypass SSRF filters using an open redirection vulnerability, exploiting a chained attack to access internal admin interfaces."
 labUrl: "https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection"
 category: "SSRF"
-date: "2025-01-01"
+date: "2025-02-20"
 ---
 
 ## Lab Description (contains spoilers)
