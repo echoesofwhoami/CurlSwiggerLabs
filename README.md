@@ -18,6 +18,8 @@ This section contains solutions and explanations for various PortSwigger Web Sec
 
 ## Cool labs pending to solve
 
+- https://portswigger.net/web-security/oauth/lab-oauth-account-hijacking-via-redirect-uri
+
 - https://portswigger.net/web-security/jwt/algorithm-confusion/lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key
 
 - https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-race-condition
