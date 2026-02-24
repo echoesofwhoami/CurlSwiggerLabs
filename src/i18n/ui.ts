@@ -13,7 +13,7 @@ export const ui = {
     'lang.pick': 'Language',
     'nav.blog': 'Blog',
     'nav.home': 'Home',
-    'blog.title': 'Lab Writeups',
+    'blog.title': 'CurlSwiggerLabs',
     'blog.description': 'PortSwigger Web Security Academy labs solved with curl.',
     'blog.readmore': 'Read writeup',
   },
