@@ -2,11 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
 import { useTranslations } from '../i18n/utils';
+import PostHeader from '../components/PostHeader.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
   return posts.map((post) => ({
-    params: { slug: post.id.replace(/\.mdx$/, '') },
+    params: { slug: post.id.replace(/\.md$/, '') },
     props: { post },
   }));
 }
@@ -22,11 +23,12 @@ const { Content } = await render(post);
   <main>
     <p><a href={`${base}/`}>← {t('nav.home')}</a></p>
     <article>
-      <h1>{post.data.title}</h1>
-      <p>
-        <strong>{post.data.category}</strong> ·
-        <a href={post.data.labUrl} target="_blank" rel="noopener noreferrer">Lab page ↗</a>
-      </p>
+      <PostHeader 
+        title={post.data.title}
+        category={post.data.category}
+        labUrl={post.data.labUrl}
+        date={post.data.date}
+      />
       <Content />
     </article>
   </main>
