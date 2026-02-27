@@ -6,7 +6,16 @@
     <link>https://echoesofwhoami.github.io/CurlSwiggerLabs/</link>
     <atom:link href="https://echoesofwhoami.github.io/CurlSwiggerLabs/rss.xml" rel="self" type="application/rss+xml"/>
     <language>en-us</language>
-    <lastBuildDate>Sat, 22 Feb 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Thu, 27 Feb 2026 00:00:00 GMT</lastBuildDate>
+    
+    <item>
+      <title>JWT Authentication Bypass via Weak Signing Key</title>
+      <description>How to exploit weak JWT signing keys by bruteforcing the secret to forge administrator tokens and bypass authentication.</description>
+      <link>https://echoesofwhoami.github.io/CurlSwiggerLabs/jwt-authentication-bypass-via-weak-signing-key/</link>
+      <guid>https://echoesofwhoami.github.io/CurlSwiggerLabs/jwt-authentication-bypass-via-weak-signing-key/</guid>
+      <pubDate>Thu, 27 Feb 2026 00:00:00 GMT</pubDate>
+      <category>JWT</category>
+    </item>
     
     <item>
       <title>Arbitrary Object Injection in PHP (Insecure Deserialization)</title>

