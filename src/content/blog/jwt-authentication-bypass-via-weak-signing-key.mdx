@@ -6,6 +6,9 @@ category: "JWT"
 date: "2025-02-27"
 ---
 
+import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../components/PartialContainer.astro';
+ 
 ## Lab Description (contains spoilers)
 
 This lab uses a JWT-based mechanism for handling sessions. The JWT signing key is weak and can be brute-forced using a wordlist of common secrets. To solve the lab, you need to brute-force the secret key used to sign the JWT, then use it to forge a valid JWT that gives you access to the admin panel and delete the user `carlos`.
@@ -14,83 +17,10 @@ You can log in to your own account using the following credentials: `wiener:pete
 
 ## Necessary Background Concepts To Solve The Lab
 
-### What is JWT (JSON Web Token)?
-
-JWT is a compact, URL-safe means of representing **Claims\*** to be transferred between two parties. It's commonly used for authentication and information exchange in web applications. It uses base64 encoding to ensure URL-safe transmission.
-
-A JWT consists of three parts separated by dots (`.`):
-
-```
-header.payload.signature
-```
-
-For example:
-```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3aWVuZXIiLCJleHAiOjE3NzIxOTg5NTd9.signature_here
-```
-
-Breaking down each part:
-
-**1. Header** (Base64URL encoded JSON):
-```json
-{
-  "kid": "170c351e-58cc-4e4b-9116-6e7924337580",
-  "alg": "HS256"
-}
-```
-- `alg`: The signing algorithm (HS256 = HMAC-SHA256)
-- `kid`: Key ID (optional identifier for the signing key)
-
-**2. Payload** (Base64URL encoded JSON):
-```json
-{
-  "iss": "portswigger",
-  "exp": 1772198957,
-  "sub": "wiener"
-}
-```
-- `iss`: Issuer of the token
-- `exp`: Expiration timestamp
-- `sub`: Subject (usually the username)
-
-**3. Signature**:
-The signature is created by taking the encoded header and payload, and signing them with a secret key using the algorithm specified in the header:
-
-```
-# Pseudocode
-
-message = base64UrlEncode(header) + "." + base64UrlEncode(payload) 
-
-key = JWT_SECRET # It could be a password, API key, UUID, or any other string
-
-signature = HMACSHA256(message, key)  # This is just the signature part, not the complete JWT
-```
-
-The signature ensures that the token hasn't been tampered with. If an attacker modifies the header or payload, the signature won't match unless they know the secret key.
-
-**The complete JWT would be constructed as:**
-
-```
-# Pseudocode
-
-jwt = base64UrlEncode(header) + "." + base64UrlEncode(payload) + "." + signature
-```
-
-### What is HS256 (HMAC-SHA256)?
-
-HS256 is a **symmetric** signing algorithm, meaning the same secret key is used to both sign and verify the token. This is different from asymmetric algorithms like RS256, which use a private key to sign and a public key to verify.
-
-The security of HS256 depends entirely on the secrecy and strength of the key. If the key is weak (like "secret", "password", or "secret1"), it can be brute-forced.
-
-### Why is Brute-forcing Possible?
-
-Since the signature is deterministic (same input + same key = same signature), an attacker can:
-1. Take the JWT's header and payload
-2. Try signing it with different secret keys from a wordlist
-3. Compare the generated signature with the original
-4. When they match, the secret key has been found
-
-This is only feasible when the secret is weak and exists in common wordlists.
+<PartialContainer>
+  <CollapsiblePartial partial="whats-jwt" title="JWT Fundamentals" />
+  <CollapsiblePartial partial="hs256-bruteforce" title="HS256 & Brute-force Attacks" />
+</PartialContainer>
 
 ## Writeup
 

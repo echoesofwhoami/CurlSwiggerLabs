@@ -6,6 +6,9 @@ category: "Object Injection (PHP)"
 date: "2025-02-22"
 ---
 
+import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../components/PartialContainer.astro';
+
 ## Lab Description (contains spoilers)
 
 This lab uses a serialization-based session mechanism and is vulnerable to arbitrary object injection as a result. To solve the lab, create and inject a malicious serialized object to delete the `morale.txt` file from Carlos's home directory. You will need to obtain source code access to solve this lab.
@@ -14,44 +17,11 @@ You can log in to your own account using the following credentials: `wiener:pete
 
 ## Necessary Background Concepts To Solve The Lab
 
-### What is Serialization?
-
-Serialization is the process of converting an object (a data structure in memory) into a format that can be stored or transmitted, like a string. Deserialization is the reverse: turning that string back into an object. In PHP, this is done with `serialize()` and `unserialize()`.
-
-For example, a PHP object like:
-```php
-$user = new User();
-$user->username = "wiener";
-$user->access_token = "abc123";
-```
-
-Gets serialized into:
-```
-O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";s:6:"abc123";}
-```
-
-Breaking down the format:
-- `O:4:"User"` — **O**bject of class name length **4**, named **"User"**
-- `:2:` — has **2** properties
-- `s:8:"username"` — **s**tring property name of length **8**: **"username"**
-- `s:6:"wiener"` — **s**tring value of length **6**: **"wiener"**
-
-When an application stores serialized objects in cookies (like session tokens), an attacker can tamper with them. If the server blindly deserializes user-controlled input, it will reconstruct whatever object the attacker provides.
-
-### What are PHP Magic Methods?
-
-PHP has special methods called **magic methods** that are automatically invoked at certain points in an object's lifecycle. They always start with a double underscore (`__`). The most relevant ones for deserialization attacks are:
-
-- `__construct()` — called when an object is **created** (`new ClassName()`)
-- `__destruct()` — called when an object is **destroyed** (goes out of scope, script ends, or garbage collected)
-- `__wakeup()` — called when an object is **deserialized** (`unserialize()`)
-- `__toString()` — called when an object is treated as a **string**
-
-The dangerous one here is `__destruct()`. When PHP deserializes an object from a cookie, it creates that object in memory. When the request finishes processing, PHP's garbage collector destroys the object, which **automatically triggers `__destruct()`**. The attacker doesn't need to call it — PHP does it for them.
-
-### What is a Backup File (~)?
-
-Many text editors (like Vim, Emacs, and others) automatically create backup copies of files by appending a tilde (`~`) to the filename. For example, editing `CustomTemplate.php` creates `CustomTemplate.php~`. These backup files often get accidentally deployed to production servers and can leak source code to anyone who requests them, since the web server serves them as plain text instead of executing them as PHP.
+<PartialContainer>
+  <CollapsiblePartial partial="php-serialization" title="Understanding PHP Serialization" />
+  <CollapsiblePartial partial="php-magic-methods" title="PHP Magic Methods" />
+  <CollapsiblePartial partial="backup-files" title="Backup Files & Source Code Leaks" />
+</PartialContainer>
 
 ## Writeup
 

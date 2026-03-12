@@ -155,3 +155,51 @@ pre code {
 .copy-code:active {
   background-color: #475569;
 }
+
+/* Partials */
+.partials-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.collapsible-partial {
+  border: 1px solid #475569;
+  border-radius: 0.5rem;
+}
+
+.collapsible-partial summary {
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.125rem;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+}
+
+.collapsible-partial summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-partial summary::before {
+  content: '+';
+  display: inline-block;
+  margin-right: 0.75rem;
+  transition: transform 0.2s ease;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.collapsible-partial[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.partial-content {
+  padding: 0 1.5rem 0.5rem;
+}
+
+.partial-content > :first-child {
+  margin-top: 0;
+}

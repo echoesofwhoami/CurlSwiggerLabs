@@ -1,0 +1,17 @@
+---
+import { getEntry, render } from 'astro:content';
+
+interface Props {
+  partial: string;
+}
+
+const { partial } = Astro.props;
+
+const entry = await getEntry('partials', partial);
+
+if (!entry) throw new Error(`Partial not found: ${partial}`);
+
+const { Content } = await render(entry);
+---
+
+<Content />

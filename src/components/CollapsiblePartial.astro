@@ -1,0 +1,23 @@
+---
+import { getEntry, render } from 'astro:content';
+
+interface Props {
+  partial: string;
+  title: string;
+}
+
+const { partial, title } = Astro.props;
+
+const entry = await getEntry('partials', partial);
+
+if (!entry) throw new Error(`Partial not found: ${partial}`);
+
+const { Content } = await render(entry);
+---
+
+<details class="collapsible-partial">
+  <summary>{title}</summary>
+  <div class="partial-content">
+    <Content />
+  </div>
+</details>
