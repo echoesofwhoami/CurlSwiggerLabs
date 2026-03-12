@@ -6,11 +6,22 @@ category: "SSRF"
 date: "2025-02-20"
 ---
 
+import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../components/PartialContainer.astro';
+
 ## Lab Description (contains spoilers)
 
 This lab demonstrates how to bypass SSRF filters using an open redirection vulnerability.
 
 The application has a stock check feature that loads data from an internal system, URL is filtered to prevent direct SSRF attacks but there's an open redirection vulnerability that can be exploited to bypass these filters.
+
+## Necessary Background Concepts To Solve The Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="ssrf" title="Server-Side Request Forgery (SSRF)" />
+  <CollapsiblePartial partial="open-redirection" title="Open Redirection Vulnerabilities" />
+  <CollapsiblePartial partial="ssrf-open-redirection-chain" title="SSRF + Open Redirection Chain Attack" />
+</PartialContainer>
 
 ## Writeup
 
