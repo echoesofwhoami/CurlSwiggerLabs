@@ -4,16 +4,11 @@ description: "How to exploit weak JWT signing keys by bruteforcing the secret to
 labUrl: "https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key"
 category: "JWT"
 date: "2025-02-27"
+portswiggerDescription: "This lab uses a JWT-based mechanism for handling sessions. The JWT signing key is weak and can be brute-forced using a wordlist of common secrets. To solve the lab, you need to brute-force the secret key used to sign the JWT, then use it to forge a valid JWT that gives you access to the admin panel and delete the user `carlos`."
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../components/PartialContainer.astro';
- 
-## Lab Description (contains spoilers)
-
-This lab uses a JWT-based mechanism for handling sessions. The JWT signing key is weak and can be brute-forced using a wordlist of common secrets. To solve the lab, you need to brute-force the secret key used to sign the JWT, then use it to forge a valid JWT that gives you access to the admin panel and delete the user `carlos`.
-
-You can log in to your own account using the following credentials: `wiener:peter`
 
 ## Necessary Background Concepts To Solve The Lab
 

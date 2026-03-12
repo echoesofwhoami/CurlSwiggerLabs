@@ -1,27 +1,26 @@
 ---
+import { formatDate } from '../utils';
+
 export interface Props {
   title: string;
   category: string;
   labUrl: string;
   date: string;
+  portswiggerDescription: string;
 }
 
-const { title, category, labUrl, date } = Astro.props;
+const { title, category, labUrl, date, portswiggerDescription } = Astro.props;
 ---
 
-<header class="mb-8">
-  <h1 class="text-3xl font-bold mb-4">{title}</h1>
-  <div class="flex flex-col gap-2">
+<div>
+  <h1>{title}</h1>
+  <div>
+    <h2>Lab Description (contains spoilers)</h2>
     <p>
       <strong>{category}</strong> ·
-      <a href={labUrl} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Portswigger Lab ↗</a>
+      <a href={labUrl} target="_blank" rel="noopener noreferrer">Portswigger Lab ↗</a>
     </p>
-    <p class="text-sm text-gray-600">
-      {new Date(date).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })}
-    </p>
+    <p>{portswiggerDescription}</p>
+    <small>{formatDate(date)}</small>
   </div>
-</header>
+</div>

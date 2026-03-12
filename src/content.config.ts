@@ -8,6 +8,7 @@ const blog = defineCollection({
     labUrl: z.string().url(),
     category: z.string(),
     date: z.string(),
+    portswiggerDescription: z.string(),
   }),
 });
 
