@@ -8,12 +8,12 @@ At the end of the writeup, I'll explain the developer approach to mitigate these
 
 ## Cool labs pending to solve
 
-- https://portswigger.net/web-security/oauth/lab-oauth-account-hijacking-via-redirect-uri
-
 - https://portswigger.net/web-security/jwt/algorithm-confusion/lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key
 
 - https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-race-condition
 
 - https://portswigger.net/web-security/websockets/lab-manipulating-handshake-to-exploit-vulnerabilities
+
+- https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-very-strict-csp-with-dangling-markup-attack
 
 Do you want me to solve a specific lab? Reach out to me on discord @echoesofwhoami
