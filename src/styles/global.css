@@ -79,6 +79,51 @@ img {
   margin: 18px auto;
 }
 
+/* Navbar */
+.navbar {
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #475569;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+  padding: 0 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  font-size: 1.25rem;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 700;
+  font-family: 'Quicksand', sans-serif;
+  transition: color 0.2s ease;
+}
+
+.brand-link:hover {
+  color: #dc2626;
+}
+
+.brand-icon {
+  border: none;
+  width: 24px;
+  height: 24px;
+}
+
 /* Code Blocks & Copy Button */
 .code-wrapper {
   position: relative;
