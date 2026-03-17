@@ -5,6 +5,7 @@ labUrl: "https://portswigger.net/web-security/deserialization/exploiting/lab-des
 category: "Object Injection (PHP)"
 date: "2025-02-22"
 portswiggerDescription: "This lab uses a serialization-based session mechanism and is vulnerable to arbitrary object injection as a result. To solve the lab, create and inject a malicious serialized object to delete the `morale.txt` file from Carlos's home directory. You will need to obtain source code access to solve this lab. You can log in to your own account using the following credentials: `wiener:peter`"
+lang: "en"
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
@@ -71,7 +72,7 @@ Output:
 O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";s:32:"xqiloaty6gq0bs6c6yu4pp4fcbf6uq3v";}
 ```
 
-This is a **serialized PHP object**. The server is storing the entire User object in the session cookie. This means we control what gets deserialized on the server — a critical vulnerability.
+This is a **serialized PHP object**. The server is storing the entire User object in the session cookie. This means we control what gets deserialized on the server which can be a critical vulnerability.
 
 Now let's investigate that `CustomTemplate.php` file we found in the HTML comment. Requesting the PHP file directly would just execute it, but we can try to get the backup file by appending a tilde (`~`):
 

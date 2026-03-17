@@ -1,11 +1,11 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from '../../layouts/Layout.astro';
 import { render } from 'astro:content';
-import PostHeader from '../components/PostHeader.astro';
-import { getPosts } from '../utils';
+import PostHeader from '../../components/PostHeader.astro';
+import { getPosts } from '../../utils';
 
 export async function getStaticPaths() {
-  return await getPosts();
+  return await getPosts('es');
 }
 
 const { post } = Astro.props;
@@ -13,7 +13,7 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 ---
 
-<Layout title={post.data.title} description={post.data.description} lang="en">
+<Layout title={post.data.title} description={post.data.description} lang="es">
   <article>
     <main>
 
@@ -23,7 +23,7 @@ const { Content } = await render(post);
       labUrl={post.data.labUrl}
       date={post.data.date}
       portswiggerDescription={post.data.portswiggerDescription}
-      lang="en"
+      lang="es"
     />
       <Content />
     </main>

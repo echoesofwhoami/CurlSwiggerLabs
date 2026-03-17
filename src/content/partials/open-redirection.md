@@ -10,9 +10,9 @@ Open redirection is a vulnerability where an application accepts user-controlled
 
 **Common vulnerable patterns:**
 ```
-GET /redirect?url=https://evil.com
-GET /login?return=https://evil.com
-GET /next?target=https://evil.com
+GET /redirect?url=https://<attacker-domain>.com
+GET /login?return=https://<attacker-domain>.com
+GET /next?target=https://<attacker-domain>.com
 ```
 
 **Why open redirection is dangerous:**

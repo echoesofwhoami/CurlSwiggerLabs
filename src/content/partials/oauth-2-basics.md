@@ -26,7 +26,7 @@ The most common OAuth flow works like this:
 
 2. **Client app redirects user** to the OAuth provider's /auth endpoint with several parameters:
    - `client_id`: identifies the client application (like "this is the blog website")
-   - `redirect_uri`: where to send the user back after authorization (like "send them back to https://blog.com/oauth-callback")
+   - `redirect_uri`: where to send the user back after authorization (like "send them back to https://<blog>.com/oauth-callback")
    - `response_type=code`: requests an authorization code (not direct access)
    - `scope`: what permissions are requested (like "I just need your email and profile picture")
 
@@ -36,7 +36,7 @@ The most common OAuth flow works like this:
 
 5. **OAuth provider redirects user back** to the `redirect_uri` with an authorization code:
    ```
-   https://blog.com/oauth-callback?code=XYZ123ABC
+   https://<blog>.com/oauth-callback?code=XYZ123ABC
    ```
    This is like getting a receipt that says "the user approved this request"
 

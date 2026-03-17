@@ -1,4 +1,6 @@
 ---
+import type { Lang } from '../i18n/utils';
+import { useTranslations } from '../i18n/utils';
 import { formatDate } from '../utils';
 
 export interface Props {
@@ -7,20 +9,22 @@ export interface Props {
   labUrl: string;
   date: string;
   portswiggerDescription: string;
+  lang?: Lang;
 }
 
-const { title, category, labUrl, date, portswiggerDescription } = Astro.props;
+const { title, category, labUrl, date, portswiggerDescription, lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
 ---
 
 <div>
   <h1>{title}</h1>
   <div>
-    <h2>Lab Description (contains spoilers)</h2>
+    <h2>{t('post.labDescription')}</h2>
     <p>
       <strong>{category}</strong> ·
-      <a href={labUrl} target="_blank" rel="noopener noreferrer">Portswigger Lab ↗</a>
+      <a href={labUrl} target="_blank" rel="noopener noreferrer">{t('post.portswiggerLab')} ↗</a>
     </p>
     <p>{portswiggerDescription}</p>
-    <small>{formatDate(date)}</small>
+    <small>{formatDate(date, lang)}</small>
   </div>
 </div>

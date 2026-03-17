@@ -5,6 +5,7 @@ labUrl: "https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-
 category: "JWT"
 date: "2025-02-27"
 portswiggerDescription: "This lab uses a JWT-based mechanism for handling sessions. The JWT signing key is weak and can be brute-forced using a wordlist of common secrets. To solve the lab, you need to brute-force the secret key used to sign the JWT, then use it to forge a valid JWT that gives you access to the admin panel and delete the user `carlos`."
+lang: "en"
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
@@ -46,7 +47,7 @@ curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=KmODI4GCLx
 
 > **Command breakdown**: \
 `-D -` = dump response headers to stdout \
-`-d "csrf=...&username=wiener&password=peter"` = send POST data (automatically sets method to POST and Content-Type to application/x-www-form-urlencoded) \
+`-d "csrf=...&username=wiener&password=peter"` = send POST data (automatically sets method to POST and Content-Type to application/x-www-form-urlencoded)
 
 Response:
 
@@ -208,7 +209,7 @@ The JWT authentication bypass allowed us to **send carlos into the digital void*
 1. **Use strong secrets**: JWT signing keys should be long, random, and cryptographically secure (at least 256 bits for HS256). Never use dictionary words or common phrases
 2. **Implement asymmetric algorithms if possible**: Consider using RS256 (RSA) or ES256 (ECDSA) instead of HS256. These use public/private key pairs, making brute-force attacks impossible
 3. **Rotate keys regularly**: Implement key rotation policies to limit the impact of a compromised key
-4. **Store secrets securely**: Use environment variables or secret management systems (like HashiCorp Vault, AWS Secrets Manager) instead of hardcoding secrets
+4. **Store secrets securely**: Use environment variables or secret management systems instead of hardcoding secrets
 5. **Validate all JWT claims**: Always verify the issuer (`iss`), expiration (`exp`), and other claims server-side
 
 ## References

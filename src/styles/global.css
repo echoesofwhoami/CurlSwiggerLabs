@@ -123,6 +123,45 @@ img {
   height: 24px;
 }
 
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-right ul {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.lang-picker {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  /* border-left: 1px solid #475569; */
+  padding-left: 1rem;
+}
+
+.lang-link {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.lang-link:hover {
+  color: #f8fafc;
+  background-color: #1e293b;
+}
+
+.lang-link.active {
+  color: #dc2626;
+  font-weight: 700;
+}
+
 /* Code Blocks & Copy Button */
 .code-wrapper {
   position: relative;

