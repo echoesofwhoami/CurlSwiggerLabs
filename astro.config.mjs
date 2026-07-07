@@ -6,8 +6,7 @@ import mdx from '@astrojs/mdx';
 export default defineConfig({
   integrations: [mdx()],
   output: 'static',
-  site: 'https://echoesofwhoami.github.io',
-  base: '/CurlSwiggerLabs',
+  site: 'https://curlswiggerlabs.echoesofwhoami.com',
   markdown: {
     shikiConfig: {
       theme: 'github-dark',

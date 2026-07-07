@@ -10,14 +10,14 @@ interface Props {
 
 const { lang, currentPath } = Astro.props;
 const t = useTranslations(lang);
-const homePath = getLocalizedPath(lang);
+const homePath = "/"
 ---
 
 <header class="navbar">
   <nav class="nav-container">
     <div class="nav-brand">
       <a href={homePath} class="brand-link">
-        <img src={`${import.meta.env.BASE_URL}/echoes.png`} alt="CurlSwiggerLabs" class="brand-icon" />
+        <img src="/echoes.png" alt="CurlSwiggerLabs" class="brand-icon" />
         <span>CurlSwiggerLabs</span>
       </a>
     </div>
