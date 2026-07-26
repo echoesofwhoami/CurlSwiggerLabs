@@ -1,0 +1,43 @@
+### CL.TE Smuggling & Differential Responses
+
+In a **CL.TE** vulnerability the front-end trusts `Content-Length` while the back-end trusts `Transfer-Encoding: chunked`.
+
+A minimal smuggling request looks like:
+
+```http
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Length: 13
+Transfer-Encoding: chunked
+
+0
+
+SMUGGLED
+```
+
+What each server sees:
+
+1. **Front-end (CL):** body is 13 bytes, so it forwards everything through `SMUGGLED`
+2. **Back-end (TE):** sees chunk size `0`, so the request ends immediately; leftover bytes `SMUGGLED` stay in the socket buffer
+3. **Those leftover bytes are prepended to whatever request arrives next on that back-end connection**
+
+#### Confirming with differential responses
+
+Timing delays can *hint* at smuggling, but a stronger proof is to force a **different response** than a normal request would get.
+
+The usual pattern:
+
+1. Send an **attack** request that smuggles `GET /404 HTTP/1.1...` into the back-end buffer
+2. Immediately send a second request (ideally on a **different** client connection, same URL so load balancing still hits the same back-end)
+3. If the second response is `404 Not Found` instead of the normal `200 OK` for `/`, the smuggled prefix was applied and CL.TE is confirmed
+
+After a successful smuggle, the back-end effectively processes something like:
+
+```http
+GET /404 HTTP/1.1
+X-Ignore: XPOST / HTTP/1.1
+Host: ...
+...
+```
+
+`X-Ignore` (or any dummy header) absorbs the start of the following real request so header parsing does not blow up before the path `/404` is evaluated.
