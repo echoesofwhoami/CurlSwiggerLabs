@@ -1,13 +1,16 @@
 ---
 import { getEntry, render } from 'astro:content';
+import { useTranslations } from '../i18n/utils';
+import type { Lang } from '../i18n/utils';
 
 interface Props {
   partial: string;
   title: string;
-  lang?: 'en' | 'es';
+  lang?: Lang;
 }
 
 const { partial, title, lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
 
 const collectionName = lang === 'es' ? 'partials-es' : 'partials';
 const entry = await getEntry(collectionName as any, partial);
@@ -18,7 +21,12 @@ const { Content } = await render(entry);
 ---
 
 <details class="collapsible-partial">
-  <summary>{title}</summary>
+  <summary>
+    <span class="partial-summary-text">
+      <span class="partial-title">{title}</span>
+      <span class="expand-hint">{t('partial.clickToExpand')}</span>
+    </span>
+  </summary>
   <div class="partial-content">
     <Content />
   </div>

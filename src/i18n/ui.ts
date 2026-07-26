@@ -24,6 +24,7 @@ export const ui = {
     'post.mitigationStrategies': 'Mitigation Strategies',
     'post.references': 'References',
     'post.resources': 'Resources',
+    'partial.clickToExpand': 'click to expand',
   },
   es: {
     'site.title': 'CurlSwiggerLabs',
@@ -43,5 +44,6 @@ export const ui = {
     'post.mitigationStrategies': 'Estrategias de Mitigación',
     'post.references': 'Referencias',
     'post.resources': 'Recursos',
+    'partial.clickToExpand': 'clic para expandir',
   },
 } as const;
