@@ -1,18 +1,18 @@
 ---
-import { languages, defaultLang } from '../i18n/ui';
-import type { Lang } from '../i18n/utils';
+import { languages } from '../i18n/ui';
+import { getLocalizedHref, type Lang } from '../i18n/utils';
 
 interface Props {
   lang: Lang;
+  currentPath: string;
 }
 
-const { lang: currentLang } = Astro.props;
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const { lang: currentLang, currentPath } = Astro.props;
 ---
 
 <nav aria-label="Language selector" class="lang-picker">
   {Object.entries(languages).map(([lang, label]) => {
-    const href = lang === defaultLang ? `${base}/` : `${base}/${lang}/`;
+    const href = getLocalizedHref(lang as Lang, currentPath);
     const isCurrent = lang === currentLang;
     return (
       <a
