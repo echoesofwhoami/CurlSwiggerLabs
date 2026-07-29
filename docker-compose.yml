@@ -4,7 +4,8 @@ services:
     ports:
       - "4321:4321"
     volumes:
+      # Share ./node_modules with the host so the IDE/TypeScript see the same deps as the container.
+      # (An anonymous /app/node_modules volume hid installs from Cursor.)
       - .:/app
-      - /app/node_modules
     environment:
       - NODE_ENV=development

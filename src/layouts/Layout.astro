@@ -56,6 +56,8 @@ const pathname = Astro.url.pathname;
 
     <meta name="robots" content="index, follow" />
 
+    <link rel="alternate" type="application/rss+xml" title={t('site.title')} href={new URL('/rss.xml', Astro.site)} />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">

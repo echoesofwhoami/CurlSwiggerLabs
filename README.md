@@ -4,7 +4,7 @@ This repository contains writeups and solutions for PortSwigger Web Security Aca
 
 At the end of the writeup, I'll explain the developer approach to mitigate these vulnerabilities.
 
-[Check the blog here](https://echoesofwhoami.github.io/CurlSwiggerLabs)
+[Check the blog here](https://curlswiggerlabs.echoesofwhoami.com)
 
 ## Cool labs pending to solve
 

@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://curlswiggerlabs.github.io/sitemap.xml
+Sitemap: https://curlswiggerlabs.echoesofwhoami.com/sitemap-index.xml
