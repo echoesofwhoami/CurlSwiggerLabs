@@ -1,0 +1,1 @@
+curl -s -D - "https://oauth-<oauth-id>.oauth-server.net/auth?client_id=bow9iv6dj8fca1ourlao4&redirect_uri=https://<lab-url>.web-security-academy.net/oauth-callback&response_type=code&scope=openid%20profile%20email"

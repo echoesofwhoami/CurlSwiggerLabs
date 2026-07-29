@@ -1,0 +1,1 @@
+echo "eyJraWQiOiJkYWRlMTg2ZC02ZDE5LTQ1ODQtYWIyNy03Mzc5NzVlMTYxMWYiLCJhbGciOiJIUzI1NiJ9" | base64 -d | jq . | cat

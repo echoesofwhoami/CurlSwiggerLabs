@@ -26,5 +26,5 @@ pnpm-debug.log*
 .vscode/
 
 # project-specific
-scripts
+/scripts
 tmp

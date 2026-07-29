@@ -1,0 +1,33 @@
+---
+import { Code } from 'astro:components';
+import type { CodeLanguage } from 'astro';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+interface Props {
+  /** Path relative to `src/content/scripts/` */
+  file: string;
+  /** Override language inferred from the file extension */
+  lang?: CodeLanguage;
+}
+
+const EXT_TO_LANG: Record<string, CodeLanguage> = {
+  py: 'python',
+  sh: 'bash',
+  bash: 'bash',
+  http: 'http',
+  js: 'javascript',
+  html: 'html',
+  php: 'php',
+  json: 'json',
+  txt: 'plaintext',
+};
+
+const { file, lang: langProp } = Astro.props;
+const absPath = join(process.cwd(), 'src/content/scripts', file);
+const code = readFileSync(absPath, 'utf-8').replace(/\n$/, '');
+const ext = file.includes('.') ? file.split('.').pop()! : '';
+const lang: CodeLanguage = langProp ?? EXT_TO_LANG[ext] ?? 'plaintext';
+---
+
+<Code code={code} lang={lang} theme="github-dark" />

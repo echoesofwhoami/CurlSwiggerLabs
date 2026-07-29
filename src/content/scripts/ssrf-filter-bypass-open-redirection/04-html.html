@@ -1,0 +1,19 @@
+<SNIP>...<SNIP>
+
+  <form id="stockCheckForm" action="/product/stock" method="POST">
+      <select name="stockApi">
+          <option value="/product/stock/check?productId=1&storeId=1">London</option>
+          <option value="/product/stock/check?productId=1&storeId=2">Paris</option>
+          <option value="/product/stock/check?productId=1&storeId=3">Milan</option>
+      </select>
+      <button type="submit" class="button">Check stock</button>
+  </form>
+  <span id="stockCheckResult"></span>
+  <script src="/resources/js/stockCheckPayload.js"></script>
+  <script src="/resources/js/stockCheck.js"></script>
+  <div class="is-linkback">
+      <a href="/">Return to list</a>
+      <a href="/product/nextProduct?currentProductId=1&path=/product?productId=2">| Next product</a>
+  </div>
+
+<SNIP>...<SNIP>

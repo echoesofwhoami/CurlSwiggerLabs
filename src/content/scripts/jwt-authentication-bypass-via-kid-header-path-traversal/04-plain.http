@@ -1,0 +1,3 @@
+HTTP/2 302 
+location: /my-account?id=wiener
+set-cookie: session=eyJraWQiOiJkYWRlMTg2ZC02ZDE5LTQ1ODQtYWIyNy03Mzc5NzVlMTYxMWYiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc3MzQwMTg5NCwic3ViIjoid2llbmVyIn0.whMw5vTopqo88l65CSzqHS4F_YMCnfOPtJBCwH9CPw4; Secure; HttpOnly; SameSite=None
