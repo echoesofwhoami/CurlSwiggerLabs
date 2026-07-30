@@ -252,6 +252,13 @@ code:not(pre code) {
   white-space: nowrap;
 }
 
+td code:not(pre code),
+th code:not(pre code) {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 pre code {
   background: none;
   padding: 0;
@@ -344,6 +351,12 @@ pre code {
 @media (max-width: 640px) {
   pre {
     font-size: 12px;
+  }
+
+  th,
+  td {
+    padding: 8px 10px;
+    font-size: 0.9em;
   }
 
   .partial-summary-text {
