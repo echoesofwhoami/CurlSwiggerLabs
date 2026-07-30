@@ -217,11 +217,11 @@ img {
 
 pre {
   outline: 1px solid #1e293b;
-  background-color: #161b27 !important;
+  background-color: #0A0A0A !important;
   color: #e1e4e8;
   padding: 28px 11px 8px 11px;
   display: block;
-  font-size: 14px;
+  font-size: 16px;
   width: 100%;
   box-sizing: border-box;
   position: relative;
