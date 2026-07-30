@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import echoesTheme from './src/themes/echoes.json';
 
 // https://astro.build/config
 export default defineConfig({
@@ -21,7 +22,8 @@ export default defineConfig({
   site: 'https://curlswiggerlabs.echoesofwhoami.com',
   markdown: {
     shikiConfig: {
-      theme: 'github-dark',
+      theme: echoesTheme,
     },
   },
 });
+

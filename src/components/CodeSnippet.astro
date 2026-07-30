@@ -3,6 +3,7 @@ import { Code } from 'astro:components';
 import type { CodeLanguage } from 'astro';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import echoesTheme from '../themes/echoes.json';
 
 interface Props {
   /** Path relative to `src/content/scripts/` */
@@ -30,4 +31,4 @@ const ext = file.includes('.') ? file.split('.').pop()! : '';
 const lang: CodeLanguage = langProp ?? EXT_TO_LANG[ext] ?? 'plaintext';
 ---
 
-<Code code={code} lang={lang} theme="github-dark" />
+<Code code={code} lang={lang} theme={echoesTheme} />

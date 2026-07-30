@@ -342,6 +342,10 @@ pre code {
 }
 
 @media (max-width: 640px) {
+  pre {
+    font-size: 12px;
+  }
+
   .partial-summary-text {
     flex-direction: column;
     align-items: flex-start;
