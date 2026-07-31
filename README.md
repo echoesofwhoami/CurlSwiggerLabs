@@ -16,4 +16,4 @@ At the end of the writeup, I'll explain the developer approach to mitigate these
 
 - https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-very-strict-csp-with-dangling-markup-attack
 
-Do you want me to solve a specific lab? Reach out to me on discord @echoesofwhoami_60012
+Do you want me to solve a specific lab? Reach out to me on discord @echoes_of_whoami
