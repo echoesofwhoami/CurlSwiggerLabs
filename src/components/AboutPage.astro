@@ -37,7 +37,12 @@ const t = useTranslations(lang);
 
 <style>
   .about-page {
+    width: min(1180px, calc(100% - 40px));
+    max-width: none;
+    box-sizing: border-box;
+    padding-inline: 0;
     padding-top: 3rem;
+    padding-bottom: 4rem;
   }
 
   header,
@@ -58,5 +63,11 @@ const t = useTranslations(lang);
     max-width: 760px;
     color: #cbd5e1;
     font-size: 1.15rem;
+  }
+
+  @media (max-width: 640px) {
+    .about-page {
+      width: min(1180px, calc(100% - 28px));
+    }
   }
 </style>
