@@ -49,7 +49,9 @@ const [{ older, newer }, relatedPosts] = await Promise.all([
         lang={lang}
       />
       <TableOfContents headings={headings} lang={lang} />
-      <Content components={{ PortswiggerDescription }} />
+      <div class="post-content">
+        <Content components={{ PortswiggerDescription }} />
+      </div>
       <PostNav older={older} newer={newer} lang={lang} />
       <RelatedLabs posts={relatedPosts} lang={lang} />
     </main>
@@ -62,6 +64,11 @@ const [{ older, newer }, relatedPosts] = await Promise.all([
     max-width: none;
     box-sizing: border-box;
     padding-inline: 0;
+    padding-bottom: 4rem;
+  }
+
+  :global(.post-content > * + *) {
+    margin-top: 1.75rem;
   }
 
   @media (max-width: 640px) {
