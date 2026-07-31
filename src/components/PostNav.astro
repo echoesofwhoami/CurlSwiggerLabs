@@ -1,0 +1,80 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getLocalizedPath, useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  older?: CollectionEntry<'blog'>;
+  newer?: CollectionEntry<'blog'>;
+  lang: Lang;
+}
+
+const { older, newer, lang } = Astro.props;
+const t = useTranslations(lang);
+const slugFor = (post: CollectionEntry<'blog'>) =>
+  post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+---
+
+{(older || newer) && (
+  <nav class="post-nav" aria-label={t('post.navigation')}>
+    {older ? (
+      <a class="post-nav-link older" href={getLocalizedPath(lang, slugFor(older))}>
+        <span>{t('post.prev')}</span>
+        <strong>{older.data.title}</strong>
+      </a>
+    ) : <span />}
+    {newer && (
+      <a class="post-nav-link newer" href={getLocalizedPath(lang, slugFor(newer))}>
+        <span>{t('post.next')}</span>
+        <strong>{newer.data.title}</strong>
+      </a>
+    )}
+  </nav>
+)}
+
+<style>
+  .post-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 3rem 0 2rem;
+  }
+
+  .post-nav-link {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #0A0F1B;
+  }
+
+  .post-nav-link span {
+    margin-bottom: 0.35rem;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .post-nav-link strong {
+    color: #f8fafc;
+  }
+
+  .post-nav-link.newer {
+    text-align: right;
+  }
+
+  @media (max-width: 640px) {
+    .post-nav {
+      grid-template-columns: 1fr;
+    }
+
+    .post-nav > span {
+      display: none;
+    }
+
+    .post-nav-link.newer {
+      text-align: left;
+    }
+  }
+</style>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 405" role="img" aria-labelledby="title desc">
+  <title id="title">OAuth redirect URI</title>
+  <desc id="desc">A dark terminal window showing an OAuth authorization request with an external redirect URI.</desc>
+  <rect width="720" height="405" fill="#0f1117"/>
+  <circle cx="30" cy="30" r="6" fill="#dc2626"/><circle cx="52" cy="30" r="6" fill="#475569"/><circle cx="74" cy="30" r="6" fill="#475569"/>
+  <path d="M0 57h720" stroke="#334155"/>
+  <g transform="translate(-45 -45) scale(1.14)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="21">
+    <text x="68" y="146" fill="#ef4444">GET</text><text x="116" y="146" fill="#e2e8f0">/oauth/authorize?</text>
+    <text x="92" y="194" fill="#94a3b8">client_id=blog-client&amp;</text>
+    <text x="92" y="242" fill="#e2e8f0">redirect_uri=</text>
+    <rect x="262" y="213" width="340" height="40" rx="4" fill="#dc2626" opacity=".16"/>
+    <text x="272" y="242" fill="#ef4444">https://attacker.example</text>
+    <text x="92" y="290" fill="#94a3b8">&amp;response_type=code</text>
+    <text x="68" y="341" fill="#64748b">Host: oauth.example</text>
+  </g>
+</svg>

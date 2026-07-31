@@ -1,0 +1,62 @@
+---
+import type { Lang } from '../i18n/utils';
+import { useTranslations } from '../i18n/utils';
+import DiscordCta from './DiscordCta.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<main class="about-page">
+  <header>
+    <h1>{t('about.title')}</h1>
+    <p class="lede">{t('about.intro')}</p>
+  </header>
+
+  <section>
+    <h2>{t('about.whyCurlTitle')}</h2>
+    <p>{t('about.whyCurlBody')}</p>
+  </section>
+
+  <section>
+    <h2>{t('about.methodTitle')}</h2>
+    <p>{t('about.methodBody')}</p>
+  </section>
+
+  <section>
+    <h2>{t('about.depthTitle')}</h2>
+    <p>{t('about.depthBody')}</p>
+  </section>
+
+  <DiscordCta lang={lang} />
+</main>
+
+<style>
+  .about-page {
+    padding-top: 3rem;
+  }
+
+  header,
+  section {
+    margin-bottom: 2.5rem;
+  }
+
+  h1 {
+    margin-bottom: 0.75rem;
+    font-size: clamp(2.2rem, 6vw, 3.5rem);
+  }
+
+  h2 {
+    margin-bottom: 0.5rem;
+  }
+
+  .lede {
+    max-width: 760px;
+    color: #cbd5e1;
+    font-size: 1.15rem;
+  }
+</style>

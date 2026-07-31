@@ -1,0 +1,60 @@
+---
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+  lang: Lang;
+}
+
+const { headings, lang } = Astro.props;
+const visibleHeadings = headings.filter(({ depth }) => depth === 2 || depth === 3);
+const t = useTranslations(lang);
+---
+
+{visibleHeadings.length > 0 && (
+  <nav class="table-of-contents" aria-labelledby="toc-title">
+    <h2 id="toc-title">{t('post.toc')}</h2>
+    <ol>
+      {visibleHeadings.map((heading) => (
+        <li class:list={{ nested: heading.depth === 3 }}>
+          <a href={`#${heading.slug}`}>{heading.text}</a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}
+
+<style>
+  .table-of-contents {
+    margin: 2rem 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #0A0F1B;
+  }
+
+  .table-of-contents h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.1rem;
+  }
+
+  .table-of-contents ol {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  .table-of-contents li {
+    margin: 0.25rem 0;
+  }
+
+  .table-of-contents li.nested {
+    margin-left: 1.25rem;
+    font-size: 0.95rem;
+  }
+</style>

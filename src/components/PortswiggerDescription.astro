@@ -1,0 +1,33 @@
+---
+import { useTranslations, type Lang } from '../i18n/utils';
+
+const lang = (Astro.locals.postLang ?? 'en') as Lang;
+const description = Astro.locals.portswiggerDescription;
+const t = useTranslations(lang);
+---
+
+{description && (
+  <aside class="portswigger-description" aria-labelledby="portswigger-description-title">
+    <h3 id="portswigger-description-title">{t('post.portswiggerDescription')}</h3>
+    <p>{description}</p>
+  </aside>
+)}
+
+<style>
+  .portswigger-description {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #0A0F1B;
+  }
+
+  .portswigger-description h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  .portswigger-description p {
+    margin: 0;
+  }
+</style>

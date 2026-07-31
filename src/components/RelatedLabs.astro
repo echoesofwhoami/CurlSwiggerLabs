@@ -1,0 +1,65 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatDate } from '../utils';
+import { getLocalizedPath, useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  posts: CollectionEntry<'blog'>[];
+  lang: Lang;
+}
+
+const { posts, lang } = Astro.props;
+const t = useTranslations(lang);
+const slugFor = (post: CollectionEntry<'blog'>) =>
+  post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+---
+
+{posts.length > 0 && (
+  <section class="related-labs" aria-labelledby="related-labs-title">
+    <h2 id="related-labs-title">{t('post.related')}</h2>
+    <ul>
+      {posts.map((post) => (
+        <li>
+          <a href={getLocalizedPath(lang, slugFor(post))}>
+            <strong>{post.data.title}</strong>
+            <span>{post.data.difficulty} · {formatDate(post.data.date, lang)}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .related-labs {
+    margin: 2rem 0;
+  }
+
+  .related-labs ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 0;
+  }
+
+  .related-labs a {
+    display: flex;
+    height: 100%;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #0A0F1B;
+  }
+
+  .related-labs strong {
+    color: #f8fafc;
+  }
+
+  .related-labs span {
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+</style>

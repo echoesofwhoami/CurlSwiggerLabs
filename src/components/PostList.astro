@@ -1,0 +1,67 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import type { Lang } from '../i18n/utils';
+import PostCard from './PostCard.astro';
+
+interface Props {
+  category: string;
+  posts: CollectionEntry<'blog'>[];
+  lang: Lang;
+}
+
+const { category, posts, lang } = Astro.props;
+const sectionId = `category-${category
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/(^-|-$)/g, '')}`;
+---
+
+<section class="post-list" aria-labelledby={sectionId}>
+  <h2 id={sectionId}>{category}</h2>
+  <div class="post-list__grid">
+    {posts.map((post) => <PostCard post={post} lang={lang} />)}
+  </div>
+</section>
+
+<style>
+  .post-list + .post-list {
+    margin-top: 4rem;
+  }
+
+  h2 {
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #334155;
+    font-size: clamp(1.45rem, 3vw, 2rem);
+  }
+
+  h2::before {
+    content: '/';
+    margin-right: 0.55rem;
+    color: #dc2626;
+  }
+
+  .post-list__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+
+  @media (max-width: 860px) {
+    .post-list__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .post-list + .post-list {
+      margin-top: 3rem;
+    }
+
+    .post-list__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

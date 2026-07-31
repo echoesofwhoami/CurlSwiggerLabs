@@ -6,6 +6,9 @@ category: "JWT"
 date: "2025-03-13"
 portswiggerDescription: "This lab uses a JWT-based mechanism for handling sessions. In order to verify the signature, the server uses the kid parameter in JWT header to fetch the relevant key from its filesystem. To solve the lab, forge a JWT that gives you access to the admin panel at /admin, then delete the user carlos. You can log in to your own account using the following credentials: wiener:peter"
 lang: "en"
+difficulty: "Practitioner"
+tools: ['curl', 'Python']
+series: "jwt-authentication-bypass"
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
@@ -20,6 +23,8 @@ import CodeSnippet from '../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Writeup
+
+<PortswiggerDescription />
 
 Let's explore the lab's login page directly and log in to get a valid JWT session token:
 

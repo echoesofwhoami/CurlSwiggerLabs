@@ -6,6 +6,8 @@ category: "Object Injection (PHP)"
 date: "2025-02-22"
 portswiggerDescription: "This lab uses a serialization-based session mechanism and is vulnerable to arbitrary object injection as a result. To solve the lab, create and inject a malicious serialized object to delete the `morale.txt` file from Carlos's home directory. You will need to obtain source code access to solve this lab. You can log in to your own account using the following credentials: `wiener:peter`"
 lang: "en"
+difficulty: "Practitioner"
+tools: ['curl']
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
@@ -21,6 +23,8 @@ import CodeSnippet from '../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Writeup
+
+<PortswiggerDescription />
 
 First let's explore the lab and log in to get a valid session cookie:
 

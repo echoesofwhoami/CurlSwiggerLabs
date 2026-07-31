@@ -6,6 +6,9 @@ category: "JWT"
 date: "2025-03-13"
 portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. Para verificar la firma, el servidor usa el parámetro kid en el header JWT para obtener la clave relevante de su sistema de archivos. Para resolver el lab, forja un JWT que te dé acceso al panel de administración en /admin, luego elimina al usuario carlos. Puedes iniciar sesión con tus propias credenciales: wiener:peter"
 lang: "es"
+difficulty: "Practitioner"
+tools: ['curl', 'Python']
+series: "jwt-authentication-bypass"
 ---
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
@@ -20,6 +23,8 @@ import CodeSnippet from '../../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Resolución
+
+<PortswiggerDescription />
 
 Exploremos la página de login del lab directamente e iniciemos sesión para obtener un token JWT de sesión válido:
 

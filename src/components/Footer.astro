@@ -1,0 +1,259 @@
+---
+import type { Lang } from '../i18n/utils';
+import { getLocalizedHref, getLocalizedPath, useTranslations } from '../i18n/utils';
+import { siteConfig } from '../site.config';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const year = new Date().getFullYear();
+
+const siteLinks = [
+  { label: t('nav.home'), href: getLocalizedHref(lang, '/') },
+  { label: t('nav.about'), href: getLocalizedPath(lang, 'about') },
+];
+const resourceLinks = [
+  {
+    label: t('footer.rss'),
+    href: `${base}${siteConfig.rssPath}`,
+    external: false,
+  },
+  {
+    label: t('footer.source'),
+    href: siteConfig.blogSourceUrl.trim(),
+    external: true,
+  },
+].filter((link) => link.href.length > 0);
+const socialLinks = [
+  {
+    label: t('footer.github'),
+    href: siteConfig.githubProfileUrl.trim(),
+    external: true,
+  },
+  {
+    label: t('footer.linkedin'),
+    href: siteConfig.linkedinUrl.trim(),
+    external: true,
+  },
+].filter((link) => link.href.length > 0);
+---
+
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="footer-brand__link" href={getLocalizedHref(lang, '/')}>
+          <img src="/echoes.png" alt="" width="32" height="32" />
+          <span>Curl<span>Swigger</span>Labs</span>
+        </a>
+        <p>{t('footer.blurb')}</p>
+      </div>
+
+      <nav class="footer-group" aria-labelledby={`footer-explore-${lang}`}>
+        <h2 id={`footer-explore-${lang}`}>{t('footer.explore')}</h2>
+        <ul>
+          {siteLinks.map(({ label, href }) => <li><a href={href}>{label}</a></li>)}
+        </ul>
+      </nav>
+
+      <nav class="footer-group" aria-labelledby={`footer-resources-${lang}`}>
+        <h2 id={`footer-resources-${lang}`}>{t('footer.resources')}</h2>
+        <ul>
+          {
+            resourceLinks.map(({ label, href, external }) => (
+              <li>
+                <a
+                  href={href}
+                  target={external ? '_blank' : undefined}
+                  rel={external ? 'noreferrer' : undefined}
+                >
+                  {label} {external && <span aria-hidden="true">↗</span>}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <nav class="footer-group" aria-labelledby={`footer-connect-${lang}`}>
+        <h2 id={`footer-connect-${lang}`}>{t('footer.connect')}</h2>
+        <ul>
+          <li>
+            {siteConfig.discordInviteUrl.trim() ? (
+              <a href={siteConfig.discordInviteUrl} target="_blank" rel="noreferrer">
+                {t('footer.discord')} <span aria-hidden="true">↗</span>
+              </a>
+            ) : (
+              <span class="footer-discord">
+                {t('footer.discord')} · {siteConfig.discordHandle}
+              </span>
+            )}
+          </li>
+          {
+            socialLinks.map(({ label, href, external }) => (
+              <li>
+                <a
+                  href={href}
+                  target={external ? '_blank' : undefined}
+                  rel={external ? 'noreferrer' : undefined}
+                >
+                  {label} {external && <span aria-hidden="true">↗</span>}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© {year} CurlSwiggerLabs</span>
+      <span>{t('footer.tagline')}</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative;
+    margin-top: 0;
+    border-top: 1px solid #334155;
+    background:
+      linear-gradient(105deg, rgba(220, 38, 38, 0.055), transparent 32%),
+      #0b0e14;
+  }
+
+  .site-footer::before {
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    width: min(220px, 35vw);
+    height: 1px;
+    background: #dc2626;
+    content: '';
+    transform: translateX(-50%);
+  }
+
+  .footer-container {
+    width: min(1180px, calc(100% - 40px));
+    margin-inline: auto;
+    padding-block: 4rem 1.5rem;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.7fr) repeat(3, minmax(120px, 0.6fr));
+    align-items: flex-start;
+    gap: clamp(2rem, 5vw, 4.5rem);
+  }
+
+  .footer-brand__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: #f8fafc;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .footer-brand__link:visited {
+    color: #f8fafc;
+  }
+
+  .footer-brand__link > span > span {
+    color: #dc2626;
+  }
+
+  .footer-brand img {
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    border: 0;
+    border-radius: 4px;
+  }
+
+  .footer-brand p {
+    max-width: 510px;
+    margin-top: 1rem;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .footer-group h2 {
+    margin: 0 0 1rem;
+    color: #e2e8f0;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+  }
+
+  .footer-group ul {
+    padding: 0;
+    margin: 0;
+  }
+
+  .footer-group li + li {
+    margin-top: 0.65rem;
+  }
+
+  .footer-group a,
+  .footer-discord {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .footer-group a:hover {
+    color: #ef4444;
+  }
+
+  .footer-group a span {
+    color: #64748b;
+    font-size: 0.75rem;
+  }
+
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 3.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #1e293b;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  @media (max-width: 900px) {
+    .footer-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .footer-container {
+      width: min(1180px, calc(100% - 28px));
+      padding-top: 3rem;
+    }
+
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 2.25rem 1.5rem;
+    }
+
+    .footer-bottom {
+      flex-direction: column;
+    }
+  }
+</style>

@@ -5,26 +5,104 @@ import { formatDate } from '../utils';
 
 export interface Props {
   title: string;
+  description: string;
   category: string;
   labUrl: string;
   date: string;
-  portswiggerDescription: string;
+  difficulty: 'Apprentice' | 'Practitioner' | 'Expert';
+  tools: string[];
+  series?: string;
   lang?: Lang;
 }
 
-const { title, category, labUrl, date, portswiggerDescription, lang = 'en' } = Astro.props;
+const {
+  title,
+  description,
+  category,
+  labUrl,
+  date,
+  difficulty,
+  tools,
+  series,
+  lang = 'en',
+} = Astro.props;
 const t = useTranslations(lang);
+const seriesName = series?.replaceAll('-', ' ');
 ---
 
-<div>
+<header class="post-header">
   <h1>{title}</h1>
-  <div>
-    <h2>{t('post.labDescription')}</h2>
-    <p>
-      <strong>{category}</strong> ·
-      <a href={labUrl} target="_blank" rel="noopener noreferrer">{t('post.portswiggerLab')} ↗</a>
-    </p>
-    <p>{portswiggerDescription}</p>
-    <small>{formatDate(date, lang)}</small>
+  <p class="post-description">{description}</p>
+  <p class="post-source">
+    <strong>{category}</strong>
+    <span aria-hidden="true">·</span>
+    <a href={labUrl} target="_blank" rel="noopener noreferrer">{t('post.portswiggerLab')} ↗</a>
+  </p>
+  <div class="post-metadata">
+    <span>
+      <strong>{t('post.difficulty')}:</strong>
+      <span class="difficulty-chip">{difficulty}</span>
+    </span>
+    <span>
+      <strong>{t('post.tools')}:</strong>
+      <span class="tool-list">
+        {tools.map((tool) => <span class="tool">{tool}</span>)}
+      </span>
+    </span>
+    {seriesName && <span><strong>{t('post.series')}:</strong> {seriesName}</span>}
   </div>
-</div>
+  <small>{formatDate(date, lang)}</small>
+</header>
+
+<style>
+  .post-header {
+    margin: 2.5rem 0 2rem;
+  }
+
+  .post-header h1 {
+    margin-bottom: 0.75rem;
+  }
+
+  .post-description {
+    color: #cbd5e1;
+    font-size: 1.15rem;
+  }
+
+  .post-source {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    margin: 1rem 0;
+  }
+
+  .post-metadata {
+    display: grid;
+    gap: 0.65rem;
+    margin: 1rem 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+  }
+
+  .tool-list {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-left: 0.35rem;
+  }
+
+  .tool,
+  .difficulty-chip {
+    padding: 0.1rem 0.45rem;
+    border: 1px solid #334155;
+    border-radius: 999px;
+    background: #1e293b;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+  }
+
+  .difficulty-chip {
+    display: inline-block;
+    margin-left: 0.35rem;
+  }
+</style>

@@ -6,6 +6,9 @@ category: "JWT"
 date: "2025-02-27"
 portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. La clave de firma JWT es débil y puede ser descubierta por fuerza bruta usando un diccionario de secretos comunes. Para resolver el lab, necesitas descubrir por fuerza bruta la clave secreta usada para firmar el JWT, luego usarla para forjar un JWT válido que te dé acceso al panel de administración y eliminar al usuario `carlos`."
 lang: "es"
+difficulty: "Practitioner"
+tools: ['curl', 'Python']
+series: "jwt-authentication-bypass"
 ---
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
@@ -20,6 +23,8 @@ import CodeSnippet from '../../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Resolución
+
+<PortswiggerDescription />
 
 Exploremos la página de login del lab directamente e iniciemos sesión para obtener un token JWT de sesión válido:
 

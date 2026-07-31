@@ -10,6 +10,9 @@ const blog = defineCollection({
     date: z.string(),
     portswiggerDescription: z.string(),
     lang: z.enum(['en', 'es']).default('en'),
+    difficulty: z.enum(['Apprentice', 'Practitioner', 'Expert']),
+    tools: z.array(z.string()).min(1),
+    series: z.string().optional(),
   }),
 });
 

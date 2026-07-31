@@ -6,6 +6,9 @@ category: "JWT"
 date: "2025-02-27"
 portswiggerDescription: "This lab uses a JWT-based mechanism for handling sessions. The JWT signing key is weak and can be brute-forced using a wordlist of common secrets. To solve the lab, you need to brute-force the secret key used to sign the JWT, then use it to forge a valid JWT that gives you access to the admin panel and delete the user `carlos`."
 lang: "en"
+difficulty: "Practitioner"
+tools: ['curl', 'Python']
+series: "jwt-authentication-bypass"
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
@@ -20,6 +23,8 @@ import CodeSnippet from '../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Writeup
+
+<PortswiggerDescription />
 
 Let's explore the lab's login page directly and log in to get a valid JWT session token:
 

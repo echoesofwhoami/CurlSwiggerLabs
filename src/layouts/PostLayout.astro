@@ -1,0 +1,72 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import type { Lang } from '../i18n/utils';
+import { getAdjacentPosts, getRelatedPosts } from '../utils';
+import Layout from './Layout.astro';
+import PortswiggerDescription from '../components/PortswiggerDescription.astro';
+import PostHeader from '../components/PostHeader.astro';
+import PostNav from '../components/PostNav.astro';
+import RelatedLabs from '../components/RelatedLabs.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  lang: Lang;
+}
+
+const { post, lang } = Astro.props;
+const slug = post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+
+Astro.locals.portswiggerDescription = post.data.portswiggerDescription;
+Astro.locals.postLang = lang;
+
+const { Content, headings } = await render(post);
+const [{ older, newer }, relatedPosts] = await Promise.all([
+  getAdjacentPosts(slug, lang),
+  getRelatedPosts(slug, lang),
+]);
+---
+
+<Layout
+  title={post.data.title}
+  description={post.data.description}
+  lang={lang}
+  type="article"
+  publishedTime={new Date(post.data.date).toISOString()}
+  wide
+>
+  <article>
+    <main>
+      <PostHeader
+        title={post.data.title}
+        description={post.data.description}
+        category={post.data.category}
+        labUrl={post.data.labUrl}
+        date={post.data.date}
+        difficulty={post.data.difficulty}
+        tools={post.data.tools}
+        series={post.data.series}
+        lang={lang}
+      />
+      <TableOfContents headings={headings} lang={lang} />
+      <Content components={{ PortswiggerDescription }} />
+      <PostNav older={older} newer={newer} lang={lang} />
+      <RelatedLabs posts={relatedPosts} lang={lang} />
+    </main>
+  </article>
+</Layout>
+
+<style>
+  main {
+    width: min(1180px, calc(100% - 40px));
+    max-width: none;
+    box-sizing: border-box;
+    padding-inline: 0;
+  }
+
+  @media (max-width: 640px) {
+    main {
+      width: min(1180px, calc(100% - 28px));
+    }
+  }
+</style>

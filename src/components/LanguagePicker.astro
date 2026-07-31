@@ -1,6 +1,6 @@
 ---
 import { languages } from '../i18n/ui';
-import { getLocalizedHref, type Lang } from '../i18n/utils';
+import { getLocalizedHref, useTranslations, type Lang } from '../i18n/utils';
 
 interface Props {
   lang: Lang;
@@ -8,21 +8,222 @@ interface Props {
 }
 
 const { lang: currentLang, currentPath } = Astro.props;
+const currentLabel = languages[currentLang];
+const t = useTranslations(currentLang);
 ---
 
-<nav aria-label="Language selector" class="lang-picker">
-  {Object.entries(languages).map(([lang, label]) => {
-    const href = getLocalizedHref(lang as Lang, currentPath);
-    const isCurrent = lang === currentLang;
-    return (
-      <a
-        href={href}
-        aria-current={isCurrent ? 'page' : undefined}
-        hreflang={lang}
-        class:list={['lang-link', { active: isCurrent }]}
-      >
-        {label}
-      </a>
-    );
-  })}
-</nav>
+<div class="lang-picker" data-language-picker>
+  <button
+    class="lang-trigger"
+    type="button"
+    aria-expanded="false"
+    aria-haspopup="menu"
+    aria-controls="language-menu"
+    aria-label={`${t('lang.pick')}: ${currentLabel}`}
+  >
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"></circle>
+      <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path>
+    </svg>
+    <span>{currentLabel}</span>
+    <svg class="chevron" aria-hidden="true" viewBox="0 0 12 8">
+      <path d="m1 1 5 5 5-5"></path>
+    </svg>
+  </button>
+
+  <ul id="language-menu" class="lang-menu" role="menu" hidden>
+    {
+      Object.entries(languages).map(([lang, label]) => {
+        const href = getLocalizedHref(lang as Lang, currentPath);
+        const isCurrent = lang === currentLang;
+        return (
+          <li>
+            <a
+              href={href}
+              aria-current={isCurrent ? 'page' : undefined}
+              hreflang={lang}
+              role="menuitem"
+              class:list={['lang-option', { active: isCurrent }]}
+            >
+              <span>{label}</span>
+              <span class="lang-code">{lang.toUpperCase()}</span>
+              {isCurrent && <span class="check" aria-hidden="true">✓</span>}
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-language-picker]').forEach((picker) => {
+    const trigger = picker.querySelector<HTMLButtonElement>('.lang-trigger');
+    const menu = picker.querySelector<HTMLElement>('.lang-menu');
+    const options = Array.from(picker.querySelectorAll<HTMLAnchorElement>('.lang-option'));
+    if (!trigger || !menu) return;
+
+    const setOpen = (open: boolean, focusOption?: 'first' | 'last') => {
+      menu.hidden = !open;
+      trigger.setAttribute('aria-expanded', String(open));
+      if (open && focusOption) {
+        options[focusOption === 'first' ? 0 : options.length - 1]?.focus();
+      }
+    };
+
+    trigger.addEventListener('click', () => {
+      setOpen(trigger.getAttribute('aria-expanded') !== 'true');
+    });
+
+    trigger.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        setOpen(true, event.key === 'ArrowDown' ? 'first' : 'last');
+      }
+    });
+
+    options.forEach((option, index) => {
+      option.addEventListener('click', () => {
+        setOpen(false);
+      });
+
+      option.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setOpen(false);
+          trigger.focus();
+          return;
+        }
+
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          const offset = event.key === 'ArrowDown' ? 1 : -1;
+          options[(index + offset + options.length) % options.length]?.focus();
+        }
+      });
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      if (!picker.contains(event.target as Node)) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && trigger.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+        trigger.focus();
+      }
+    });
+  });
+</script>
+
+<style>
+  .lang-picker {
+    position: relative;
+    padding-left: 0;
+  }
+
+  .lang-trigger {
+    display: flex;
+    min-height: 38px;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid #334155;
+    border-radius: 5px;
+    background: rgba(15, 17, 23, 0.8);
+    color: #cbd5e1;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .lang-trigger:hover,
+  .lang-trigger:focus-visible,
+  .lang-trigger[aria-expanded='true'] {
+    border-color: #64748b;
+    color: #f8fafc;
+    outline: none;
+  }
+
+  .lang-trigger svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+  }
+
+  .lang-trigger .chevron {
+    width: 10px;
+    transition: transform 0.15s ease;
+  }
+
+  .lang-trigger[aria-expanded='true'] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .lang-menu {
+    position: absolute;
+    z-index: 110;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 190px;
+    margin: 0;
+    padding: 0.35rem;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #0A0F1B;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
+  }
+
+  .lang-menu:not([hidden]) {
+    display: block;
+  }
+
+  .lang-menu[hidden] {
+    display: none;
+  }
+
+  .lang-option {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    font-weight: 650;
+  }
+
+  .lang-option:hover,
+  .lang-option:focus-visible {
+    background: #1e293b;
+    color: #f8fafc;
+    outline: none;
+  }
+
+  .lang-option.active {
+    color: #f8fafc;
+  }
+
+  .lang-code {
+    color: #64748b;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+  }
+
+  .check {
+    color: #dc2626;
+    font-weight: 800;
+  }
+
+  @media (max-width: 520px) {
+    .lang-trigger > span {
+      display: none;
+    }
+  }
+</style>

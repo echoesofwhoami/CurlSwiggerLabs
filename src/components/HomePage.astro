@@ -1,0 +1,329 @@
+---
+import { siteConfig } from '../site.config';
+import { useTranslations, getLocalizedPath, type Lang } from '../i18n/utils';
+import { getGroupedPosts } from '../utils';
+import DiscordCta from './DiscordCta.astro';
+import PostList from './PostList.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const groupedPosts = await getGroupedPosts(lang);
+const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
+---
+
+<main class="home-page">
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-shell home-hero__content">
+      <h1 id="home-title">Curl<span>Swigger</span>Labs</h1>
+      <h2>{t('home.hero.title')}</h2>
+      <p>{t('home.hero.subtitle')}</p>
+      <div class="home-hero__actions">
+        <a class="home-button home-button--primary" href="#labs">{t('home.cta.labs')}</a>
+        <a class="home-button" href={aboutHref}>{t('home.cta.about')}</a>
+        <a class="home-link" href={siteConfig.discordInviteUrl || '#discord'}>
+          {t('home.cta.discord')}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="intent" aria-labelledby="intent-title">
+    <div class="home-shell">
+      <h2 id="intent-title">{t('home.intent.title')}</h2>
+      <div class="intent__items">
+        <article>
+          <span aria-hidden="true">01</span>
+          <h3>{t('home.intent.depth.title')}</h3>
+          <p>{t('home.intent.depth.body')}</p>
+        </article>
+        <article>
+          <span aria-hidden="true">02</span>
+          <h3>{t('home.intent.tools.title')}</h3>
+          <p>{t('home.intent.tools.body')}</p>
+        </article>
+        <article>
+          <span aria-hidden="true">03</span>
+          <h3>{t('home.intent.build.title')}</h3>
+          <p>{t('home.intent.build.body')}</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="labs" id="labs" aria-labelledby="labs-title">
+    <div class="home-shell">
+      <header class="labs__header">
+        <h2 id="labs-title">{t('home.labs.title')}</h2>
+        <p>{t('home.labs.subtitle')}</p>
+      </header>
+      {groupedPosts.map(({ category, categoryPosts }) => (
+        <PostList category={category} posts={categoryPosts} lang={lang} />
+      ))}
+    </div>
+  </section>
+
+  <section class="home-discord" id="discord" aria-label={t('discord.title')}>
+    <div class="home-shell">
+      <DiscordCta lang={lang} />
+    </div>
+  </section>
+</main>
+
+<style>
+  .home-page {
+    max-width: none;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .home-shell {
+    width: min(1180px, calc(100% - 40px));
+    margin-inline: auto;
+  }
+
+  .home-hero {
+    position: relative;
+    display: grid;
+    min-height: min(760px, calc(100vh - 64px));
+    align-items: center;
+    isolation: isolate;
+  }
+
+  .home-hero::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background:
+      radial-gradient(circle at 82% 28%, rgba(220, 38, 38, 0.13), transparent 31rem),
+      linear-gradient(115deg, rgba(30, 41, 59, 0.3), transparent 55%);
+    content: '';
+  }
+
+  .home-hero::after {
+    position: absolute;
+    z-index: -1;
+    right: 7vw;
+    bottom: 12%;
+    width: min(36vw, 430px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #dc2626);
+    box-shadow: 0 -88px 0 rgba(71, 85, 105, 0.35), 0 -176px 0 rgba(71, 85, 105, 0.18);
+    content: '';
+    transform: rotate(-8deg);
+  }
+
+  .home-hero__content {
+    padding-block: 5rem;
+  }
+
+  .home-hero h1 {
+    margin: 0 0 1.5rem;
+    color: #f8fafc;
+    font-size: clamp(2.8rem, 8vw, 6.5rem);
+    letter-spacing: -0.07em;
+  }
+
+  .home-hero h1 span {
+    color: #dc2626;
+  }
+
+  .home-hero h2 {
+    max-width: 850px;
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 3.35rem);
+    letter-spacing: -0.035em;
+  }
+
+  .home-hero p {
+    max-width: 720px;
+    margin-top: 1.4rem;
+    color: #cbd5e1;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+  }
+
+  .home-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 2rem;
+  }
+
+  .home-button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.15rem 1rem;
+    border: 1px solid #475569;
+    border-radius: 5px;
+    color: #f8fafc;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .home-button:visited {
+    color: #f8fafc;
+  }
+
+  .home-button:hover {
+    border-color: #94a3b8;
+    color: #fff;
+  }
+
+  .home-button:focus-visible {
+    outline: 2px solid #dc2626;
+    outline-offset: 3px;
+  }
+
+  .home-button--primary {
+    border-color: #dc2626;
+    background: transparent;
+    color: #ef4444;
+  }
+
+  .home-button--primary:visited {
+    color: #ef4444;
+  }
+
+  .home-button--primary:hover,
+  .home-button--primary:focus-visible {
+    border-color: #ef4444;
+    background: rgba(220, 38, 38, 0.1);
+    color: #f87171;
+  }
+
+  .home-link {
+    padding: 0.65rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .intent {
+    border-block: 1px solid #334155;
+    background: #0A0F1B;
+  }
+
+  .intent .home-shell {
+    display: grid;
+    grid-template-columns: 0.7fr 2.3fr;
+    gap: 3rem;
+    padding-block: 3.5rem;
+  }
+
+  .intent h2 {
+    margin: 0;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .intent__items {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .intent article {
+    position: relative;
+    padding-left: 1rem;
+    border-left: 1px solid #475569;
+  }
+
+  .intent article > span {
+    color: #dc2626;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .intent h3 {
+    margin: 0.35rem 0 0.6rem;
+    font-size: 1.05rem;
+  }
+
+  .intent p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .labs {
+    scroll-margin-top: 84px;
+    padding-block: 6rem;
+  }
+
+  .labs__header {
+    max-width: 720px;
+    margin-bottom: 3.5rem;
+  }
+
+  .labs__header h2 {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .labs__header p {
+    margin-top: 0.8rem;
+    font-size: 1.05rem;
+  }
+
+  .home-discord {
+    border-top: 1px solid #334155;
+    background:
+      linear-gradient(100deg, rgba(220, 38, 38, 0.08), transparent 45%),
+      #0A0F1B;
+  }
+
+  .home-discord .home-shell {
+    padding-block: 4rem;
+  }
+
+  @media (max-width: 820px) {
+    .intent .home-shell {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .intent__items {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .home-shell {
+      width: min(100% - 28px, 1180px);
+    }
+
+    .home-hero {
+      min-height: auto;
+    }
+
+    .home-hero__content {
+      padding-block: 4.5rem;
+    }
+
+    .home-hero h1 {
+      font-size: clamp(2rem, 10vw, 3rem);
+    }
+
+    .home-hero__actions {
+      align-items: stretch;
+    }
+
+    .home-button {
+      flex: 1 1 auto;
+    }
+
+    .labs {
+      padding-block: 4.5rem;
+    }
+
+    .home-discord .home-shell {
+      padding-block: 3rem;
+    }
+  }
+</style>

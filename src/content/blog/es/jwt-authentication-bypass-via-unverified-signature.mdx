@@ -6,6 +6,9 @@ category: "JWT"
 date: "2025-03-18"
 portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. Debido a fallos de implementación, el servidor no verifica la firma de ningún JWT que recibe. Para resolver el lab, modifica tu token de sesión para obtener acceso al panel de administración en /admin, luego elimina al usuario carlos. Puedes iniciar sesión en tu propia cuenta usando las siguientes credenciales: wiener:peter"
 lang: "es"
+difficulty: "Apprentice"
+tools: ['curl', 'Python']
+series: "jwt-authentication-bypass"
 ---
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
@@ -20,6 +23,8 @@ import CodeSnippet from '../../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Resolución
+
+<PortswiggerDescription />
 
 Exploremos la página de login del lab directamente e iniciemos sesión para obtener un token JWT de sesión válido:
 

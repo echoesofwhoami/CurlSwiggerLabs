@@ -6,6 +6,8 @@ category: "OAuth"
 date: "2025-03-04"
 portswiggerDescription: "Este lab utiliza un servicio OAuth para permitir a los usuarios iniciar sesión con su cuenta de redes sociales. Una mala configuración del proveedor OAuth hace posible que un atacante robe códigos de autorización asociados a las cuentas de otros usuarios. Para resolver el lab, roba un código de autorización asociado al usuario admin, luego úsalo para acceder a su cuenta y eliminar al usuario `carlos`. El usuario admin abrirá cualquier cosa que envíes desde el servidor de exploits y siempre tiene una sesión activa con el servicio OAuth. Puedes iniciar sesión con tu propia cuenta de redes sociales usando las siguientes credenciales: `wiener:peter`"
 lang: "es"
+difficulty: "Practitioner"
+tools: ['curl', 'Python']
 ---
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
@@ -20,6 +22,8 @@ import CodeSnippet from '../../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Resolución
+
+<PortswiggerDescription />
 
 Primero exploremos el lab y entendamos la estructura de la aplicación:
 

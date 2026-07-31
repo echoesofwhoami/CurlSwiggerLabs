@@ -3,6 +3,7 @@ import { languages, defaultLang } from '../i18n/ui';
 import { getLocalizedHref, useTranslations, type Lang } from '../i18n/utils';
 import '../styles/global.css';
 import CopyCodeButton from '../components/CopyCodeButton.astro';
+import Footer from '../components/Footer.astro';
 import Navbar from '../components/Navbar.astro';
 
 interface Props {
@@ -15,9 +16,11 @@ interface Props {
   image?: string;
   /** ISO date for article pages */
   publishedTime?: string;
+  /** Align site chrome with wide landing-page content. */
+  wide?: boolean;
 }
 
-const { lang, type = 'website', publishedTime } = Astro.props;
+const { lang, type = 'website', publishedTime, wide = false } = Astro.props;
 const t = useTranslations(lang);
 
 const title = Astro.props.title ?? t('site.title');
@@ -87,8 +90,9 @@ const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
     <title>{title}</title>
   </head>
   <body>
-    <Navbar lang={lang} currentPath={pathname} />
+    <Navbar lang={lang} currentPath={pathname} wide={wide} />
     <slot />
-    <CopyCodeButton />
+    <Footer lang={lang} />
+    <CopyCodeButton lang={lang} />
   </body>
 </html>

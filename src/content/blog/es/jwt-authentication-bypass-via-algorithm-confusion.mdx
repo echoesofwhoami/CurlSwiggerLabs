@@ -6,6 +6,9 @@ category: "JWT"
 date: "2025-03-13"
 portswiggerDescription: "Este lab utiliza un mecanismo basado en JWT para gestionar sesiones. Usa un par de claves RSA robusto para firmar y verificar tokens. Sin embargo, debido a fallos de implementación, este mecanismo es vulnerable a ataques de confusión de algoritmo. Para resolver el lab, primero obtén la clave pública del servidor. Esta se expone a través de un endpoint estándar. Usa esta clave para firmar un token de sesión modificado que te dé acceso al panel de administración en /admin, luego elimina al usuario carlos. Puedes iniciar sesión con tus propias credenciales: wiener:peter"
 lang: "es"
+difficulty: "Practitioner"
+tools: ['curl', 'Python']
+series: "jwt-authentication-bypass"
 ---
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
@@ -20,6 +23,8 @@ import CodeSnippet from '../../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Resolución
+
+<PortswiggerDescription />
 
 El lab indica que el servidor expone su clave pública a través de un endpoint estándar. Vamos a obtenerla:
 

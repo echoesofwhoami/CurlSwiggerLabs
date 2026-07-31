@@ -1,11 +1,13 @@
 ---
 title: "HTTP Request Smuggling: Confirmando CL.TE mediante Respuestas Diferenciales"
-description: "Este lab involucra un servidor front-end y uno back-end, y el front-end no soporta encoding chunked. Para resolver el lab, hay que hacer smuggling de una petición hacia el servidor back-end de modo que una petición posterior a / (la raíz) dispare una respuesta 404 Not Found. Aunque el lab soporta HTTP/2, la solución prevista requiere técnicas solo posibles en HTTP/1."
+description: "Confirma un desync CL.TE controlando los bytes HTTP/1.1 en crudo y convirtiendo un prefijo de petición oculto en una respuesta 404 diferencial."
 labUrl: "https://portswigger.net/web-security/request-smuggling/finding/lab-confirming-cl-te-via-differential-responses"
 category: "HTTP Request Smuggling"
 date: "2026-07-26"
 portswiggerDescription: "Este lab involucra un servidor front-end y uno back-end, y el front-end no soporta encoding chunked. Para resolver el lab, hay que hacer smuggling de una petición hacia el servidor back-end de modo que una petición posterior a / (la raíz) dispare una respuesta 404 Not Found. Aunque el lab soporta HTTP/2, la solución prevista requiere técnicas solo posibles en HTTP/1."
 lang: "es"
+difficulty: "Practitioner"
+tools: ['Burp Repeater', 'curl', 'Python']
 ---
 
 import CollapsiblePartial from '../../../components/CollapsiblePartial.astro';
@@ -20,6 +22,8 @@ import CodeSnippet from '../../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Resolución
+
+<PortswiggerDescription />
 
 ### Resolver el lab con Burp
 

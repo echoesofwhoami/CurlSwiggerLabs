@@ -6,6 +6,8 @@ category: "SSRF"
 date: "2025-02-20"
 portswiggerDescription: "This lab demonstrates how to bypass SSRF filters using an open redirection vulnerability. The application has a stock check feature that loads data from an internal system, URL is filtered to prevent direct SSRF attacks but there's an open redirection vulnerability that can be exploited to bypass these filters."
 lang: "en"
+difficulty: "Practitioner"
+tools: ['curl']
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
@@ -21,6 +23,8 @@ import CodeSnippet from '../../components/CodeSnippet.astro';
 </PartialContainer>
 
 ## Writeup
+
+<PortswiggerDescription />
 
 First let's explore the lab and identify the stock check feature
 
