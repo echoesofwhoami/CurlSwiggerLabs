@@ -1,7 +1,9 @@
 ---
+import { Image } from 'astro:assets';
 import type { Lang } from '../i18n/utils';
 import { useTranslations } from '../i18n/utils';
 import { formatDate } from '../utils';
+import psLogo from '../assets/ps_logo.png';
 import ExternalLink from './ExternalLink.astro';
 
 export interface Props {
@@ -40,6 +42,13 @@ const descriptionLines = description
   <p class="post-source">
     <strong>{category}</strong>
     <span aria-hidden="true">·</span>
+    <Image
+      class="ps-logo"
+      src={psLogo}
+      alt="portswigger logo"
+      width={18}
+      height={18}
+    />
     <ExternalLink text={t('post.portswiggerLab')} url={labUrl} />
   </p>
   <div class="post-metadata">
@@ -103,6 +112,12 @@ const descriptionLines = description
     gap: 0.45rem;
     align-items: center;
     margin: 1rem 0;
+  }
+
+  .ps-logo {
+    width: 1em;
+    height: 1em;
+    margin: 0;
   }
 
   .post-metadata {

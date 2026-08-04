@@ -2,6 +2,7 @@
 import type { Lang } from '../i18n/utils';
 import { getLocalizedHref, getLocalizedPath, useTranslations } from '../i18n/utils';
 import { siteConfig } from '../site.config';
+import ExternalLinkSvg from '../assets/external_link.svg';
 
 interface Props {
   lang: Lang;
@@ -70,8 +71,9 @@ const socialLinks = [
                   href={href}
                   target={external ? '_blank' : undefined}
                   rel={external ? 'noreferrer' : undefined}
+                  class={external ? 'external-link' : ''}
                 >
-                  {label} {external && <span aria-hidden="true">↗</span>}
+                  {label} {external && <ExternalLinkSvg />}
                 </a>
               </li>
             ))
@@ -85,7 +87,7 @@ const socialLinks = [
           <li>
             {siteConfig.discordInviteUrl.trim() ? (
               <a href={siteConfig.discordInviteUrl} target="_blank" rel="noreferrer">
-                {t('footer.discord')} <span aria-hidden="true">↗</span>
+                {t('footer.discord')} <ExternalLinkSvg />
               </a>
             ) : (
               <span class="footer-discord">
@@ -100,8 +102,9 @@ const socialLinks = [
                   href={href}
                   target={external ? '_blank' : undefined}
                   rel={external ? 'noreferrer' : undefined}
+                  class={external ? 'external-link' : ''}
                 >
-                  {label} {external && <span aria-hidden="true">↗</span>}
+                  {label} {external && <ExternalLinkSvg />}
                 </a>
               </li>
             ))
@@ -229,6 +232,12 @@ const socialLinks = [
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.02em;
+  }
+
+  .external-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   @media (max-width: 900px) {
