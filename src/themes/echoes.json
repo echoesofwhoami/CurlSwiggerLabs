@@ -88,7 +88,6 @@
         "constant",
         "constant.other",
         "entity.name.constant",
-        "variable.other.constant",
         "variable.other.enummember"
       ],
       "settings": {
@@ -187,12 +186,23 @@
       "scope": [
         "entity.name.function",
         "entity.name.function.call",
-        "entity.name.command",
-        "meta.function-call",
         "meta.function-call.generic"
       ],
       "settings": {
-        "foreground": "#ffffff"
+        "foreground": "#d70000"
+      }
+    },
+    {
+      "name": "Shell Commands",
+      "scope": [
+        "entity.name.command",
+        "entity.name.command.shell",
+        "entity.name.function.call.shell",
+        "support.function.builtin.shell"
+      ],
+      "settings": {
+        "foreground": "#ffffff",
+        "fontStyle": ""
       }
     },
     {
@@ -252,11 +262,24 @@
         "variable.other",
         "variable.other.readwrite",
         "variable.other.assignment",
+        "variable.other.constant",
         "variable.other.normal",
+        "variable.other.object",
+        "variable.other.object.property",
         "variable.other.php"
       ],
       "settings": {
         "foreground": "#ffffff"
+      }
+    },
+    {
+      "name": "Variable Property (end of chain)",
+      "scope": [
+        "variable.other.property",
+        "support.variable.property"
+      ],
+      "settings": {
+        "foreground": "#d70000"
       }
     },
     {
@@ -301,12 +324,10 @@
       "scope": [
         "support.function",
         "support.function.builtin",
-        "support.function.construct",
-        "support.function.builtin.shell"
+        "support.function.construct"
       ],
       "settings": {
-        "foreground": "#ffffff",
-        "fontStyle": "bold"
+        "foreground": "#d70000"
       }
     },
     {

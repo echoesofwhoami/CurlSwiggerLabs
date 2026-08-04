@@ -1,0 +1,14 @@
+{
+  "results": [
+    {
+      "name": "db-cleanup",
+      "success": true,
+      "message": "Child process executed successfully"
+    },
+    {
+      "name": "fs-cleanup",
+      "success": false,
+      "error": { "code": 1, "message": "Unexpected error." }
+    }
+  ]
+}

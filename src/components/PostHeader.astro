@@ -2,6 +2,7 @@
 import type { Lang } from '../i18n/utils';
 import { useTranslations } from '../i18n/utils';
 import { formatDate } from '../utils';
+import ExternalLink from './ExternalLink.astro';
 
 export interface Props {
   title: string;
@@ -28,15 +29,18 @@ const {
 } = Astro.props;
 const t = useTranslations(lang);
 const seriesName = series?.replaceAll('-', ' ');
+const descriptionLines = description
+  .split(/\n+/)
+  .map((line) => line.trim())
+  .filter(Boolean);
 ---
 
 <header class="post-header">
   <h1>{title}</h1>
-  <p class="post-description">{description}</p>
   <p class="post-source">
     <strong>{category}</strong>
     <span aria-hidden="true">·</span>
-    <a href={labUrl} target="_blank" rel="noopener noreferrer">{t('post.portswiggerLab')} ↗</a>
+    <ExternalLink text={t('post.portswiggerLab')} url={labUrl} />
   </p>
   <div class="post-metadata">
     <span>
@@ -51,6 +55,13 @@ const seriesName = series?.replaceAll('-', ' ');
     </span>
     {seriesName && <span><strong>{t('post.series')}:</strong> {seriesName}</span>}
   </div>
+  <div class="post-description">
+    {descriptionLines.map((line, index) => (
+      <p class:list={[index === descriptionLines.length - 1 && descriptionLines.length > 1 && 'post-description-hook']}>
+        {line}
+      </p>
+    ))}
+  </div>
   <small>{formatDate(date, lang)}</small>
 </header>
 
@@ -64,8 +75,26 @@ const seriesName = series?.replaceAll('-', ' ');
   }
 
   .post-description {
-    color: #cbd5e1;
-    font-size: 1.15rem;
+    margin: 1.25rem 0;
+    padding-left: 1rem;
+    border-left: 2px solid #dc2626;
+  }
+
+  .post-description p {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.55;
+    letter-spacing: -0.01em;
+  }
+
+  .post-description p + p {
+    margin-top: 0.65rem;
+  }
+
+  .post-description-hook {
+    color: #f87171;
   }
 
   .post-source {

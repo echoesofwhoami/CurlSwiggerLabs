@@ -1,0 +1,210 @@
+---
+title: "Remote Code Execution via Server-Side Prototype Pollution"
+description: |-
+  From 2015 with the standard ES6, the fiction of classes was half baked into sugar syntax on top of the prototype mess so developers could write class MyObject {...} and pretend they were in Java.
+  Today we'll see how to exploit the foundation of this language to achieve Remote Code Execution
+labUrl: "https://portswigger.net/web-security/prototype-pollution/server-side/lab-remote-code-execution-via-server-side-prototype-pollution"
+category: "Prototype Pollution"
+date: "2026-08-01"
+portswiggerDescription: "This lab is built on Node.js and the Express framework. It is vulnerable to server-side prototype pollution because it unsafely merges user-controllable input into a server-side JavaScript object. Due to the configuration of the server, it's possible to pollute `Object.prototype` in such a way that you can inject arbitrary system commands that are subsequently executed on the server. To solve the lab: find a prototype pollution source that you can use to add arbitrary properties to the global `Object.prototype`; identify a gadget that you can use to inject and execute arbitrary system commands; trigger remote execution of a command that deletes the file `/home/carlos/morale.txt`. In this lab, you already have escalated privileges, giving you access to admin functionality. You can log in to your own account with the following credentials: `wiener:peter`"
+lang: "en"
+difficulty: "Practitioner"
+tools: ['curl']
+---
+
+import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
+import PartialContainer from '../../components/PartialContainer.astro';
+import CodeSnippet from '../../components/CodeSnippet.astro';
+import ExternalLink from '../../components/ExternalLink.astro';
+
+## Necessary Background Concepts To Solve The Lab
+
+<PartialContainer>
+  <CollapsiblePartial partial="javascript-prototype" title="Javascript Prototype" />
+  <CollapsiblePartial partial="prototype-pollution" title="Prototype Pollution Basics" />
+  <CollapsiblePartial partial="nodejs-execargv-gadget" title="Node.js execArgv Gadget" />
+</PartialContainer>
+
+## Lab's content
+
+This lab contains a login for the user `wiener:peter`, which has admin privileges.
+
+Once authenticated, the two relevant features for the attack are:
+
+1. The endpoint (`POST /my-account/change-address`) that unsafely merges request data into a server-side object, from there we can pollute the global `Object.prototype` of the Node.js backend.
+
+2. The admin endpoint (`POST /admin/jobs`) that starts separate Node.js worker processes for maintenance jobs. If those workers inherit a polluted `execArgv` from `Object.prototype`, we can emulate the Node.js `--eval` flag to run arbitrary code and turn prototype pollution into Remote Code Execution.
+
+The goal of the lab is to delete the file `/home/carlos/morale.txt`.
+
+<PortswiggerDescription/>
+
+## Writeup
+
+Set **the base URL** in a bash variable to make the rest of the commands shorter:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/00-bash.sh" />
+
+### Login
+
+The CSRF token is tied to the session cookie. If you POST login without that cookie, the server opens a new empty session and rejects the token. So lets get both values:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/01-bash.sh" />
+
+> **Command breakdown**: \
+`-s` = silent mode (no progress meter) \
+`-D -` = dump response headers to stdout \
+`"$BASE_LAB_URL/login"` = expands to `https://<lab-url>.web-security-academy.net/login`\
+`| grep -iE 'set-cookie|csrf'` = output only the lines containing session cookie and CSRF token
+
+Example output:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/01-plain.txt" />
+
+POST `/login` is the authentication endpoint. Use the `session` cookie from above with the matching CSRF token to authenticate:
+
+<CodeSnippet
+  file="remote-code-execution-via-server-side-prototype-pollution/02-bash.sh"
+  body="remote-code-execution-via-server-side-prototype-pollution/02-body.json"
+/>
+
+> **Command breakdown**: \
+`-b "session=<session-cookie>"` = same session that issued the CSRF token \
+`-d '{"csrf":...,"username":"wiener","password":"peter"}'` = same fields the page posts via `jsonSubmit()` when using the browser
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/03-plain.http" />
+
+> **Important**: Use the new `session` cookie from this response for the rest of the lab, do not use the one from the previous request.
+
+### Find the pollution source
+
+`POST /my-account/change-address` updates the billing address as JSON. To check whether merges are prototype-safe, pollute Express's `json spaces` setting. If the raw response suddenly comes back indented, `Object.prototype` was writable:
+
+<CodeSnippet
+  file="remote-code-execution-via-server-side-prototype-pollution/04-bash.sh"
+  body="remote-code-execution-via-server-side-prototype-pollution/04-body.json"
+/>
+
+> **Command breakdown**: \
+`-b "session=<session-cookie>"` = send the session cookie to perform the action as the wiener user\
+`sessionId` = this app requires the session id in the JSON body so we pass it that way too \
+`"__proto__":{"json spaces":10}` = the pollution payload.
+
+Raw response shape:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/05-json.json" />
+
+Because of the unsafe merge, "json spaces" lands on `Object.prototype`. Plain objects can inherit it on lookup. Express picks it up when formatting JSON, so the response is indented with 10 spaces. In this lab the property can also show up in the JSON body itself, which is extra proof the prototype is polluted.
+
+> **Important**: Pollution stays in the Node process until restart. If you break the app while testing, use **Restart node application** in the lab banner. **In real life, there is no restart button so be careful with your tests**.
+
+If you want to see the pollution's persistent issue you can issue the same request again without the pollution key and you will see that the property is still there reflected in the response and formatted in the JSON body, the global `Object.prototype` is still polluted.
+
+### How to achieve Remote Code Execution via Prototype Pollution
+
+We do not get the lab's source code, but thanks to my web developer background I can show a simplified scenario that matches the lab's behavior. To understand what we have so far and what can we do with it.
+
+#### Part 1: What we have so far. The unsafe merge function on change address endpoint
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/06-example-merge.js" />
+
+> **Script breakdown**: \
+`merge(user.address, req.body)` = merges the already-parsed JSON body. The framework's automatic parsing turned `"__proto__"` into a normal own property \
+`for (let key in source)` = walks attacker keys, including `"__proto__"` \
+`merge(target[key], source[key])` = recursive merge for object values. \
+`target[key] = source[key]` = assigns a non-object value onto the target object.
+
+The reason behind this kind of merge is to update nested objects without wiping sibling fields. A shallow assign would replace a whole branch. Recursion walks into objects and only overwrites the keys you sent:
+
+```js
+const address = { city: "Madrid", metadata: { verified_address: false } }
+
+merge(address, { metadata: { verified_address: true } })
+
+// address.city stays "Madrid"
+// address.metadata.verified_address becomes true
+```
+
+That is useful for a "change address" form. The bug is that the same recursion also walks attacker keys like `"__proto__"`.
+
+The important part is the recursive call when `key` is `"__proto__"`. \
+Reading `target["__proto__"]` does not return a normal nested object. It returns the target's prototype, which for a plain address object is `Object.prototype`. \
+So subsequently `merge(target[key], source[key])` becomes `merge(Object.prototype, { "json spaces": 10 })`, and the next assignments write straight onto `Object.prototype` instead of onto `user.address.nested_object`.
+
+#### Part 2: Child-process gadget on the admin jobs endpoint
+
+In the admin's dashboard there is an endpoint `POST /admin/jobs`. When called it starts separate Node.js worker processes for maintenance jobs. If those workers inherit a polluted `execArgv` from `Object.prototype`, we can emulate the Node.js `--eval` flag to run arbitrary code and turn prototype pollution into effective Code Execution.
+
+Here is my attempt to replicate the behavior behind this endpoint:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/07-example-admin-jobs.js" />
+
+> **Script breakdown**: \
+`options = { cwd: __dirname }` = fork options with **no own `execArgv`** \
+`fork(..., [], options)` = `fork` internally reads the properties of `options` including `options.execArgv` so a polluted `Object.prototype.execArgv` can become the child's Node CLI flags allowing us to to run arbitrary code with `--eval=` \
+`setTimeout(..., 5000)` = kills a hanged child process and returns `"Timed out waiting for task to complete."` \
+`child.on("exit", ...)` = reads the exit code of the child process and returns a non verbose informative JSON for the response
+
+> **Important**: I suspect this lab runs on a Node version older than **18.18.0 / 20.6.0**. \
+Before those releases, `fork` and related functions used to read the options paremeters with a plain property lookup (including the ones sitting on the prototype chain), so a polluted `Object.prototype.execArgv` was treated as a real option and passed to the child as Node CLI flags. \
+Starting in 18.18.0 and 20.6.0 <ExternalLink text="PR #48726" url="https://github.com/nodejs/node/pull/48726" />, `child_process` only honors **own** properties on the options object, so this inherited `execArgv` gadget no longer works unless application code copies the polluted value onto the options object itself (via merging option objects with a for..in loop for example) before passing it to the function's parameters.
+
+#### Let's do a sanity check on the admin jobs endpoint before we start hacking it
+
+Let's grab a fresh CSRF from `/admin` so we can interact with the `POST /admin/jobs` endpoint:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/08-bash.sh" />
+
+Now include the CSRF token and the session we got from the login endpoint in the request:
+
+<CodeSnippet
+  file="remote-code-execution-via-server-side-prototype-pollution/09-bash.sh"
+  body="remote-code-execution-via-server-side-prototype-pollution/09-body.json"
+/>
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/10-json.json" />
+
+### Confirm the RCE vector without Collaborator
+
+The official solution pings Burp Collaborator from `--eval` to prove command execution. That works if you have Collaborator. So we want a confirmation that stays inside the lab.
+
+Let's treat it as a blind RCE and detect it by the timeout response. We'll pollute `execArgv` with the change-address feature so when we trigger the admin jobs the child runs `sleep 5`:
+
+<CodeSnippet
+  file="remote-code-execution-via-server-side-prototype-pollution/11-bash.sh"
+  body="remote-code-execution-via-server-side-prototype-pollution/11-body.json"
+/>
+
+> **Command breakdown**: \
+`--eval=require('child_process').execSync('sleep 5')` = child process blocks on `sleep 5` during startup \
+`execSync` = it's a function that can run **shell** commands
+
+Trigger `POST /admin/jobs` again **with the same request as before in the sanity check**. Instead of success, both tasks fail but with timeout messages:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/12-json.json" />
+
+`Timed out waiting for task to complete.` means the child accepted our `execArgv` and ran our `--eval`. \
+If instead of `sleep 5` we made it run a code that crashes the child process, we would get an unexpected error response so this is a good indicator that the RCE vector is working.
+
+### Delete Carlos's file
+
+Swap `sleep 5` for the objective:
+
+<CodeSnippet
+  file="remote-code-execution-via-server-side-prototype-pollution/13-bash.sh"
+  body="remote-code-execution-via-server-side-prototype-pollution/13-body.json"
+/>
+
+Trigger `POST /admin/jobs` again. Example response:
+
+<CodeSnippet file="remote-code-execution-via-server-side-prototype-pollution/14-json.json" />
+
+The first task succeeds deleting the file and the second task fails with an error message because the file was already deleted.
+
+**Prototype pollution: because sometimes the most dangerous property on an object is the one you never assigned.**
+
+## Mitigation
+
+1. **Safe object merges**: avoid merging JSON through `__proto__`, `constructor`, or `prototype` specially if it's a user controlled source.
+2. **Own-property options**: when calling `fork` / `spawn`, set `execArgv` explicitly (`process.execArgv` or `[]`) so lookups do not fall through to `Object.prototype`
+3. **Avoid `--eval` style sinks**: do not let user-influenced values reach child process CLI flags, shell strings, or dynamic `require` paths
+4. **Sanitize request data**: If possible, never accept prototype pollution sources like `__proto__` in the request body.

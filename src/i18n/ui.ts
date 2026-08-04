@@ -27,6 +27,7 @@ export const ui = {
     'footer.tagline': 'HTTP in. Understanding out.',
     'code.copy': 'Copy',
     'code.copied': 'Copied!',
+    'code.requestBody': 'Formatted request body',
     'about.title': 'About CurlSwiggerLabs',
     'about.description': 'Why these PortSwigger writeups start with the request, not the tool.',
     'about.intro': 'CurlSwiggerLabs is a notebook for learning web security from the protocol upward. Each writeup solves a PortSwigger Web Security Academy lab while slowing down at the parts that are usually hidden behind a graphical client.',
@@ -73,7 +74,7 @@ export const ui = {
     'post.prev': 'Older lab',
     'post.next': 'Newer lab',
     'post.related': 'Related labs',
-    'post.portswiggerDescription': 'PortSwigger lab description',
+    'post.portswiggerDescription': 'PortSwigger\'s original description',
     'partial.clickToExpand': 'click to expand',
   },
   es: {
@@ -97,6 +98,7 @@ export const ui = {
     'footer.tagline': 'Entra HTTP. Sale comprensión.',
     'code.copy': 'Copiar',
     'code.copied': '¡Copiado!',
+    'code.requestBody': 'Cuerpo de la petición formateado',
     'about.title': 'Acerca de CurlSwiggerLabs',
     'about.description': 'Por qué estas resoluciones de PortSwigger empiezan por la petición y no por la herramienta.',
     'about.intro': 'CurlSwiggerLabs es un cuaderno para aprender seguridad web desde el protocolo. Cada artículo resuelve un lab de PortSwigger Web Security Academy y se detiene en los detalles que suelen quedar ocultos detrás de un cliente gráfico.',
@@ -143,7 +145,7 @@ export const ui = {
     'post.prev': 'Lab anterior',
     'post.next': 'Lab siguiente',
     'post.related': 'Labs relacionados',
-    'post.portswiggerDescription': 'Descripción del lab de PortSwigger',
+    'post.portswiggerDescription': 'La descripción original de PortSwigger',
     'partial.clickToExpand': 'clic para expandir',
   },
 } as const;

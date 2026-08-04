@@ -34,6 +34,13 @@ export const categories = {
     },
     coverImage: '/images/categories/php-object-injection.svg?v=3',
   },
+  'prototype-pollution': {
+    labels: {
+      en: 'Prototype Pollution',
+      es: 'Prototype Pollution',
+    },
+    coverImage: '/images/categories/prototype-pollution.svg?v=1',
+  },
 } as const;
 
 export type CategoryId = keyof typeof categories;

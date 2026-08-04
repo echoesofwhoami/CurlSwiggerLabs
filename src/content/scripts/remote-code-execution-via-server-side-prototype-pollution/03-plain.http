@@ -1,0 +1,3 @@
+HTTP/2 302 Found
+Location: /my-account?id=wiener
+Set-Cookie: session=<session-cookie>; Secure; HttpOnly; SameSite=None

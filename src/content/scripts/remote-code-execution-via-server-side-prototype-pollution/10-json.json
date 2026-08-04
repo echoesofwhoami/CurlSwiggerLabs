@@ -1,0 +1,6 @@
+{
+  "results": [
+    { "name": "db-cleanup", "success": true },
+    { "name": "fs-cleanup", "success": true }
+  ]
+}

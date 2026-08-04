@@ -7,27 +7,13 @@ const t = useTranslations(lang);
 ---
 
 {description && (
-  <aside class="portswigger-description" aria-labelledby="portswigger-description-title">
-    <h3 id="portswigger-description-title">{t('post.portswiggerDescription')}</h3>
-    <p>{description}</p>
-  </aside>
+  <details class="compact-collapsible">
+    <summary>
+      <span class="compact-collapsible-title">{t('post.portswiggerDescription')}</span>
+      <span class="expand-hint">{t('partial.clickToExpand')}</span>
+    </summary>
+    <div class="compact-collapsible-content">
+      <p>{description}</p>
+    </div>
+  </details>
 )}
-
-<style>
-  .portswigger-description {
-    margin: 1.5rem 0;
-    padding: 1rem 1.25rem;
-    border: 1px solid #334155;
-    border-radius: 6px;
-    background: #0A0F1B;
-  }
-
-  .portswigger-description h3 {
-    margin: 0 0 0.5rem;
-    font-size: 1rem;
-  }
-
-  .portswigger-description p {
-    margin: 0;
-  }
-</style>

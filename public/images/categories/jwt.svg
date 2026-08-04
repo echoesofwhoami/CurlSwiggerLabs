@@ -6,8 +6,8 @@
   <path d="M0 57h720" stroke="#334155"/>
   <g transform="translate(-45 -45) scale(1.14)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="23">
     <text x="68" y="143" fill="#64748b">01</text><text x="116" y="143" fill="#94a3b8">{</text>
-    <text x="68" y="190" fill="#64748b">02</text><text x="116" y="190" fill="#e2e8f0">"typ": <tspan fill="#94a3b8">"JWT"</tspan>,</text>
-    <text x="68" y="237" fill="#64748b">03</text><text x="116" y="237" fill="#e2e8f0">"alg": <tspan fill="#ef4444">"none"</tspan></text>
+    <text x="68" y="190" fill="#64748b">02</text><text x="140" y="190" fill="#e2e8f0">"typ": <tspan fill="#94a3b8">"JWT"</tspan>,</text>
+    <text x="68" y="237" fill="#64748b">03</text><text x="140" y="237" fill="#e2e8f0">"alg": <tspan fill="#ef4444">"none"</tspan></text>
     <text x="68" y="284" fill="#64748b">04</text><text x="116" y="284" fill="#94a3b8">}</text>
     <text x="68" y="337" fill="#64748b">eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0</text>
   </g>

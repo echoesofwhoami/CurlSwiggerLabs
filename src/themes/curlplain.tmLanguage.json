@@ -1,0 +1,10 @@
+{
+  "name": "curlplain",
+  "scopeName": "source.curlplain",
+  "patterns": [
+    {
+      "name": "constant.other.placeholder.curlplain",
+      "match": "<[A-Za-z][A-Za-z0-9_-]*>"
+    }
+  ]
+}

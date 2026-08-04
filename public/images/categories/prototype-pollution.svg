@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 405" role="img" aria-labelledby="title desc">
+  <title id="title">Prototype pollution payload</title>
+  <desc id="desc">A dark code window showing a JSON __proto__ pollution gadget with execArgv.</desc>
+  <rect width="720" height="405" fill="#0f1117"/>
+  <circle cx="30" cy="30" r="6" fill="#dc2626"/><circle cx="52" cy="30" r="6" fill="#475569"/><circle cx="74" cy="30" r="6" fill="#475569"/>
+  <path d="M0 57h720" stroke="#334155"/>
+  <g transform="translate(-20 -30) scale(1.05)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">
+    <text x="68" y="140" fill="#64748b">01</text><text x="116" y="140" fill="#94a3b8">{</text>
+    <text x="68" y="185" fill="#64748b">02</text><text x="140" y="185" fill="#e2e8f0">"__proto__": {</text>
+    <text x="68" y="230" fill="#64748b">03</text><text x="174" y="230" fill="#e2e8f0">  "execArgv": [<tspan fill="#ef4444">"--eval=..."</tspan>]</text>
+    <text x="68" y="275" fill="#64748b">04</text><text x="140" y="275" fill="#94a3b8">}</text>
+    <text x="68" y="320" fill="#64748b">05</text><text x="116" y="320" fill="#94a3b8">}</text>
+  </g>
+</svg>

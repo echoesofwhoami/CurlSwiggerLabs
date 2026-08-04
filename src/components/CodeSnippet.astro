@@ -3,11 +3,16 @@ import { Code } from 'astro:components';
 import type { CodeLanguage } from 'astro';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { useTranslations, type Lang } from '../i18n/utils';
+import { placeholderTransformer } from '../shiki/placeholder-transformer';
 import echoesTheme from '../themes/echoes.json';
+import curlplain from '../themes/curlplain.tmLanguage.json';
 
 interface Props {
   /** Path relative to `src/content/scripts/` */
   file: string;
+  /** Optional JSON body path relative to `src/content/scripts/` */
+  body?: string;
   /** Override language inferred from the file extension */
   lang?: CodeLanguage;
 }
@@ -24,11 +29,61 @@ const EXT_TO_LANG: Record<string, CodeLanguage> = {
   txt: 'plaintext',
 };
 
-const { file, lang: langProp } = Astro.props;
-const absPath = join(process.cwd(), 'src/content/scripts', file);
-const code = readFileSync(absPath, 'utf-8').replace(/\n$/, '');
+const PLAINTEXT_ALIASES = new Set(['plaintext', 'txt', 'plain', 'text']);
+const scriptsRoot = join(process.cwd(), 'src/content/scripts');
+const transformers = [placeholderTransformer];
+
+const { file, body: bodyProp, lang: langProp } = Astro.props;
+const postLang = (Astro.locals.postLang ?? 'en') as Lang;
+const t = useTranslations(postLang);
+
+const code = readFileSync(join(scriptsRoot, file), 'utf-8').replace(/\n$/, '');
 const ext = file.includes('.') ? file.split('.').pop()! : '';
-const lang: CodeLanguage = langProp ?? EXT_TO_LANG[ext] ?? 'plaintext';
+const inferred: CodeLanguage = langProp ?? EXT_TO_LANG[ext] ?? 'plaintext';
+const lang = PLAINTEXT_ALIASES.has(String(inferred)) ? curlplain : inferred;
+
+let bodyCode: string | undefined;
+if (bodyProp) {
+  const rawBody = readFileSync(join(scriptsRoot, bodyProp), 'utf-8').replace(/\n$/, '');
+  try {
+    bodyCode = JSON.stringify(JSON.parse(rawBody), null, 2);
+  } catch {
+    bodyCode = rawBody;
+  }
+}
 ---
 
-<Code code={code} lang={lang} theme={echoesTheme} />
+<div class="code-snippet">
+  <Code code={code} lang={lang} theme={echoesTheme} transformers={transformers} />
+  {bodyCode && (
+    <details class="compact-collapsible request-body">
+      <summary>
+        <span class="compact-collapsible-title">{t('code.requestBody')}</span>
+        <span class="expand-hint">{t('partial.clickToExpand')}</span>
+      </summary>
+      <div class="compact-collapsible-content">
+        <Code code={bodyCode} lang="json" theme={echoesTheme} transformers={transformers} />
+      </div>
+    </details>
+  )}
+</div>
+
+<style>
+  .code-snippet {
+    margin: 18px 0;
+  }
+
+  .code-snippet :global(.code-wrapper),
+  .code-snippet :global(pre) {
+    margin: 0;
+  }
+
+  .request-body {
+    margin-top: 0.5rem;
+  }
+
+  .compact-collapsible-content :global(.code-wrapper),
+  .compact-collapsible-content :global(pre) {
+    margin: 0;
+  }
+</style>

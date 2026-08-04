@@ -65,7 +65,7 @@ a:hover {
 }
 
 blockquote {
-  border-left: 3px solid #dc2626;
+  border-left: 1px solid #dc2626;
   margin: 18px 0;
   padding: 4px 16px;
   color: #64748b;
@@ -373,4 +373,59 @@ pre code {
 
 .partial-content > :first-child {
   margin-top: 0;
+}
+
+/* Compact collapsibles (request body, lab description, etc.) */
+.compact-collapsible {
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0A0F1B;
+}
+
+.compact-collapsible summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.compact-collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+.compact-collapsible summary::before {
+  content: '+';
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.compact-collapsible[open] summary::before {
+  content: '−';
+}
+
+.compact-collapsible-title {
+  flex: 1;
+}
+
+.compact-collapsible[open] .expand-hint {
+  display: none;
+}
+
+.compact-collapsible-content {
+  padding: 0 0.85rem 0.85rem;
+}
+
+.compact-collapsible-content > :first-child {
+  margin-top: 0;
+}
+
+.compact-collapsible-content > :last-child {
+  margin-bottom: 0;
 }
