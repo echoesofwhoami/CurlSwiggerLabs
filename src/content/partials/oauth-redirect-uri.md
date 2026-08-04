@@ -1,4 +1,6 @@
 ---
+title: "OAuth redirect_uri Validation"
+category: "OAuth"
 ---
 
 ### Why is redirect_uri Validation Critical?

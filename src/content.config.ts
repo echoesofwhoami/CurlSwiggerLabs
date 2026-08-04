@@ -19,12 +19,18 @@ const blog = defineCollection({
 
 const partials = defineCollection({
   type: 'content',
-  schema: z.object({}),
+  schema: z.object({
+    title: z.string(),
+    category: z.string(),
+  }),
 });
 
 const partialsEs = defineCollection({
   type: 'content',
-  schema: z.object({}),
+  schema: z.object({
+    title: z.string().optional(),
+    category: z.string().optional(),
+  }),
 });
 
 export const collections = { blog, partials, 'partials-es': partialsEs };

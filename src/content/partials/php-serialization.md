@@ -1,4 +1,6 @@
 ---
+title: "Understanding PHP Serialization"
+category: "Object Injection"
 ---
 
 ### What is Serialization?

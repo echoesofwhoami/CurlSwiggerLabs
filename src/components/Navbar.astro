@@ -14,6 +14,7 @@ const { lang, currentPath, wide = false } = Astro.props;
 const t = useTranslations(lang);
 const homePath = getLocalizedHref(lang, '/');
 const aboutPath = getLocalizedPath(lang, 'about');
+const conceptsPath = getLocalizedPath(lang, 'background-concepts');
 const currentSlug = getPathWithoutLang(currentPath);
 const menuId = 'site-nav-menu';
 ---
@@ -51,6 +52,11 @@ const menuId = 'site-nav-menu';
         <li>
           <a href={homePath} aria-current={currentSlug === '' ? 'page' : undefined}>
             {t('nav.home')}
+          </a>
+        </li>
+        <li>
+          <a href={conceptsPath} aria-current={currentSlug === 'background-concepts' ? 'page' : undefined}>
+            {t('nav.concepts')}
           </a>
         </li>
         <li>

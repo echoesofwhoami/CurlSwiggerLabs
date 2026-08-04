@@ -1,3 +1,8 @@
+---
+title: "HS256 & Brute-force Attacks"
+category: "JWT"
+---
+
 ### What is HS256 (HMAC-SHA256)?
 
 HS256 is a **symmetric** signing algorithm, meaning the same secret key is used to both sign and verify the token. This is different from asymmetric algorithms like RS256, which use a private key to sign and a public key to verify.

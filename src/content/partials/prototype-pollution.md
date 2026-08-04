@@ -1,4 +1,6 @@
 ---
+title: "Prototype Pollution Basics"
+category: "Prototype Pollution"
 ---
 
 **Prototype pollution** exploits how JavaScript objects inherit properties. With controlled input, an attacker sets properties on an object's prototype (the shared fallback other objects also use). Those objects then see the new properties even though they never defined them, which can change how the application behaves.

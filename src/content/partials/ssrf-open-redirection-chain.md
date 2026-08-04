@@ -1,3 +1,8 @@
+---
+title: "SSRF + Open Redirection Chain Attack"
+category: "SSRF & Open Redirection"
+---
+
 ### Open Redirection + SSRF Chain Attack
 
 When an application can make arbitrary requests with SSRF protections and also has an open redirection vulnerability, attackers can chain these to bypass the SSRF filters:

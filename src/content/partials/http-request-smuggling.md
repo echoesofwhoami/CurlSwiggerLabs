@@ -1,3 +1,8 @@
+---
+title: "HTTP Request Smuggling Basics"
+category: "Fundamentals"
+---
+
 ### What is HTTP Request Smuggling?
 
 HTTP request smuggling tricks a site into mixing up where one HTTP request ends and the next one starts.

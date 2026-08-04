@@ -1,3 +1,8 @@
+---
+title: "JWT Algorithm Confusion Attack"
+category: "JWT"
+---
+
 ### What is a JWT Algorithm Confusion Attack?
 
 JWT algorithm confusion (also known as key confusion) exploits servers that use **asymmetric** algorithms like RS256 but fail to enforce the expected algorithm when verifying tokens.

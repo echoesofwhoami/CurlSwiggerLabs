@@ -1,3 +1,8 @@
+---
+title: "JWT kid Header & Path Traversal"
+category: "JWT"
+---
+
 ### What is the `kid` Header Parameter?
 
 The `kid` (Key ID) is an optional header parameter in a JWT that tells the server **which key to use** to verify the token's signature. This is useful when a server manages multiple signing keys.

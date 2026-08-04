@@ -1,3 +1,8 @@
+---
+title: "JWT Fundamentals"
+category: "Fundamentals"
+---
+
 ### What is JWT (JSON Web Token)?
 
 JWT is a compact, URL-safe means of representing **Claims\*** to be transferred between two parties. It's commonly used for authentication and information exchange in web applications. It uses base64 encoding to ensure URL-safe transmission.

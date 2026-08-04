@@ -1,3 +1,8 @@
+---
+title: "Understanding OAuth 2.0 & Authorization Flows"
+category: "Fundamentals"
+---
+
 ### What is OAuth 2.0?
 
 OAuth 2.0 is an authorization framework that allows third-party applications to access a user's resources without exposing their credentials. Instead of sharing passwords, OAuth uses **authorization codes** and **access tokens** to grant limited access.

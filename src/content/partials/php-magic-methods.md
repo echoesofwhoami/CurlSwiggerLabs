@@ -1,4 +1,6 @@
 ---
+title: "PHP Magic Methods"
+category: "PHP"
 ---
 
 ### What are PHP Magic Methods?

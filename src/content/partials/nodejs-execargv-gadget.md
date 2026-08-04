@@ -1,4 +1,6 @@
 ---
+title: "Node.js execArgv Gadget"
+category: "Prototype Pollution"
 ---
 
 ### Node.js `execArgv` as a Gadget

@@ -1,3 +1,8 @@
+---
+title: "JWT Unverified Signature Vulnerability"
+category: "JWT"
+---
+
 ### JWT Unverified Signature Vulnerability
 
 When a server receives a JWT, it should **always verify the signature** before trusting the token's contents. However, some implementations fail to do this properly.

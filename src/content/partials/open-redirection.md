@@ -1,3 +1,8 @@
+---
+title: "Open Redirection Vulnerabilities"
+category: "SSRF & Open Redirection"
+---
+
 ### What is Open Redirection?
 
 Open redirection is a vulnerability where an application accepts user-controlled input that determines where to redirect the user, without properly validating the destination URL. This allows attackers to redirect users to malicious websites.

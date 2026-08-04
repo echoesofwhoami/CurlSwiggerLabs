@@ -1,0 +1,11 @@
+---
+import BackgroundConceptsPage from '../components/BackgroundConceptsPage.astro';
+import { useTranslations } from '../i18n/utils';
+import Layout from '../layouts/Layout.astro';
+
+const t = useTranslations('en');
+---
+
+<Layout title={t('concepts.title')} description={t('concepts.description')} lang="en" wide>
+  <BackgroundConceptsPage />
+</Layout>

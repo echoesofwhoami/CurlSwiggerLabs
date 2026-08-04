@@ -1,3 +1,8 @@
+---
+title: "CL.TE & Differential Responses"
+category: "HTTP Request Smuggling"
+---
+
 ### CL.TE Smuggling & Differential Responses
 
 In a **CL.TE** vulnerability the front-end trusts `Content-Length` while the back-end trusts `Transfer-Encoding: chunked`.

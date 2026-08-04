@@ -1,3 +1,8 @@
+---
+title: "Server-Side Request Forgery (SSRF)"
+category: "SSRF & Open Redirection"
+---
+
 ### What is Server-Side Request Forgery (SSRF)?
 
 Server-Side Request Forgery (SSRF) is a vulnerability that allows an attacker to make the server-side application send HTTP requests to an arbitrary domain of the attacker's choosing. This can be used to:

@@ -1,4 +1,6 @@
 ---
+title: "Javascript Prototype"
+category: "Prototype Pollution"
 ---
 
 Most JavaScript objects have a link to a special object called its **prototype**
