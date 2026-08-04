@@ -1,0 +1,75 @@
+---
+import { Image } from 'astro:assets';
+import { getChipVisual } from '../data/chipIcons';
+
+export interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+const visual = getChipVisual(label);
+const accent = visual?.accent ?? '#94a3b8';
+---
+
+<span class="meta-chip" style={`--chip-accent: ${accent}`}>
+  {visual && (
+    <span class:list={['meta-chip__mark', visual.kind === 'image' && 'meta-chip__mark--photo']}>
+      {visual.kind === 'svg' ? (
+        <visual.Icon width="17" height="17" />
+      ) : (
+        <Image src={visual.src} alt="" width={17} height={17} />
+      )}
+    </span>
+  )}
+  <span class="meta-chip__label">{label}</span>
+</span>
+
+<style>
+  .meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.7rem 0.28rem 0.45rem;
+    border: 1px solid color-mix(in srgb, var(--chip-accent) 28%, #334155);
+    border-radius: 999px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--chip-accent) 14%, #1e293b) 0%,
+        #152033 100%
+      );
+    color: #f8fafc;
+    font-size: 0.82rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .meta-chip__mark {
+    display: grid;
+    place-items: center;
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    background: transparent;
+  }
+
+  .meta-chip__mark :global(svg),
+  .meta-chip__mark :global(img) {
+    display: block;
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    border: 0;
+  }
+
+  .meta-chip__mark--photo :global(img) {
+    border-radius: 0.2rem;
+    object-fit: cover;
+  }
+
+  .meta-chip__label {
+    line-height: 1.15;
+  }
+</style>

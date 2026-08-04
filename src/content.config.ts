@@ -12,6 +12,7 @@ const blog = defineCollection({
     lang: z.enum(['en', 'es']).default('en'),
     difficulty: z.enum(['Apprentice', 'Practitioner', 'Expert']),
     tools: z.array(z.string()).min(1),
+    technologies: z.array(z.string()).default([]),
     series: z.string().optional(),
   }),
 });

@@ -36,13 +36,15 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
     <div class="post-card__meta">
       <time datetime={post.data.date}>{formatDate(post.data.date, lang)}</time>
       <span aria-hidden="true">·</span>
-      <span class="post-card__difficulty">{post.data.difficulty}</span>
+      <span class:list={['post-card__difficulty', `post-card__difficulty--${post.data.difficulty.toLowerCase()}`]}>
+        {post.data.difficulty}
+      </span>
     </div>
 
     <h3><a href={href}>{post.data.title}</a></h3>
     <p>{post.data.description}</p>
     <a class="post-card__read-more" href={href}>
-      {t('blog.readmore')} <span aria-hidden="true">→</span>
+      {t('blog.readmore')}
     </a>
   </div>
 </article>
@@ -107,6 +109,18 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
 
   .post-card__difficulty {
     color: #cbd5e1;
+  }
+
+  .post-card__difficulty--apprentice {
+    color: #70d16d;
+  }
+
+  .post-card__difficulty--practitioner {
+    color: #4cc1ff;
+  }
+
+  .post-card__difficulty--expert {
+    color: #ae75c3;
   }
 
   h3 {

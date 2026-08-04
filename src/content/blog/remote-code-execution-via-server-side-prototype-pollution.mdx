@@ -8,8 +8,9 @@ category: "Prototype Pollution"
 date: "2026-08-01"
 portswiggerDescription: "This lab is built on Node.js and the Express framework. It is vulnerable to server-side prototype pollution because it unsafely merges user-controllable input into a server-side JavaScript object. Due to the configuration of the server, it's possible to pollute `Object.prototype` in such a way that you can inject arbitrary system commands that are subsequently executed on the server. To solve the lab: find a prototype pollution source that you can use to add arbitrary properties to the global `Object.prototype`; identify a gadget that you can use to inject and execute arbitrary system commands; trigger remote execution of a command that deletes the file `/home/carlos/morale.txt`. In this lab, you already have escalated privileges, giving you access to admin functionality. You can log in to your own account with the following credentials: `wiener:peter`"
 lang: "en"
-difficulty: "Practitioner"
+difficulty: "Expert"
 tools: ['curl']
+technologies: ['Node.js', 'Express']
 ---
 
 import CollapsiblePartial from '../../components/CollapsiblePartial.astro';
