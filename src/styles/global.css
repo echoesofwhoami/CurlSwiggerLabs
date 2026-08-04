@@ -124,18 +124,32 @@ img {
 
 /* Navbar */
 .navbar {
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid #475569;
   position: sticky;
   top: 0;
   left: 0;
   right: 0;
   width: 100%;
   z-index: 100;
+}
+
+.navbar::before {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 64px;
+  border-bottom: 1px solid #475569;
+  background: rgba(11, 13, 19, 0.82);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  content: '';
+  pointer-events: none;
+  backdrop-filter: blur(10px);
 }
 
 .nav-container {
+  position: relative;
+  z-index: 1;
   padding: 0 20px;
   max-width: 900px;
   margin: 0 auto;

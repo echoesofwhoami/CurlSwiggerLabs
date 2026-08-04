@@ -15,10 +15,11 @@ const t = useTranslations(lang);
 const homePath = getLocalizedHref(lang, '/');
 const aboutPath = getLocalizedPath(lang, 'about');
 const currentSlug = getPathWithoutLang(currentPath);
+const menuId = 'site-nav-menu';
 ---
 
-<header class="navbar">
-  <nav class:list={['nav-container', { wide }]}>
+<header class="navbar" data-navbar>
+  <nav class:list={['nav-container', { wide }]} aria-label="Primary">
     <div class="nav-brand">
       <a href={homePath} class="brand-link" aria-label="CurlSwiggerLabs">
         <img src="/echoes.png" alt="" class="brand-icon" />
@@ -27,7 +28,25 @@ const currentSlug = getPathWithoutLang(currentPath);
         </span>
       </a>
     </div>
-    <div class="nav-right">
+
+    <button
+      class="nav-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls={menuId}
+      data-nav-toggle
+      aria-label={t('nav.openMenu')}
+      data-label-open={t('nav.openMenu')}
+      data-label-close={t('nav.closeMenu')}
+    >
+      <span class="nav-toggle__bars" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+    </button>
+
+    <div class="nav-right" id={menuId} data-nav-menu>
       <ul>
         <li>
           <a href={homePath} aria-current={currentSlug === '' ? 'page' : undefined}>
@@ -44,6 +63,50 @@ const currentSlug = getPathWithoutLang(currentPath);
     </div>
   </nav>
 </header>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-navbar]').forEach((navbar) => {
+    const toggle = navbar.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+    const menu = navbar.querySelector<HTMLElement>('[data-nav-menu]');
+    if (!toggle || !menu) return;
+
+    const mq = window.matchMedia('(max-width: 640px)');
+
+    const setOpen = (open: boolean) => {
+      const next = mq.matches ? open : false;
+      navbar.classList.toggle('is-open', next);
+      document.documentElement.classList.toggle('nav-menu-open', next);
+      toggle.setAttribute('aria-expanded', String(next));
+      toggle.setAttribute(
+        'aria-label',
+        next ? (toggle.dataset.labelClose ?? 'Close menu') : (toggle.dataset.labelOpen ?? 'Open menu'),
+      );
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      if (!navbar.contains(event.target as Node) && toggle.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+      }
+    });
+
+    menu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => setOpen(false));
+    });
+
+    mq.addEventListener('change', () => setOpen(false));
+  });
+</script>
 
 <style>
   .nav-container {
@@ -64,6 +127,55 @@ const currentSlug = getPathWithoutLang(currentPath);
 
   .brand-primary {
     color: #dc2626;
+  }
+
+  .nav-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: inherit;
+    color: #e2e8f0;
+    cursor: pointer;
+  }
+
+  .nav-toggle:focus-visible {
+    outline: 2px solid #dc2626;
+    outline-offset: 2px;
+  }
+
+  .nav-toggle__bars {
+    display: grid;
+    gap: 5px;
+    width: 18px;
+  }
+
+  .nav-toggle__bars span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    transition:
+      transform 160ms ease,
+      opacity 160ms ease;
+    transform-origin: center;
+  }
+
+  .navbar.is-open .nav-toggle__bars span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+  .navbar.is-open .nav-toggle__bars span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .navbar.is-open .nav-toggle__bars span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
   }
 
   .nav-right > ul a,
@@ -88,50 +200,102 @@ const currentSlug = getPathWithoutLang(currentPath);
   @media (max-width: 640px) {
     .nav-container {
       width: min(1180px, calc(100% - 28px));
-      height: auto;
+      height: 64px;
       min-height: 64px;
-      padding-block: 0.5rem;
+      padding-block: 0;
+    }
+
+    .nav-toggle {
+      display: inline-flex;
+      margin-left: auto;
+      flex-shrink: 0;
     }
 
     .brand-link {
-      gap: 0.35rem;
-      font-size: 1rem;
-    }
-
-    .brand-icon {
-      width: 20px;
-      height: 20px;
+      flex-shrink: 0;
     }
 
     .nav-right {
-      gap: 0.5rem;
+      position: fixed;
+      z-index: 90;
+      top: 64px;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: none;
+      align-content: start;
+      gap: 1.25rem;
+      width: 100%;
+      margin: 0;
+      padding: 1.5rem 1.1rem 2rem;
+      overflow-y: auto;
+      border: 0;
+      border-top: 1px solid #475569;
+      border-radius: 0;
+      background:
+        linear-gradient(180deg, rgba(220, 38, 38, 0.07), transparent 14rem),
+        #0b0d13;
+      box-shadow: none;
+    }
+
+    .navbar.is-open .nav-right {
+      display: grid;
     }
 
     .nav-right > ul {
-      gap: 0.55rem;
+      display: grid;
+      gap: 0.35rem;
+      margin: 0;
+      padding: 0;
     }
 
     .nav-right > ul a {
-      font-size: 0.82rem;
+      display: flex;
+      min-height: 52px;
+      align-items: center;
+      padding: 0.75rem 0.85rem;
+      border-radius: 0;
+      font-size: 1.15rem;
     }
 
+    .nav-right > ul a:hover,
+    .nav-right > ul a:focus-visible,
+    .nav-right > ul a[aria-current='page'] {
+      background: transparent;
+    }
+
+    .nav-right :global(.lang-picker) {
+      padding-top: 1rem;
+      padding-left: 0;
+      border-top: 1px solid #1e293b;
+    }
+
+    .nav-right :global(.lang-trigger) {
+      width: 100%;
+      min-height: 48px;
+      justify-content: flex-start;
+    }
+
+    .nav-right :global(.lang-trigger > span) {
+      display: inline;
+    }
+
+    .nav-right :global(.lang-menu) {
+      position: static;
+      width: 100%;
+      margin-top: 0.5rem;
+      box-shadow: none;
+    }
   }
 
-  @media (max-width: 420px) {
-    .brand-icon {
-      display: none;
-    }
+  :global(html.nav-menu-open),
+  :global(html.nav-menu-open body) {
+    overflow: hidden;
+  }
 
-    .brand-link {
-      font-size: 0.92rem;
-    }
-
-    .nav-right {
-      gap: 0.35rem;
-    }
-
-    .nav-right > ul {
-      gap: 0.4rem;
+  @media (prefers-reduced-motion: reduce) {
+    .nav-toggle__bars span {
+      transition: none;
     }
   }
 </style>
