@@ -1,5 +1,6 @@
 ---
 import { render, type CollectionEntry } from 'astro:content';
+import { getCategory, getCategoryId } from '../data/categories';
 import type { Lang } from '../i18n/utils';
 import { getAdjacentPosts, getRelatedPosts } from '../utils';
 import Layout from './Layout.astro';
@@ -16,6 +17,8 @@ interface Props {
 
 const { post, lang } = Astro.props;
 const slug = post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+const categoryId = getCategoryId(post.data.category);
+const category = categoryId ? getCategory(categoryId, lang) : undefined;
 
 Astro.locals.portswiggerDescription = post.data.portswiggerDescription;
 Astro.locals.postLang = lang;
@@ -32,6 +35,7 @@ const [{ older, newer }, relatedPosts] = await Promise.all([
   description={post.data.description}
   lang={lang}
   type="article"
+  image={category?.ogImage}
   publishedTime={new Date(post.data.date).toISOString()}
   wide
 >

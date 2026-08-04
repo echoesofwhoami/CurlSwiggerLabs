@@ -5,6 +5,7 @@ export const categories = {
       es: 'JWT',
     },
     coverImage: '/images/categories/jwt.svg?v=3',
+    ogImage: '/images/categories/jwt.png',
   },
   oauth: {
     labels: {
@@ -12,6 +13,7 @@ export const categories = {
       es: 'OAuth',
     },
     coverImage: '/images/categories/oauth.svg?v=3',
+    ogImage: '/images/categories/oauth.png',
   },
   ssrf: {
     labels: {
@@ -19,6 +21,7 @@ export const categories = {
       es: 'SSRF',
     },
     coverImage: '/images/categories/ssrf.svg?v=3',
+    ogImage: '/images/categories/ssrf.png',
   },
   'http-request-smuggling': {
     labels: {
@@ -26,6 +29,7 @@ export const categories = {
       es: 'HTTP Request Smuggling',
     },
     coverImage: '/images/categories/http-request-smuggling.svg?v=3',
+    ogImage: '/images/categories/http-request-smuggling.png',
   },
   'php-object-injection': {
     labels: {
@@ -33,6 +37,7 @@ export const categories = {
       es: 'Inyección de Objetos (PHP)',
     },
     coverImage: '/images/categories/php-object-injection.svg?v=3',
+    ogImage: '/images/categories/php-object-injection.png',
   },
   'prototype-pollution': {
     labels: {
@@ -40,6 +45,7 @@ export const categories = {
       es: 'Prototype Pollution',
     },
     coverImage: '/images/categories/prototype-pollution.svg?v=1',
+    ogImage: '/images/categories/prototype-pollution.png',
   },
 } as const;
 
@@ -59,5 +65,6 @@ export function getCategory(id: CategoryId, lang: SupportedLanguage) {
     id,
     label: category.labels[lang],
     coverImage: category.coverImage,
+    ogImage: category.ogImage,
   };
 }

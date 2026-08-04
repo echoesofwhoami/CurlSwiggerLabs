@@ -32,6 +32,18 @@ const pathname = Astro.url.pathname;
 
 const imagePath = Astro.props.image ?? '/og-default.png';
 const ogImageURL = new URL(imagePath, Astro.site);
+const imageExt = imagePath.split('?')[0].split('.').pop()?.toLowerCase();
+const ogImageType =
+  imageExt === 'jpg' || imageExt === 'jpeg'
+    ? 'image/jpeg'
+    : imageExt === 'webp'
+      ? 'image/webp'
+      : imageExt === 'svg'
+        ? 'image/svg+xml'
+        : 'image/png';
+const isDefaultOgImage = imagePath === '/og-default.png';
+const ogImageWidth = '1200';
+const ogImageHeight = isDefaultOgImage ? '627' : '675';
 const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
 ---
 
@@ -68,9 +80,9 @@ const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
     <meta property="og:site_name" content={t('site.title')} />
     <meta property="og:image" content={ogImageURL} />
     <meta property="og:image:secure_url" content={ogImageURL} />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="627" />
+    <meta property="og:image:type" content={ogImageType} />
+    <meta property="og:image:width" content={ogImageWidth} />
+    <meta property="og:image:height" content={ogImageHeight} />
     <meta property="og:image:alt" content={title} />
     {type === 'article' && publishedTime && (
       <meta property="article:published_time" content={publishedTime} />
