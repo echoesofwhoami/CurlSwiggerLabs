@@ -1,7 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import HomePage from '../../components/HomePage.astro';
+import { spanishEnabled } from '../../i18n/ui';
 import { useTranslations } from '../../i18n/utils';
+
+if (!spanishEnabled) {
+  return Astro.redirect('/');
+}
 
 const t = useTranslations('es');
 ---

@@ -1,7 +1,15 @@
+/** Set to `true` to publish Spanish routes and show the language picker again. */
+export const spanishEnabled = false;
+
 export const languages = {
   en: 'English',
   es: 'Español',
-};
+} as const;
+
+/** Locales exposed in the UI, hreflang tags, and sitemap. */
+export const activeLanguages = Object.fromEntries(
+  Object.entries(languages).filter(([lang]) => lang !== 'es' || spanishEnabled),
+) as { en: 'English'; es?: 'Español' };
 
 export const defaultLang = 'en';
 

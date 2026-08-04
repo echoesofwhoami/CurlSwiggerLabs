@@ -1,5 +1,5 @@
 ---
-import { languages, defaultLang } from '../i18n/ui';
+import { activeLanguages, defaultLang, spanishEnabled } from '../i18n/ui';
 import { getLocalizedHref, useTranslations, type Lang } from '../i18n/utils';
 import '../styles/global.css';
 import CopyCodeButton from '../components/CopyCodeButton.astro';
@@ -43,7 +43,7 @@ const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
     <meta name="description" content={description} />
 
     <link rel="canonical" href={canonicalURL} />
-    {Object.keys(languages).map((alternateLang) => (
+    {Object.keys(activeLanguages).map((alternateLang) => (
       <link
         rel="alternate"
         hreflang={alternateLang}
@@ -62,7 +62,9 @@ const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:locale" content={ogLocale} />
-    <meta property="og:locale:alternate" content={alternateLocale} />
+    {spanishEnabled && (
+      <meta property="og:locale:alternate" content={alternateLocale} />
+    )}
     <meta property="og:site_name" content={t('site.title')} />
     <meta property="og:image" content={ogImageURL} />
     <meta property="og:image:secure_url" content={ogImageURL} />

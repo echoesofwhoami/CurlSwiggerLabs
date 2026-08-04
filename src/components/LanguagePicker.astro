@@ -1,5 +1,5 @@
 ---
-import { languages } from '../i18n/ui';
+import { activeLanguages, languages } from '../i18n/ui';
 import { getLocalizedHref, useTranslations, type Lang } from '../i18n/utils';
 
 interface Props {
@@ -33,7 +33,7 @@ const t = useTranslations(currentLang);
 
   <ul id="language-menu" class="lang-menu" role="menu" hidden>
     {
-      Object.entries(languages).map(([lang, label]) => {
+      Object.entries(activeLanguages).map(([lang, label]) => {
         const href = getLocalizedHref(lang as Lang, currentPath);
         const isCurrent = lang === currentLang;
         return (

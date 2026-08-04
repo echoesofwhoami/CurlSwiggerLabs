@@ -1,8 +1,10 @@
 ---
 import PostLayout from '../../layouts/PostLayout.astro';
+import { spanishEnabled } from '../../i18n/ui';
 import { getPosts } from '../../utils';
 
 export async function getStaticPaths() {
+  if (!spanishEnabled) return [];
   return await getPosts('es');
 }
 

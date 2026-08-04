@@ -1,4 +1,5 @@
 ---
+import { spanishEnabled } from '../i18n/ui';
 import type { Lang } from '../i18n/utils';
 import { getLocalizedHref, getLocalizedPath, getPathWithoutLang, useTranslations } from '../i18n/utils';
 import LanguagePicker from './LanguagePicker.astro';
@@ -39,7 +40,7 @@ const currentSlug = getPathWithoutLang(currentPath);
           </a>
         </li>
       </ul>
-      <LanguagePicker lang={lang} currentPath={currentPath} />
+      {spanishEnabled && <LanguagePicker lang={lang} currentPath={currentPath} />}
     </div>
   </nav>
 </header>

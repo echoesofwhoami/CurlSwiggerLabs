@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import { spanishEnabled } from './src/i18n/ui.ts';
 import { placeholderTransformer } from './src/shiki/placeholder-transformer.ts';
 import echoesTheme from './src/themes/echoes.json';
 
@@ -14,9 +15,10 @@ export default defineConfig({
         defaultLocale: 'en',
         locales: {
           en: 'en-US',
-          es: 'es-ES',
+          ...(spanishEnabled ? { es: 'es-ES' } : {}),
         },
       },
+      filter: (page) => spanishEnabled || !/\/es(\/|$)/.test(new URL(page).pathname),
     }),
   ],
   output: 'static',
