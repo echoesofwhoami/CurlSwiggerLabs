@@ -3,6 +3,9 @@ import type { Lang } from '../i18n/utils';
 import { getLocalizedHref, getLocalizedPath, useTranslations } from '../i18n/utils';
 import { siteConfig } from '../site.config';
 import ExternalLinkSvg from '../assets/external_link.svg';
+import ExternalLink from './ExternalLink.astro';
+import psLogo from '../assets/ps_logo.png';
+import { Image } from 'astro:assets';
 
 interface Props {
   lang: Lang;
@@ -52,6 +55,16 @@ const socialLinks = [
           <span>Curl<span>Swigger</span>Labs</span>
         </a>
         <p>{t('footer.blurb')}</p>
+        <p>
+
+        </p>
+        <p class="footer-credit">
+          {t('footer.creditBefore')}{' '}
+          <ExternalLink text="PortSwigger" url="https://portswigger.net/web-security" class="portswigger-color">
+            <Image class="ps-logo" src={psLogo} alt="portswigger logo" width={18} height={18} />
+          </ExternalLink>
+          {' '}{t('footer.creditAfter')}
+        </p>
       </div>
 
       <nav class="footer-group" aria-labelledby={`footer-explore-${lang}`}>
@@ -172,12 +185,20 @@ const socialLinks = [
     color: #dc2626;
   }
 
-  .footer-brand img {
+  .footer-brand__link img {
     width: 32px;
     height: 32px;
     margin: 0;
     border: 0;
     border-radius: 4px;
+  }
+
+  .footer-brand .ps-logo {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 0;
+    border-radius: 0.2em;
   }
 
   .footer-brand p {
@@ -186,6 +207,13 @@ const socialLinks = [
     color: #94a3b8;
     font-size: 0.95rem;
     line-height: 1.7;
+  }
+
+  .footer-credit :global(.external-link) {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    vertical-align: bottom;
   }
 
   .footer-group h2 {

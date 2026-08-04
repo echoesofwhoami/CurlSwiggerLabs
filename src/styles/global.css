@@ -429,3 +429,8 @@ pre code {
 .compact-collapsible-content > :last-child {
   margin-bottom: 0;
 }
+
+
+.portswigger-color {
+  color: #ff6633 !important;
+}

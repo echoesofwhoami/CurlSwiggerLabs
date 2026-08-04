@@ -4,17 +4,24 @@ import ExternalLinkSvg from '../assets/external_link.svg';
 export interface Props {
   text: string;
   url: string;
+  class?: string;
 }
 
-const { text, url } = Astro.props;
+const { text, url, class: className } = Astro.props;
 ---
 
-<a href={url} target="_blank" rel="noopener noreferrer" class="external-link">
+<a href={url} target="_blank" rel="noopener noreferrer" class:list={['external-link', className]}>
+  <slot />
   {text}
   <ExternalLinkSvg />
 </a>
 
 <style>
+  .external-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
   .external-link:hover {
     text-decoration: underline;
   }
