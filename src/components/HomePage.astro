@@ -98,8 +98,8 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
     z-index: -1;
     inset: 0;
     background:
-      radial-gradient(circle at 82% 28%, rgba(220, 38, 38, 0.13), transparent 31rem),
-      linear-gradient(115deg, rgba(30, 41, 59, 0.3), transparent 55%);
+      radial-gradient(circle at 82% 28%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 31rem),
+      linear-gradient(115deg, color-mix(in srgb, var(--surface-elevated) 30%, transparent), transparent 55%);
     content: '';
   }
 
@@ -110,8 +110,8 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
     bottom: 12%;
     width: min(36vw, 430px);
     height: 1px;
-    background: linear-gradient(90deg, transparent, #dc2626);
-    box-shadow: 0 -88px 0 rgba(71, 85, 105, 0.35), 0 -176px 0 rgba(71, 85, 105, 0.18);
+    background: linear-gradient(90deg, transparent, var(--accent));
+    box-shadow: 0 -88px 0 color-mix(in srgb, var(--border-muted) 35%, transparent), 0 -176px 0 color-mix(in srgb, var(--border-muted) 18%, transparent);
     content: '';
     transform: rotate(-8deg);
   }
@@ -122,13 +122,13 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
 
   .home-hero h1 {
     margin: 0 0 1.5rem;
-    color: #f8fafc;
+    color: var(--heading);
     font-size: clamp(2.8rem, 8vw, 6.5rem);
     letter-spacing: -0.07em;
   }
 
   .home-hero h1 span {
-    color: #dc2626;
+    color: var(--accent);
   }
 
   .home-hero h2 {
@@ -141,7 +141,7 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
   .home-hero p {
     max-width: 720px;
     margin-top: 1.4rem;
-    color: #cbd5e1;
+    color: var(--text);
     font-size: clamp(1rem, 2vw, 1.2rem);
   }
 
@@ -159,42 +159,42 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
     align-items: center;
     justify-content: center;
     padding: 0.15rem 1rem;
-    border: 1px solid #475569;
+    border: 1px solid var(--border-muted);
     border-radius: 5px;
-    color: #f8fafc;
+    color: var(--heading);
     font-size: 0.9rem;
     font-weight: 700;
   }
 
   .home-button:visited {
-    color: #f8fafc;
+    color: var(--heading);
   }
 
   .home-button:hover {
-    border-color: #94a3b8;
-    color: #fff;
+    border-color: var(--text-muted);
+    color: var(--heading);
   }
 
   .home-button:focus-visible {
-    outline: 2px solid #dc2626;
+    outline: 2px solid var(--accent);
     outline-offset: 3px;
   }
 
   .home-button--primary {
-    border-color: #dc2626;
+    border-color: var(--accent);
     background: transparent;
-    color: #ef4444;
+    color: var(--accent-hover);
   }
 
   .home-button--primary:visited {
-    color: #ef4444;
+    color: var(--accent-hover);
   }
 
   .home-button--primary:hover,
   .home-button--primary:focus-visible {
-    border-color: #ef4444;
-    background: rgba(220, 38, 38, 0.1);
-    color: #f87171;
+    border-color: var(--accent-hover);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent-soft);
   }
 
   .home-link {
@@ -204,8 +204,8 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
   }
 
   .intent {
-    border-block: 1px solid #334155;
-    background: #0A0F1B;
+    border-block: 1px solid var(--border);
+    background: var(--surface);
   }
 
   .intent .home-shell {
@@ -231,11 +231,11 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
   .intent article {
     position: relative;
     padding-left: 1rem;
-    border-left: 1px solid #475569;
+    border-left: 1px solid var(--border-muted);
   }
 
   .intent article > span {
-    color: #dc2626;
+    color: var(--accent);
     font-size: 0.75rem;
     font-weight: 700;
   }
@@ -271,10 +271,10 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
   }
 
   .home-discord {
-    border-top: 1px solid #334155;
+    border-top: 1px solid var(--border);
     background:
-      linear-gradient(100deg, rgba(220, 38, 38, 0.08), transparent 45%),
-      #0A0F1B;
+      linear-gradient(100deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 45%),
+      var(--surface);
   }
 
   .home-discord .home-shell {

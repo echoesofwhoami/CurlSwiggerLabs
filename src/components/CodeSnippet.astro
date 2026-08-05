@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { useTranslations, type Lang } from '../i18n/utils';
 import { placeholderTransformer } from '../shiki/placeholder-transformer';
-import echoesTheme from '../themes/echoes.json';
+import { cssVariablesTheme } from '../styles/shiki-css-theme';
 import curlplain from '../themes/curlplain.tmLanguage.json';
 
 interface Props {
@@ -54,7 +54,7 @@ if (bodyProp) {
 ---
 
 <div class="code-snippet">
-  <Code code={code} lang={lang} theme={echoesTheme} transformers={transformers} />
+  <Code code={code} lang={lang} theme={cssVariablesTheme} transformers={transformers} />
   {bodyCode && (
     <details class="compact-collapsible request-body">
       <summary>
@@ -62,7 +62,7 @@ if (bodyProp) {
         <span class="expand-hint">{t('partial.clickToExpand')}</span>
       </summary>
       <div class="compact-collapsible-content">
-        <Code code={bodyCode} lang="json" theme={echoesTheme} transformers={transformers} />
+        <Code code={bodyCode} lang="json" theme={cssVariablesTheme} transformers={transformers} />
       </div>
     </details>
   )}

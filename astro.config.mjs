@@ -4,7 +4,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { spanishEnabled } from './src/i18n/ui.ts';
 import { placeholderTransformer } from './src/shiki/placeholder-transformer.ts';
-import echoesTheme from './src/themes/echoes.json';
+import { cssVariablesTheme } from './src/styles/shiki-css-theme.ts';
 
 // https://astro.build/config
 export default defineConfig({
@@ -25,9 +25,8 @@ export default defineConfig({
   site: 'https://curlswiggerlabs.echoesofwhoami.com',
   markdown: {
     shikiConfig: {
-      theme: echoesTheme,
+      theme: cssVariablesTheme,
       transformers: [placeholderTransformer],
     },
   },
 });
-

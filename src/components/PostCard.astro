@@ -57,24 +57,24 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
     overflow: hidden;
     box-sizing: border-box;
     flex-direction: column;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    background: #0A0F1B;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
     transition:
       border-color 160ms ease,
       transform 160ms ease;
   }
 
   .post-card:hover {
-    border-color: #64748b;
+    border-color: var(--border-muted);
   }
 
   .post-card__image-link {
     display: block;
     aspect-ratio: 16 / 9;
     overflow: hidden;
-    border-bottom: 1px solid #334155;
-    background: #0a0a0a;
+    border-bottom: 1px solid var(--border);
+    background: var(--code-bg);
     line-height: 0;
   }
 
@@ -102,13 +102,13 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
     align-items: center;
     gap: 0.45rem;
     margin-bottom: 0.55rem;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.78rem;
     font-weight: 650;
   }
 
   .post-card__difficulty {
-    color: #cbd5e1;
+    color: var(--text);
   }
 
   .post-card__difficulty--apprentice {
@@ -129,11 +129,11 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
   }
 
   h3 a {
-    color: #f8fafc;
+    color: var(--heading);
   }
 
   h3 a:hover {
-    color: #ef4444;
+    color: var(--accent-hover);
   }
 
   p {

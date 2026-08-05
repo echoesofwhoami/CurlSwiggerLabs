@@ -1,0 +1,652 @@
+---
+import { Code } from 'astro:components';
+import type { Lang } from '../i18n/utils';
+import { useTranslations } from '../i18n/utils';
+import { placeholderTransformer } from '../shiki/placeholder-transformer';
+import { cssVariablesTheme } from '../styles/shiki-css-theme';
+import { listShikiThemes } from '../styles/shiki-themes';
+import { FONT_OPTIONS, PRESETS } from '../scripts/theme-config';
+import PostHeader from './PostHeader.astro';
+import TableOfContents from './TableOfContents.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const shikiThemes = listShikiThemes();
+const sampleBash = `curl -s "https://<lab-url>.web-security-academy.net/login" \\
+  -H "Cookie: session=<session>" \\
+  -d "username=wiener&password=peter"`;
+const samplePython = `import base64
+import hashlib
+import hmac
+
+SECRET = b"<signing-key>"
+
+def forge_token(header: str, payload: str) -> str:
+    """Sign a forged JWT with a weak key."""
+    signing_input = f"{header}.{payload}".encode()
+    # HMAC-SHA256 over the signing input
+    sig = hmac.new(SECRET, signing_input, hashlib.sha256).digest()
+    return f"{header}.{payload}.{base64.urlsafe_b64encode(sig).rstrip(b'=').decode()}"
+
+print(forge_token("<header>", "<payload>"))`;
+const previewHeadings = [
+  { depth: 2, slug: 'preview-writeup', text: t('post.writeup') },
+  { depth: 3, slug: 'preview-request', text: 'The request' },
+  { depth: 3, slug: 'preview-script', text: 'The script' },
+];
+---
+
+<section class="theme-tweaker" data-theme-tweaker>
+  <header class="tweaker-intro">
+    <h1>{t('tweaker.title')}</h1>
+    <p>{t('tweaker.intro')}</p>
+  </header>
+
+  <div class="tweaker-layout">
+    <form class="tweaker-controls" data-tweaker-form>
+      <div class="tweaker-controls__scroll">
+      <fieldset>
+        <legend>{t('tweaker.presets')}</legend>
+        <label>
+          <span class="sr-only">{t('tweaker.presets')}</span>
+          <select name="preset" data-preset-select>
+            <option value="">Custom</option>
+            {PRESETS.map((preset) => (
+              <option value={preset.id}>{preset.label}</option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>{t('tweaker.saved')}</legend>
+        <div class="tweaker-row">
+          <select name="saved" data-saved-select>
+            <option value="">—</option>
+          </select>
+          <button type="button" data-load-saved>{t('tweaker.load')}</button>
+          <button type="button" data-delete-saved>{t('tweaker.delete')}</button>
+        </div>
+        <div class="tweaker-row">
+          <input
+            type="text"
+            name="saveName"
+            data-save-name
+            placeholder={t('tweaker.namePlaceholder')}
+            autocomplete="off"
+          />
+          <button type="button" data-save-config>{t('tweaker.save')}</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{t('tweaker.shiki')}</legend>
+        <select name="shikiTheme" data-field="shikiTheme">
+          {shikiThemes.map((theme) => (
+            <option value={theme.id}>{theme.label}</option>
+          ))}
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>{t('tweaker.font')}</legend>
+        <select name="fontSans" data-field="fontSans">
+          {FONT_OPTIONS.map((font) => (
+            <option value={font.family}>{font.label}</option>
+          ))}
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>{t('tweaker.colors')}</legend>
+        <div class="color-grid">
+          <label><span>{t('tweaker.pageBg')}</span><input type="color" data-field="pageBg" /></label>
+          <label><span>{t('tweaker.surface')}</span><input type="color" data-field="surface" /></label>
+          <label><span>{t('tweaker.surfaceElevated')}</span><input type="color" data-field="surfaceElevated" /></label>
+          <label><span>{t('tweaker.border')}</span><input type="color" data-field="border" /></label>
+          <label><span>{t('tweaker.text')}</span><input type="color" data-field="text" /></label>
+          <label><span>{t('tweaker.textMuted')}</span><input type="color" data-field="textMuted" /></label>
+          <label><span>{t('tweaker.heading')}</span><input type="color" data-field="heading" /></label>
+          <label><span>{t('tweaker.accent')}</span><input type="color" data-field="accent" /></label>
+          <label><span>{t('tweaker.accentHover')}</span><input type="color" data-field="accentHover" /></label>
+          <label><span>{t('tweaker.codeBg')}</span><input type="color" data-field="codeBg" /></label>
+          <label><span>{t('tweaker.codeInlineBg')}</span><input type="color" data-field="codeInlineBg" /></label>
+          <label><span>{t('tweaker.codeInlineFg')}</span><input type="color" data-field="codeInlineFg" /></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{t('tweaker.typography')}</legend>
+        <label class="range-label">
+          <span>{t('tweaker.fontSize')} <em data-readout="fontSizeBase"></em></span>
+          <input type="range" min="14" max="22" step="1" data-field="fontSizeBase" data-type="number" />
+        </label>
+        <label class="range-label">
+          <span>{t('tweaker.lineHeight')} <em data-readout="lineHeight"></em></span>
+          <input type="range" min="1.3" max="2" step="0.05" data-field="lineHeight" data-type="number" />
+        </label>
+        <label class="range-label">
+          <span>{t('tweaker.contentWidth')} <em data-readout="contentMaxWidth"></em></span>
+          <input type="range" min="720" max="1400" step="20" data-field="contentMaxWidth" data-type="number" />
+        </label>
+        <label class="range-label">
+          <span>{t('tweaker.contentGap')} <em data-readout="contentGap"></em></span>
+          <input type="range" min="1" max="3" step="0.05" data-field="contentGap" data-type="number" />
+        </label>
+        <label class="range-label">
+          <span>{t('tweaker.radius')} <em data-readout="radius"></em></span>
+          <input type="range" min="0" max="16" step="1" data-field="radius" data-type="number" />
+        </label>
+        <label class="range-label">
+          <span>{t('tweaker.codeFontSize')} <em data-readout="codeFontSize"></em></span>
+          <input type="range" min="12" max="20" step="1" data-field="codeFontSize" data-type="number" />
+        </label>
+      </fieldset>
+      </div>
+
+      <div class="tweaker-actions">
+        <button type="button" class="primary" data-apply>{t('tweaker.apply')}</button>
+        <button type="button" data-reset>{t('tweaker.reset')}</button>
+      </div>
+    </form>
+
+    <div class="tweaker-preview" data-tweaker-preview>
+      <h2 class="preview-label">{t('tweaker.preview')}</h2>
+      <article class="preview-article">
+        <PostHeader
+          title="Sample lab writeup"
+          description={"Learn how request bytes decide the outcome.\nThen rebuild the exploit with curl."}
+          category="Authentication"
+          labUrl="https://portswigger.net/web-security"
+          date="2026-01-15"
+          difficulty="Practitioner"
+          tools={['curl', 'Burp Suite']}
+          technologies={['HTTP']}
+          lang={lang}
+        />
+        <TableOfContents headings={previewHeadings} lang={lang} />
+        <div class="post-content">
+          <h2 id="preview-writeup">{t('post.writeup')}</h2>
+          <p>
+            Body copy uses the muted text token. Links look like
+            <a href="#preview-request">this</a>, and inline code like <code>session</code>.
+          </p>
+          <blockquote>A note that sits on the accent border.</blockquote>
+          <table>
+            <thead>
+              <tr><th>Header</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Cookie</td><td><code>session=…</code></td></tr>
+              <tr><td>Method</td><td>POST</td></tr>
+            </tbody>
+          </table>
+
+          <h3 id="preview-request">The request</h3>
+          <div class="code-snippet">
+            <Code
+              code={sampleBash}
+              lang="bash"
+              theme={cssVariablesTheme}
+              transformers={[placeholderTransformer]}
+            />
+          </div>
+
+          <h3 id="preview-script">The script</h3>
+          <div class="code-snippet">
+            <Code
+              code={samplePython}
+              lang="python"
+              theme={cssVariablesTheme}
+              transformers={[placeholderTransformer]}
+            />
+          </div>
+
+          <details class="collapsible-partial" open>
+            <summary>
+              <span class="partial-summary-text">
+                <span class="partial-title">{t('post.backgroundConcepts')}</span>
+                <span class="expand-hint">{t('partial.clickToExpand')}</span>
+              </span>
+            </summary>
+            <div class="partial-content">
+              <p>Collapsed sections inherit surface and border tokens.</p>
+            </div>
+          </details>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    apply,
+    DEFAULT_CONFIG,
+    deleteSaved,
+    getActive,
+    getPreset,
+    listSaved,
+    matchPresetId,
+    resetToDefault,
+    save,
+    type ThemeConfig,
+  } from '../scripts/theme-config';
+
+  const root = document.querySelector<HTMLElement>('[data-theme-tweaker]');
+  if (root) {
+    const form = root.querySelector<HTMLFormElement>('[data-tweaker-form]')!;
+    const presetSelect = root.querySelector<HTMLSelectElement>('[data-preset-select]')!;
+    const savedSelect = root.querySelector<HTMLSelectElement>('[data-saved-select]')!;
+    const saveNameInput = root.querySelector<HTMLInputElement>('[data-save-name]')!;
+
+    let draft: ThemeConfig = getActive();
+    let syncingForm = false;
+
+    const fieldEls = () =>
+      Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]'));
+
+    const normalizeHex = (value: string): string => {
+      const v = value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase();
+      if (/^#[0-9a-fA-F]{3}$/.test(v)) {
+        return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`.toLowerCase();
+      }
+      const ctx = document.createElement('canvas').getContext('2d');
+      if (!ctx) return '#000000';
+      ctx.fillStyle = '#000000';
+      ctx.fillStyle = v;
+      const computed = ctx.fillStyle;
+      if (/^#[0-9a-fA-F]{6}$/.test(computed)) return computed;
+      return '#000000';
+    };
+
+    const refreshSavedOptions = (selected = '') => {
+      const saved = listSaved();
+      const names = Object.keys(saved).sort((a, b) => a.localeCompare(b));
+      savedSelect.innerHTML =
+        '<option value="">—</option>' +
+        names.map((name) => `<option value="${name.replace(/"/g, '&quot;')}">${name}</option>`).join('');
+      if (selected && names.includes(selected)) savedSelect.value = selected;
+    };
+
+    const syncPresetSelect = (config: ThemeConfig) => {
+      presetSelect.value = matchPresetId(config);
+    };
+
+    const syncReadouts = () => {
+      root.querySelectorAll<HTMLElement>('[data-readout]').forEach((el) => {
+        const key = el.dataset.readout as keyof ThemeConfig;
+        const value = draft[key];
+        if (key === 'contentGap') el.textContent = `${value}rem`;
+        else if (key === 'contentMaxWidth' || key === 'radius' || key === 'fontSizeBase' || key === 'codeFontSize')
+          el.textContent = `${value}px`;
+        else el.textContent = String(value);
+      });
+    };
+
+    const populateForm = (config: ThemeConfig) => {
+      syncingForm = true;
+      draft = { ...DEFAULT_CONFIG, ...config };
+      for (const el of fieldEls()) {
+        const key = el.dataset.field as keyof ThemeConfig;
+        const value = draft[key];
+        if (el.type === 'color') {
+          el.value = normalizeHex(String(value));
+        } else {
+          el.value = String(value);
+        }
+      }
+      syncPresetSelect(draft);
+      syncReadouts();
+      syncingForm = false;
+    };
+
+    const readForm = (): ThemeConfig => {
+      const next = { ...draft };
+      for (const el of fieldEls()) {
+        const key = el.dataset.field as keyof ThemeConfig;
+        if (el.dataset.type === 'number') {
+          (next as Record<string, unknown>)[key] = Number(el.value);
+        } else {
+          (next as Record<string, unknown>)[key] = el.value;
+        }
+      }
+      if (next.accent !== draft.accent) {
+        next.accentSoft = next.accent;
+        next.codePlaceholder = next.accent;
+        next.codeInlineFg = next.accent;
+      }
+      if (next.border !== draft.border) {
+        next.borderMuted = next.border;
+      }
+      return next;
+    };
+
+    const liveApply = () => {
+      if (syncingForm) return;
+      draft = readForm();
+      syncPresetSelect(draft);
+      syncReadouts();
+      apply(draft);
+    };
+
+    populateForm(draft);
+    refreshSavedOptions();
+    apply(draft);
+
+    form.addEventListener('input', (event) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('[data-field]')) liveApply();
+    });
+
+    form.addEventListener('change', (event) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('[data-field]')) liveApply();
+    });
+
+    presetSelect.addEventListener('change', () => {
+      const id = presetSelect.value;
+      if (!id) return;
+      const preset = getPreset(id);
+      if (!preset) return;
+      const next = { ...preset.config };
+      populateForm(next);
+      apply(next);
+    });
+
+    root.querySelector('[data-apply]')?.addEventListener('click', () => {
+      draft = readForm();
+      apply(draft);
+      syncPresetSelect(draft);
+    });
+
+    root.querySelector('[data-reset]')?.addEventListener('click', () => {
+      const next = resetToDefault();
+      populateForm(next);
+      apply(next);
+    });
+
+    root.querySelector('[data-save-config]')?.addEventListener('click', () => {
+      const name = saveNameInput.value.trim();
+      if (!name) {
+        saveNameInput.focus();
+        return;
+      }
+      draft = readForm();
+      save(name, draft);
+      apply(draft);
+      refreshSavedOptions(name);
+      saveNameInput.value = '';
+      syncPresetSelect(draft);
+    });
+
+    root.querySelector('[data-load-saved]')?.addEventListener('click', () => {
+      const name = savedSelect.value;
+      if (!name) return;
+      const saved = listSaved()[name];
+      if (!saved) return;
+      populateForm(saved);
+      apply(draft);
+    });
+
+    root.querySelector('[data-delete-saved]')?.addEventListener('click', () => {
+      const name = savedSelect.value;
+      if (!name) return;
+      deleteSaved(name);
+      refreshSavedOptions();
+    });
+  }
+</script>
+
+<style>
+  .theme-tweaker {
+    width: min(var(--content-max-width), calc(100% - 40px));
+    height: calc(100vh - 64px);
+    margin: 0 auto;
+    padding-block: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .tweaker-intro {
+    flex-shrink: 0;
+  }
+
+  .tweaker-intro h1 {
+    margin: 0 0 0.4rem;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .tweaker-intro p {
+    max-width: 42rem;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .tweaker-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+    margin-top: 1rem;
+  }
+
+  .tweaker-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .tweaker-controls__scroll {
+    display: grid;
+    gap: 1rem;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 1rem 1rem 0.75rem;
+  }
+
+  .tweaker-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    padding: 0.85rem 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .tweaker-preview {
+    min-height: 0;
+    overflow: auto;
+  }
+
+  fieldset {
+    margin: 0;
+    padding: 0.75rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  fieldset:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  legend {
+    padding: 0;
+    color: var(--heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.65rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .color-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .color-grid label {
+    margin-top: 0.35rem;
+  }
+
+  .range-label em {
+    color: var(--heading);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  input[type='text'],
+  select,
+  button {
+    font: inherit;
+  }
+
+  input[type='text'],
+  select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--page-bg);
+    color: var(--heading);
+  }
+
+  input[type='color'] {
+    width: 100%;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type='range'] {
+    width: 100%;
+  }
+
+  .tweaker-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.4rem;
+    margin-top: 0.65rem;
+  }
+
+  .tweaker-row:last-child {
+    grid-template-columns: 1fr auto;
+  }
+
+  button {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-elevated);
+    color: var(--heading);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  button.primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: #fff;
+  }
+
+  .preview-label {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .preview-article {
+    padding: 1.25rem 1.5rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--page-bg);
+  }
+
+  .preview-article :global(.post-header) {
+    margin-top: 0;
+  }
+
+  .preview-article :global(.post-content > * + *) {
+    margin-top: var(--content-gap);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 960px) {
+    .theme-tweaker {
+      width: min(var(--content-max-width), calc(100% - 28px));
+      height: auto;
+      min-height: 0;
+      margin-bottom: 2rem;
+    }
+
+    .tweaker-layout {
+      grid-template-columns: 1fr;
+      flex: none;
+      min-height: 0;
+    }
+
+    .tweaker-controls {
+      height: auto;
+      max-height: min(70vh, 560px);
+    }
+
+    .tweaker-preview {
+      overflow: visible;
+    }
+  }
+</style>

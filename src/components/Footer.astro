@@ -20,6 +20,7 @@ const siteLinks = [
   { label: t('nav.home'), href: getLocalizedHref(lang, '/') },
   { label: t('nav.about'), href: getLocalizedPath(lang, 'about') },
   { label: t('nav.concepts'), href: getLocalizedPath(lang, 'background-concepts') },
+  { label: t('nav.tweaker'), href: getLocalizedPath(lang, 'i-dont-like-this-website') },
 ];
 const resourceLinks = [
   {
@@ -138,10 +139,10 @@ const socialLinks = [
   .site-footer {
     position: relative;
     margin-top: 0;
-    border-top: 1px solid #334155;
+    border-top: 1px solid var(--border);
     background:
-      linear-gradient(105deg, rgba(220, 38, 38, 0.055), transparent 32%),
-      #0b0e14;
+      linear-gradient(105deg, color-mix(in srgb, var(--accent) 5.5%, transparent), transparent 32%),
+      var(--page-bg);
   }
 
   .site-footer::before {
@@ -150,7 +151,7 @@ const socialLinks = [
     left: 50%;
     width: min(220px, 35vw);
     height: 1px;
-    background: #dc2626;
+    background: var(--accent);
     content: '';
     transform: translateX(-50%);
   }
@@ -172,18 +173,18 @@ const socialLinks = [
     display: inline-flex;
     align-items: center;
     gap: 0.7rem;
-    color: #f8fafc;
+    color: var(--heading);
     font-size: 1.2rem;
     font-weight: 700;
     letter-spacing: -0.03em;
   }
 
   .footer-brand__link:visited {
-    color: #f8fafc;
+    color: var(--heading);
   }
 
   .footer-brand__link > span > span {
-    color: #dc2626;
+    color: var(--accent);
   }
 
   .footer-brand__link img {
@@ -205,7 +206,7 @@ const socialLinks = [
   .footer-brand p {
     max-width: 510px;
     margin-top: 1rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 0.95rem;
     line-height: 1.7;
   }
@@ -219,7 +220,7 @@ const socialLinks = [
 
   .footer-group h2 {
     margin: 0 0 1rem;
-    color: #e2e8f0;
+    color: var(--text);
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.13em;
@@ -236,17 +237,17 @@ const socialLinks = [
 
   .footer-group a,
   .footer-discord {
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 0.9rem;
     font-weight: 600;
   }
 
   .footer-group a:hover {
-    color: #ef4444;
+    color: var(--accent-hover);
   }
 
   .footer-group a span {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.75rem;
   }
 
@@ -256,8 +257,8 @@ const socialLinks = [
     gap: 1rem;
     margin-top: 3.25rem;
     padding-top: 1.25rem;
-    border-top: 1px solid #1e293b;
-    color: #64748b;
+    border-top: 1px solid var(--surface-elevated);
+    color: var(--text-muted);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.02em;

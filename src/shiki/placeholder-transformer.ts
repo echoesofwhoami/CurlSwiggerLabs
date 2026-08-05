@@ -2,14 +2,12 @@ import type { Element, ElementContent } from 'hast';
 import type { ShikiTransformer } from 'shiki';
 
 const PLACEHOLDER = /<[A-Za-z][A-Za-z0-9_-]*>/g;
-const PLACEHOLDER_COLOR = '#D70000';
+const PLACEHOLDER_STYLE = 'color:var(--code-placeholder);font-weight:700';
 
-function restyleColor(style: string, color: string): string {
-  if (!style) return `color:${color}`;
-  if (/color\s*:/.test(style)) {
-    return style.replace(/color\s*:[^;]+/i, `color:${color}`);
-  }
-  return `color:${color};${style}`;
+function restyleAsPlaceholder(style: string): string {
+  // Drop inherited token color so the hard Echoes red always wins.
+  const withoutColor = style.replace(/color\s*:[^;]+;?/gi, '').trim();
+  return withoutColor ? `${PLACEHOLDER_STYLE};${withoutColor}` : PLACEHOLDER_STYLE;
 }
 
 function styledText(value: string, style: string): Element {
@@ -22,7 +20,7 @@ function styledText(value: string, style: string): Element {
 }
 
 /**
- * Color `<placeholder>` tokens red in any language after Shiki highlighting.
+ * Color `<placeholder>` tokens with the hard Echoes red after Shiki highlighting.
  */
 export const placeholderTransformer: ShikiTransformer = {
   name: 'curlswigger-placeholders',
@@ -49,7 +47,7 @@ export const placeholderTransformer: ShikiTransformer = {
       if (start > last) {
         parts.push(styledText(value.slice(last, start), parentStyle));
       }
-      parts.push(styledText(match[0], restyleColor(parentStyle, PLACEHOLDER_COLOR)));
+      parts.push(styledText(match[0], restyleAsPlaceholder(parentStyle)));
       last = start + match[0].length;
     }
 

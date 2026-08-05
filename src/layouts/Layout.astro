@@ -5,6 +5,8 @@ import '../styles/global.css';
 import CopyCodeButton from '../components/CopyCodeButton.astro';
 import Footer from '../components/Footer.astro';
 import Navbar from '../components/Navbar.astro';
+import { SHIKI_THEMES } from '../styles/shiki-themes';
+import { FONT_OPTIONS } from '../scripts/theme-config';
 
 interface Props {
   title?: string;
@@ -45,6 +47,74 @@ const isDefaultOgImage = imagePath === '/og-default.png';
 const ogImageWidth = '1200';
 const ogImageHeight = isDefaultOgImage ? '627' : '675';
 const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
+
+const shikiBootMap = Object.fromEntries(
+  Object.values(SHIKI_THEMES).map((theme) => [theme.id, theme.vars]),
+);
+const fontBootMap = Object.fromEntries(
+  FONT_OPTIONS.filter((font) => font.google).map((font) => [font.family, font.google]),
+);
+const themeBootScript = `(function () {
+  try {
+    var SHIKI = ${JSON.stringify(shikiBootMap)};
+    var FONT_MAP = ${JSON.stringify(fontBootMap)};
+    var varsRaw = localStorage.getItem('csl-theme-vars');
+    var activeRaw = localStorage.getItem('csl-theme-active');
+    if (!varsRaw && !activeRaw) return;
+    var vars = varsRaw ? JSON.parse(varsRaw) : null;
+    var active = activeRaw ? JSON.parse(activeRaw) : null;
+    if (!vars && active) {
+      vars = {
+        '--page-bg': active.pageBg,
+        '--surface': active.surface,
+        '--surface-elevated': active.surfaceElevated,
+        '--border': active.border,
+        '--border-muted': active.borderMuted,
+        '--text': active.text,
+        '--text-muted': active.textMuted,
+        '--heading': active.heading,
+        '--accent': active.accent,
+        '--accent-hover': active.accentHover,
+        '--accent-soft': active.accentSoft,
+        '--font-sans': active.fontSans,
+        '--font-size-base': active.fontSizeBase + 'px',
+        '--line-height': String(active.lineHeight),
+        '--content-max-width': active.contentMaxWidth + 'px',
+        '--content-gap': active.contentGap + 'rem',
+        '--radius': active.radius + 'px',
+        '--code-bg': active.codeBg,
+        '--code-inline-bg': active.codeInlineBg,
+        '--code-inline-fg': active.codeInlineFg,
+        '--code-font-size': active.codeFontSize + 'px',
+        '--code-placeholder': active.codePlaceholder
+      };
+    }
+    if (!vars) return;
+    var shikiId = (active && active.shikiTheme) || 'echoes';
+    var shikiVars = SHIKI[shikiId] || SHIKI.echoes;
+    if (shikiVars) {
+      for (var sk in shikiVars) {
+        if (Object.prototype.hasOwnProperty.call(shikiVars, sk)) vars[sk] = shikiVars[sk];
+      }
+    }
+    if (vars['--code-bg']) vars['--shiki-background'] = vars['--code-bg'];
+    var root = document.documentElement;
+    for (var key in vars) {
+      if (Object.prototype.hasOwnProperty.call(vars, key) && vars[key] != null) {
+        root.style.setProperty(key, vars[key]);
+      }
+    }
+    var family = vars['--font-sans'] || '';
+    var google = FONT_MAP[family];
+    if (google && !document.getElementById('csl-theme-font')) {
+      var link = document.createElement('link');
+      link.id = 'csl-theme-font';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=' + google + '&display=swap';
+      document.head.appendChild(link);
+    }
+  } catch (e) {}
+})();`;
 ---
 
 <!doctype html>
@@ -100,6 +170,7 @@ const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+    <script is:inline set:html={themeBootScript} />
 
     <title>{title}</title>
   </head>
