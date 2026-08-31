@@ -47,6 +47,14 @@ export const categories = {
     coverImage: '/images/categories/prototype-pollution.svg?v=1',
     ogImage: '/images/categories/prototype-pollution.png',
   },
+  'dom-based': {
+    labels: {
+      en: 'DOM-based',
+      es: 'DOM-based',
+    },
+    coverImage: '/images/categories/dom-based.svg?v=1',
+    ogImage: '/images/categories/dom-based.svg',
+  },
 } as const;
 
 export type CategoryId = keyof typeof categories;

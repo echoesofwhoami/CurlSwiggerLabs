@@ -33,4 +33,11 @@ const partialsEs = defineCollection({
   }),
 });
 
-export const collections = { blog, partials, 'partials-es': partialsEs };
+const labNotes = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string().optional(),
+  }),
+});
+
+export const collections = { blog, partials, 'partials-es': partialsEs, 'lab-notes': labNotes };

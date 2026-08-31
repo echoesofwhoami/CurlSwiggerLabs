@@ -1,0 +1,93 @@
+---
+title: "DOM Clobbering"
+category: "DOM-based"
+---
+
+In the browser, `window` is the global object. Some names on it can be read two ways: as `window.color` and as the bare name `color`. That is not true of every global.
+
+A top-level `var` becomes a property of `window`:
+
+```js
+var color = "blue"
+window.color // "blue"
+```
+
+A top-level `let` or `const` does **not**. The name exists in the script, but `window` has no matching property:
+
+```js
+const accent = "red"
+window.accent // undefined
+```
+
+The other direction also works. A property assigned onto `window` is visible as a bare global:
+
+```js
+window.lang = "en"
+lang // "en"
+```
+
+So `window.settings` is not "the variable named settings." It is a **property lookup** on the global object. HTML can create those properties too. A top-level `const settings = ...` would not collide with that. A lookup of `window.settings` can.
+
+A page script often needs a few defaults (theme, language, a default image path). Another script on the same page might already have put a real config object on `window` under that name. So a common pattern is:
+
+```js
+const settings = window.settings || { theme: "light", lang: "en" }
+```
+
+`||` means "if the left side is missing or empty, use the right side." If nothing defined `window.settings`, the value is `undefined`, which is falsy, and the hardcoded object (`{ theme: "light", lang: "en" }`) is used. If a trusted script previously set `window.settings = { anything: "anything" }`, that object is used instead.
+
+This check only distinguishes “nothing on `window.settings`” from “something truthy.” It does not check that the value is actually a config object. A DOM node is also truthy, so it would pass the same test.
+
+**Chromium** (Chrome, Edge, and other Blink browsers) has an extra rule. An element with `id="settings"` is also exposed as `window.settings`. The value is the DOM node, not a config object. Nodes are truthy, so the `||` fallback never runs. HTML has overwritten the name the script was about to use. That overwrite is **DOM clobbering**. No `<script>` tag is required. Attacker-controlled markup is enough.
+
+#### One element clobbers a fallback
+
+HTML in the document:
+
+```html
+<a id="settings"></a>
+```
+
+Then the same lookup as above:
+
+```js
+const settings = window.settings || { theme: "light", lang: "en" }
+
+console.log(settings.theme)
+```
+
+`window.settings` is the `<a>` element. `settings.theme` is not `"light"`. The script is reading a property on an anchor, not on the fallback object.
+
+#### Two elements can fake an object shape
+
+When **two** elements share the same `id`, Chromium often exposes `window.<id>` as an `HTMLCollection` (a list of both nodes). Named items in that collection can be read like object properties. On `<a>` tags, a `name` attribute can surface as a property whose value comes from `href`.
+
+```html
+<a id="opts"></a>
+<a id="opts" name="theme" href="dark"></a>
+```
+
+In Chromium, this can resolve to a string:
+
+```js
+window.opts.theme // often "dark" (from the second anchor's href)
+```
+
+No `<script>` tag was required. Tags that sanitizers often still allow, such as `<a>`, were enough to make JavaScript see something shaped like `{ theme: "dark" }`.
+
+#### Quick reference (Chromium)
+
+| HTML on the page | What JavaScript may read |
+|------------------|--------------------------|
+| `<div id="foo">` | `window.foo` is the element |
+| Two nodes with `id="foo"`, one with `name="bar" href="...">` | `window.foo` is an `HTMLCollection`; `window.foo.bar` is often a string from `href` |
+
+#### Why it matters
+
+HTML sanitizers may block `<script>` and inline event handlers while still allowing `<a>`, `<img>`, and similar tags. If the application reads defaults from `window.someName` and later passes the result into a **DOM sink** (for example `innerHTML` or a URL attribute), clobbering can turn that "safe" markup into DOM XSS.
+
+#### What happens with Firefox
+
+Firefox still clobbers **flat** names. One element with `id="foo"` can show up as `window.foo`, so a `window.foo || fallback` check can skip the fallback there too.
+
+What Firefox does **not** do is the second row of the table. Duplicate ids stay a single node (the first match), not an `HTMLCollection`. `window.foo.bar` from a `name` / `href` on another element with the same `id` does not resolve the way it does in Chromium. The HTML is still in the document. The fake object shape is not.

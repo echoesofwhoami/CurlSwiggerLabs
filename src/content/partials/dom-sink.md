@@ -1,0 +1,41 @@
+---
+title: "DOM Sink"
+category: "DOM-based"
+---
+
+A **DOM sink** is a place in the client-side JavaScript where **data from outside the script** is **processed in a dangerous way**. \
+"Sink" means the data flows **into** something that can change what the browser parses or runs.
+
+The opposite idea is a **source**: where data enters the page. That data can be **reflected** (it comes straight back in the same response, like a URL parameter or search box) or **stored** (the server saved it earlier and sends it later, like a comment from a previous visit).
+
+**A DOM XSS bug is usually a source connected to a sink.**
+
+#### Common sinks
+
+| Sink | What goes wrong |
+|------|-----------------|
+| `element.innerHTML = ...` | Browser parses the string as HTML. Tags and attributes in the data can run scripts or handlers. |
+| `element.outerHTML = ...` | Same parser pass, replaces the element itself. |
+| `insertAdjacentHTML(...)` | Same parser pass, inserts HTML at a chosen position. |
+| `document.write(...)` | Writes markup into the open document stream. |
+| `eval(...)`, `setTimeout(string, ...)` | Runs the string as JavaScript code. |
+| `location = ...`, `location.href = ...` | Can jump to `javascript:` URLs in some contexts. |
+
+Not every DOM write is a sink. Assigning to `textContent` or `innerText` treats input as **plain text**. The browser does not parse HTML tags from the string, so `<script>` stays literal text on screen.
+
+#### Why `innerHTML` is a classic sink
+
+A search results page might build a message like this:
+
+```js
+const searchQuery = new URLSearchParams(location.search).get('q')
+
+document.getElementById('results').innerHTML = '<p>Results for: ' + searchQuery + '</p>'
+```
+
+If `?q=` contains `</p><img src=x onerror=alert(1)><p>`, the browser will parse the HTML closing the paragraph early. The `<img>` is no longer inside the string as text. It becomes a real element in the DOM, and the `onerror` handler will run the alert.
+
+That search example is **reflected DOM XSS**. The **source** is the `?q=` parameter in the URL. The **sink** is the `innerHTML` line in client-side JavaScript.
+The server did not need to echo the payload in the HTML response.
+
+If the same query value were **already rendered as HTML in the server response** (for example `<p>Results for: PAYLOAD</p>` in the page source), it would be **ordinary reflected XSS** instead. The browser would parse that markup on the initial load. No client-side sink would be involved.

@@ -1,0 +1,32 @@
+---
+import { getEntry, render } from 'astro:content';
+import { useTranslations } from '../i18n/utils';
+import type { Lang } from '../i18n/utils';
+
+interface Props {
+  partial: string;
+  title: string;
+  lang?: Lang;
+  collection?: string;
+}
+
+const { partial, title, lang = 'en', collection } = Astro.props;
+const t = useTranslations(lang);
+
+const collectionName = collection ?? (lang === 'es' ? 'partials-es' : 'partials');
+const entry = await getEntry(collectionName as any, partial);
+
+if (!entry) throw new Error(`Partial not found: ${partial} in ${collectionName}`);
+
+const { Content } = await render(entry);
+---
+
+<details class="compact-collapsible">
+  <summary>
+    <span class="compact-collapsible-title">{title}</span>
+    <span class="expand-hint">{t('partial.clickToExpand')}</span>
+  </summary>
+  <div class="compact-collapsible-content">
+    <Content />
+  </div>
+</details>

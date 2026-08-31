@@ -5,6 +5,8 @@ import NodeIcon from '../assets/logos/nodedotjs.svg';
 import ExpressIcon from '../assets/logos/express.svg';
 import PhpIcon from '../assets/logos/php.svg';
 import NginxIcon from '../assets/logos/nginx.svg';
+import ChromiumIcon from '../assets/logos/chromium.svg';
+import JavaScriptIcon from '../assets/logos/javascript.svg';
 import psLogo from '../assets/ps_logo.png';
 
 type SvgIcon = typeof CurlIcon;
@@ -21,6 +23,8 @@ const visuals: Record<string, ChipVisual> = {
   express: { kind: 'svg', Icon: ExpressIcon, accent: '#E2E8F0' },
   php: { kind: 'svg', Icon: PhpIcon, accent: '#777BB4' },
   nginx: { kind: 'svg', Icon: NginxIcon, accent: '#009639' },
+  chromium: { kind: 'svg', Icon: ChromiumIcon, accent: '#1A74E7' },
+  javascript: { kind: 'svg', Icon: JavaScriptIcon, accent: '#F7DF1E' },
 };
 
 const aliases: Record<string, keyof typeof visuals> = {
@@ -36,6 +40,13 @@ const aliases: Record<string, keyof typeof visuals> = {
   express: 'express',
   php: 'php',
   nginx: 'nginx',
+  chromium: 'chromium',
+  chrome: 'chromium',
+  'google chrome': 'chromium',
+  javascript: 'javascript',
+  js: 'javascript',
+  dompurify: 'javascript',
+  'dom purify': 'javascript',
 };
 
 export function getChipVisual(label: string): ChipVisual | undefined {

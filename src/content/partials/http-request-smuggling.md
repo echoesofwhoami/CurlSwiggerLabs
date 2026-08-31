@@ -1,6 +1,6 @@
 ---
 title: "HTTP Request Smuggling Basics"
-category: "Fundamentals"
+category: "HTTP Request Smuggling"
 ---
 
 ### What is HTTP Request Smuggling?
