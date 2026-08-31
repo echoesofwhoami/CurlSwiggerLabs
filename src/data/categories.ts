@@ -53,7 +53,7 @@ export const categories = {
       es: 'DOM-based',
     },
     coverImage: '/images/categories/dom-based.svg?v=1',
-    ogImage: '/images/categories/dom-based.svg',
+    ogImage: '/images/categories/dom-based.png',
   },
 } as const;
 
