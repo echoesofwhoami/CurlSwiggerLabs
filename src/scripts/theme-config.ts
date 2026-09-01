@@ -30,6 +30,24 @@ export interface ThemeConfig {
   shikiTheme: ShikiThemeId;
 }
 
+/** Quiz success/error foreground colors derived from surface luminance. */
+export function quizVarsFromConfig(config: ThemeConfig): {
+  '--success-fg': string;
+  '--success-border': string;
+  '--error-fg': string;
+} {
+  const hex = config.surfaceElevated.replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+  return {
+    '--success-fg': light ? '#15803d' : '#86efac',
+    '--success-border': '#22c55e',
+    '--error-fg': light ? config.accent : config.accentSoft,
+  };
+}
+
 export interface FontOption {
   id: string;
   label: string;
@@ -524,6 +542,7 @@ export function configToCssVars(config: ThemeConfig): ShikiVarMap {
     '--code-inline-fg': config.codeInlineFg,
     '--code-font-size': `${config.codeFontSize}px`,
     '--code-placeholder': config.codePlaceholder,
+    ...quizVarsFromConfig(config),
     ...shiki,
     // Code blocks use --shiki-background inline; keep it tied to the code-bg control.
     '--shiki-background': config.codeBg,

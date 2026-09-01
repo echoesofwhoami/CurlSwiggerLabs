@@ -22,6 +22,11 @@
   --code-font-size: 16px;
   --code-placeholder: #d70000;
 
+  /* Quiz state colors (overridden per theme via theme-config) */
+  --success-fg: #86efac;
+  --success-border: #22c55e;
+  --error-fg: #f87171;
+
   /* Shiki css-variables theme (Echoes defaults) */
   --shiki-foreground: #ffffff;
   --shiki-background: #000000;

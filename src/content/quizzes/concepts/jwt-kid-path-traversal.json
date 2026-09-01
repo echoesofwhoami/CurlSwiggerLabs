@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What is the purpose of the kid (Key ID) header in a JWT?",
+      "o": ["It specifies the username who issued the token", "It tells the server which signing key to retrieve for signature verification", "It encodes the token expiration as a compact string", "It identifies the JWT library version used to create the token"],
+      "a": 1,
+      "x": "kid is an optional JWT header parameter used when a server manages multiple signing keys. The server reads kid and looks up the corresponding verification key, for example during key rotation.",
+      "h": "Servers can have more than one signing key. kid helps them answer: which key should I use for this specific token?"
+    },
+    {
+      "q": "When does the kid parameter become vulnerable to path traversal?",
+      "o": ["When the server stores keys in a PostgreSQL database", "When the server reads the signing key from the filesystem using kid as a path component without sanitizing it", "When kid is base64-encoded in the payload instead of the header", "When the JWT uses RS256 instead of HS256"],
+      "a": 1,
+      "x": "If the server concatenates kid into a filesystem path like base_path + kid, an attacker can supply ../ sequences to escape the intended directory and point the lookup at any readable file.",
+      "h": "Path traversal attacks target how a server builds a filesystem path from user-controlled input. Where does kid get used in a vulnerable implementation?"
+    },
+    {
+      "q": "Why is /dev/null an ideal target when exploiting kid path traversal?",
+      "o": ["It triggers a kernel panic that disables authentication", "Reading it returns empty content, making the effective HMAC secret an empty string the attacker can predict and match", "It exposes the real signing key in an error message", "It has world-writable permissions that bypass filesystem ACLs"],
+      "a": 1,
+      "x": "On Linux, /dev/null always returns zero bytes when read. The server uses an empty string as the key. The attacker signs their forged token with the same empty string, so both sides compute matching HMAC values.",
+      "h": "The attacker needs to know exactly what key value the server will use. What file always has completely predictable, constant content when read?"
+    },
+    {
+      "q": "What path traversal string is commonly used to reach the filesystem root regardless of starting depth?",
+      "o": ["/root", "../", "../../../../../../", "%2F%2F"],
+      "a": 2,
+      "x": "Each ../ goes up one directory level. Using many in a row guarantees reaching the root even when the starting directory depth is unknown. On Linux, going above root is silently clamped, so extra ../ sequences are harmless.",
+      "h": "One ../ goes up one level. If you do not know how deep the starting directory is, how many would you use to be sure you reach root?"
+    },
+    {
+      "q": "What defensive technique most directly prevents kid path traversal?",
+      "o": ["Encrypt the JWT so kid cannot be read", "Validate kid against an allowlist of known key identifiers before using it in any filesystem lookup", "Switch from HS256 to RS256 so keys are never read from disk", "Rate-limit JWT verification requests"],
+      "a": 1,
+      "x": "An allowlist compares kid against a set of expected identifiers such as UUIDs generated at deployment time. Any kid that does not match exactly is rejected before any filesystem access occurs.",
+      "h": "The server should not accept any kid value it was not expecting. What validation pattern rejects anything not on a pre-approved list?"
+    }
+  ]
+}

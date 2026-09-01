@@ -98,6 +98,16 @@ const themeBootScript = `(function () {
       }
     }
     if (vars['--code-bg']) vars['--shiki-background'] = vars['--code-bg'];
+    if (active) {
+      var hex = (active.surfaceElevated || '#1e293b').replace('#', '');
+      var r = parseInt(hex.substr(0, 2), 16);
+      var g = parseInt(hex.substr(2, 2), 16);
+      var b = parseInt(hex.substr(4, 2), 16);
+      var light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+      vars['--success-fg'] = light ? '#15803d' : '#86efac';
+      vars['--success-border'] = '#22c55e';
+      vars['--error-fg'] = light ? active.accent : active.accentSoft;
+    }
     var root = document.documentElement;
     for (var key in vars) {
       if (Object.prototype.hasOwnProperty.call(vars, key) && vars[key] != null) {

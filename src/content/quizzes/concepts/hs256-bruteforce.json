@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What makes HS256 a symmetric signing algorithm?",
+      "o": ["It uses two different keys for signing and verifying", "The same secret key is used to both create and verify the signature", "It only works with public keys stored in JWKS endpoints", "It encrypts the payload so only the server can read it"],
+      "a": 1,
+      "x": "HS256 is HMAC-SHA256. One shared secret signs the token and verifies it. Anyone who knows that secret can forge valid tokens, which is why secret strength matters.",
+      "h": "Symmetric means the same key works in both directions. Who can forge a token if they know the HS256 secret?"
+    },
+    {
+      "q": "Why can an attacker crack a weak HS256 JWT secret offline?",
+      "o": ["The server exposes a key-recovery endpoint for debugging", "The captured JWT contains the header, payload, and signature needed to test candidate secrets locally without contacting the server", "HS256 stores the secret inside the token payload", "Offline cracking requires the server to respond with a hint for each guess"],
+      "a": 1,
+      "x": "HMAC verification only needs the algorithm, the signed data (header.payload), and a candidate key. All of that is visible in the token, so wordlist attacks run at GPU speed with zero server interaction.",
+      "h": "What inputs does HMAC verification need? Are all of them already present in a captured JWT?"
+    },
+    {
+      "q": "What hashcat mode is designed specifically for JWT HS256 secret cracking?",
+      "o": ["Mode 1000 (NTLM)", "Mode 16500 (JWT)", "Mode 3200 (bcrypt)", "Mode 7500 (Kerberos)"],
+      "a": 1,
+      "x": "Hashcat mode 16500 accepts a full JWT and tries each wordlist entry as the HMAC secret. It reports a hit when the computed signature matches the token signature.",
+      "h": "Hashcat has a dedicated mode number in the 16000 range for JWT tokens."
+    },
+    {
+      "q": "Which wordlist is purpose-built for JWT signing secrets rather than general passwords?",
+      "o": ["rockyou.txt", "jwt.secrets.list from SecLists", "A random 256-bit hex dictionary", "The application's robots.txt file"],
+      "a": 1,
+      "x": "jwt.secrets.list collects strings commonly copied from tutorials and documentation, like secret, your-secret-key, and jwt_secret. Developers paste these without changing them.",
+      "h": "General password lists work, but SecLists includes a curated list specifically for JWT signing secrets."
+    },
+    {
+      "q": "After cracking the HS256 secret, what must the attacker do to gain admin access?",
+      "o": ["Submit the secret to the server login endpoint", "Change a claim like sub to administrator and re-sign the token with the cracked secret using HS256", "Delete the signature and rely on the none algorithm", "Base64-decode the token and send it back unchanged"],
+      "a": 1,
+      "x": "Knowing the secret lets the attacker produce a valid HMAC for any payload. Changing sub to administrator and signing header.payload with HS256 and the cracked secret produces a token the server accepts as legitimate.",
+      "h": "Cracking gives you signing power. What payload change do you still need to impersonate the admin user?"
+    }
+  ]
+}

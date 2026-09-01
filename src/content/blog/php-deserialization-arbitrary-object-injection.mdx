@@ -130,3 +130,5 @@ The server returns a `500 Internal Server Error` — which is expected. The serv
 3. **Server-side session storage**: Store session data on the server (files, database, Redis) and only give the client an opaque session ID
 4. **Remove backup files**: Ensure editor backup files (`~`, `.bak`, `.swp`) are never deployed to production. Adding the proper regex for each e.g.: `.*~` to `.gitignore` is a quick and easy way to prevent them from being committed, but more important is to configure the web server to block access to them
 5. **Audit magic methods**: Review `__destruct()`, `__wakeup()`, and other magic methods for dangerous operations like file deletion, command execution, or database queries
+
+## Quiz

@@ -1,0 +1,689 @@
+---
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  /** Path relative to src/content/quizzes/, without .json extension */
+  file: string;
+  /** Stable slug used as the localStorage key */
+  slug: string;
+  lang?: Lang;
+}
+
+const { file, slug, lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+const quizzesRoot = join(process.cwd(), 'src/content/quizzes');
+let quizJson = '';
+let quizCount = 0;
+
+try {
+  const raw = readFileSync(join(quizzesRoot, `${file}.json`), 'utf-8');
+  const parsed = JSON.parse(raw) as { questions: unknown[] };
+  if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+    quizCount  = parsed.questions.length;
+    quizJson   = JSON.stringify(parsed.questions);
+  }
+} catch {
+  /* quiz file not found or invalid — render nothing */
+}
+---
+
+{quizCount > 0 && (
+  <section
+    class="quiz"
+    data-quiz-slug={slug}
+    data-questions={quizJson}
+    data-t-question={t('quiz.question')}
+    data-t-of={t('quiz.of')}
+    data-t-correct={t('quiz.correct')}
+    data-t-wrong={t('quiz.wrong')}
+    data-t-next={t('quiz.next')}
+    data-t-results={t('quiz.results')}
+    data-t-retake={t('quiz.retake')}
+    data-t-you-scored={t('quiz.youScored')}
+    data-t-correct-label={t('quiz.correctLabel')}
+    data-t-hint={t('quiz.hint')}
+  >
+    <header class="quiz-header">
+      <h2 class="quiz-title">
+        <svg class="quiz-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="10" cy="10" r="8.5"/>
+          <path d="M7.5 7.5a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2.2-2.4 3.7" stroke-linecap="round"/>
+          <circle cx="10" cy="14.5" r=".75" fill="currentColor" stroke="none"/>
+        </svg>
+        {t('quiz.title')}
+      </h2>
+      <span class="quiz-meta">{quizCount}&nbsp;{t('quiz.questions')}</span>
+    </header>
+
+    <div class="quiz-inner" aria-live="polite">
+      <!-- questions rendered by client JS -->
+    </div>
+  </section>
+)}
+
+<script>
+  /*  types  */
+  interface QuizQuestion {
+    q: string;
+    o: string[];
+    a: number;
+    x?: string;
+    h?: string;
+  }
+
+  /*  helpers  */
+  function escHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function shuffled(arr: QuizQuestion[]): QuizQuestion[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /*  single quiz init  */
+  function initSingleQuiz(quiz: HTMLElement): void {
+    quiz.dataset.quizInit = '1';
+
+    const rawQuestions = quiz.dataset.questions;
+    if (!rawQuestions) return;
+
+    let allQuestions: QuizQuestion[];
+    try { allQuestions = JSON.parse(rawQuestions) as QuizQuestion[]; }
+    catch { return; }
+    if (!allQuestions.length) return;
+
+    const slug        = quiz.dataset.quizSlug ?? 'quiz';
+    const storageKey  = `csl-quiz-${slug}`;
+    const inner       = quiz.querySelector<HTMLElement>('.quiz-inner');
+    if (!inner) return;
+
+    const tQuestion      = quiz.dataset.tQuestion      ?? 'Question';
+    const tOf            = quiz.dataset.tOf            ?? 'of';
+    const tCorrect       = quiz.dataset.tCorrect       ?? 'Correct!';
+    const tWrong         = quiz.dataset.tWrong         ?? 'Not quite';
+    const tNext          = quiz.dataset.tNext          ?? 'Next question';
+    const tResults       = quiz.dataset.tResults       ?? 'See results';
+    const tRetake        = quiz.dataset.tRetake        ?? 'Retake quiz';
+    const tYouScored     = quiz.dataset.tYouScored     ?? 'You scored';
+    const tCorrectLabel  = quiz.dataset.tCorrectLabel  ?? 'correct';
+    const tHint          = quiz.dataset.tHint          ?? 'Get a hint';
+
+    let questions = shuffled(allQuestions);
+    let score     = 0;
+
+    /*  summary screen  */
+    function buildSummary(s: number, tot: number): string {
+      const pct     = Math.round((s / tot) * 100);
+      const perfect = s === tot;
+      return `
+        <div class="quiz-summary${perfect ? ' is-perfect' : ''}">
+          <div class="quiz-score-display">
+            <span class="quiz-score-num">${s}</span>
+            <span class="quiz-score-sep"> / </span>
+            <span class="quiz-score-denom">${tot}</span>
+          </div>
+          <p class="quiz-score-text">${tYouScored} <strong>${s} ${tOf} ${tot}</strong> ${tCorrectLabel}</p>
+          <div class="quiz-score-bar-wrap" aria-hidden="true">
+            <div class="quiz-score-bar" style="width:${pct}%"></div>
+          </div>
+          <button class="quiz-retake" type="button">${tRetake}</button>
+        </div>`;
+    }
+
+    function wireRetake(root: HTMLElement): void {
+      root.querySelector<HTMLButtonElement>('.quiz-retake')?.addEventListener('click', () => {
+        questions = shuffled(allQuestions);
+        score = 0;
+        try { localStorage.removeItem(storageKey); } catch { /* noop */ }
+        showQuestion(0);
+      });
+    }
+
+    /*  question screen  */
+    function showQuestion(idx: number): void {
+      const q      = questions[idx];
+      const pct    = Math.round((idx / questions.length) * 100);
+      const isLast = idx === questions.length - 1;
+
+      /* Shuffle the display order of options so the correct answer
+         is not always at the same position across questions.
+         We track which display index maps to the original correct answer. */
+      const order: number[] = q.o.map((_, i) => i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      const displayOpts    = order.map(i => q.o[i]);
+      const displayCorrect = order.indexOf(q.a);
+
+      const optHtml = displayOpts.map((opt, oi) => `
+        <li>
+          <button class="quiz-opt" data-idx="${oi}" type="button">
+            <span class="quiz-opt-letter">${String.fromCharCode(65 + oi)}</span>
+            <span class="quiz-opt-text">${escHtml(opt)}</span>
+          </button>
+        </li>`).join('');
+
+      const hintHtml = q.h ? `
+        <div class="quiz-hint-area">
+          <button class="quiz-hint-btn" type="button">${escHtml(tHint)}</button>
+          <p class="quiz-hint-text" hidden>${escHtml(q.h)}</p>
+        </div>` : '';
+
+      inner!.innerHTML = `
+        <div class="quiz-progress">
+          <span class="quiz-progress-label">${tQuestion} <strong>${idx + 1}</strong> ${tOf} ${questions.length}</span>
+          <div class="quiz-progress-track"
+               role="progressbar"
+               aria-valuenow="${idx + 1}"
+               aria-valuemax="${questions.length}"
+               aria-label="${tQuestion} ${idx + 1} ${tOf} ${questions.length}">
+            <div class="quiz-progress-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <div class="quiz-question-area">
+          <p class="quiz-q"><strong class="quiz-num">${idx + 1}.</strong> ${escHtml(q.q)}</p>
+          <ul class="quiz-opts" role="list">${optHtml}</ul>
+          ${hintHtml}
+        </div>
+        <div class="quiz-feedback" hidden>
+          <p class="quiz-fb-label"></p>
+          <p class="quiz-fb-text"></p>
+          <button class="quiz-next" type="button">${isLast ? tResults : tNext}</button>
+        </div>`;
+
+      /*  hint button wiring  */
+      const hintBtn  = inner!.querySelector<HTMLButtonElement>('.quiz-hint-btn');
+      const hintText = inner!.querySelector<HTMLElement>('.quiz-hint-text');
+      hintBtn?.addEventListener('click', () => {
+        hintText?.removeAttribute('hidden');
+        hintBtn.setAttribute('hidden', '');
+      });
+
+      const opts     = inner!.querySelectorAll<HTMLButtonElement>('.quiz-opt');
+      const feedback = inner!.querySelector<HTMLElement>('.quiz-feedback')!;
+      const fbLabel  = inner!.querySelector<HTMLElement>('.quiz-fb-label')!;
+      const fbText   = inner!.querySelector<HTMLElement>('.quiz-fb-text')!;
+      const nextBtn  = inner!.querySelector<HTMLButtonElement>('.quiz-next')!;
+
+      opts.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const chosen    = Number(btn.dataset.idx);
+          const isCorrect = chosen === displayCorrect;
+          if (isCorrect) score++;
+
+          opts.forEach(b => {
+            b.setAttribute('disabled', '');
+            if (Number(b.dataset.idx) === displayCorrect) b.classList.add('is-correct');
+          });
+          if (!isCorrect) btn.classList.add('is-wrong');
+
+          /* Hide the hint area once answered */
+          inner!.querySelector<HTMLElement>('.quiz-hint-area')
+            ?.setAttribute('hidden', '');
+
+          feedback.classList.remove('is-correct', 'is-wrong');
+          feedback.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+          fbLabel.textContent  = isCorrect ? tCorrect : tWrong;
+          fbText.textContent   = isCorrect ? (q.x ?? '') : (q.h ?? q.x ?? '');
+
+          feedback.removeAttribute('hidden');
+          feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      });
+
+      nextBtn.addEventListener('click', () => {
+        if (isLast) {
+          inner!.innerHTML = buildSummary(score, questions.length);
+          wireRetake(inner!);
+          try {
+            localStorage.setItem(storageKey, JSON.stringify({ score, total: questions.length }));
+          } catch { /* noop */ }
+        } else {
+          showQuestion(idx + 1);
+        }
+      });
+    }
+
+    /*  restore saved state  */
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const { score: s, total: tot } = JSON.parse(saved) as { score: number; total: number };
+        inner.innerHTML = buildSummary(s, tot);
+        wireRetake(inner);
+        return;
+      }
+    } catch { /* noop */ }
+
+    showQuestion(0);
+  }
+
+  /*  initialize all visible quizzes  */
+  function initVisible(): void {
+    document.querySelectorAll<HTMLElement>('.quiz:not([data-quiz-init])').forEach(quiz => {
+      const details = quiz.closest('details');
+      if (!details || details.open) initSingleQuiz(quiz);
+    });
+  }
+
+  /* Attach open-listener to all <details> not yet tracked */
+  function attachDetailsListeners(): void {
+    document.querySelectorAll<HTMLDetailsElement>('details:not([data-quiz-details])').forEach(d => {
+      d.dataset.quizDetails = '1';
+      d.addEventListener('toggle', () => { if (d.open) initVisible(); });
+    });
+  }
+
+  initVisible();
+  attachDetailsListeners();
+
+  document.addEventListener('astro:after-swap', () => {
+    initVisible();
+    attachDetailsListeners();
+  });
+</script>
+
+<style is:global>
+  /*  Wrapper  */
+  .quiz {
+    margin-top: 2.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 1.4rem 1.6rem 1.6rem;
+  }
+
+  /*  Header  */
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .quiz-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--heading);
+    font-weight: 700;
+  }
+
+  .quiz-icon {
+    width: 1.1em;
+    height: 1.1em;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .quiz-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 9px;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  /*  Progress  */
+  .quiz-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .quiz-progress-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .quiz-progress-track {
+    height: 4px;
+    background: var(--surface-elevated);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .quiz-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  /*  Question  */
+  .quiz-question-area {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .quiz-q {
+    margin: 0;
+    font-size: 0.97rem;
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  /* number: just bold + dot, no badge */
+  .quiz-num {
+    color: var(--accent);
+    margin-right: 0.15rem;
+  }
+
+  /*  Options  */
+  .quiz-opts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .quiz-opt {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+    line-height: 1.4;
+  }
+
+  .quiz-opt:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface-elevated));
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .quiz-opt:disabled {
+    cursor: default;
+    opacity: 0.75;
+  }
+
+  .quiz-opt.is-correct {
+    background: color-mix(in srgb, var(--success-border) 12%, var(--surface-elevated));
+    border-color: var(--success-border);
+    color: var(--success-fg);
+    opacity: 1;
+  }
+
+  .quiz-opt.is-wrong {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface-elevated));
+    border-color: var(--accent);
+    color: var(--error-fg);
+    opacity: 1;
+  }
+
+  .quiz-opt-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--text-muted) 22%, var(--surface-elevated));
+    color: var(--text);
+    font-size: 0.68rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background-color 0.12s, color 0.12s;
+  }
+
+  .quiz-opt:hover:not(:disabled) .quiz-opt-letter {
+    background: color-mix(in srgb, var(--accent) 20%, var(--surface-elevated));
+    color: var(--heading);
+  }
+
+  .quiz-opt.is-correct .quiz-opt-letter { background: var(--success-border); color: #fff; }
+  .quiz-opt.is-wrong   .quiz-opt-letter { background: var(--accent); color: #fff; }
+
+  /*  Hint (pre-answer)  */
+  .quiz-hint-area {
+    margin-top: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .quiz-hint-btn {
+    align-self: flex-start;
+    background: none;
+    border: 1px dashed var(--border-muted);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+  }
+
+  .quiz-hint-btn::before {
+    content: '? ';
+  }
+
+  .quiz-hint-btn:hover {
+    border-color: var(--accent-soft);
+    color: var(--accent-soft);
+  }
+
+  .quiz-hint-text {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    background: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
+    border-left: 2px solid var(--border-muted);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  /*  Feedback panel  */
+  .quiz-feedback {
+    margin-top: 1rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .quiz-feedback.is-correct {
+    border-color: var(--success-border);
+    background: color-mix(in srgb, var(--success-border) 8%, var(--surface-elevated));
+  }
+
+  .quiz-feedback.is-wrong {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface-elevated));
+  }
+
+  .quiz-fb-label {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .quiz-feedback.is-correct .quiz-fb-label { color: var(--success-fg); }
+  .quiz-feedback.is-wrong   .quiz-fb-label { color: var(--error-fg); }
+
+  .quiz-fb-text {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  .quiz-next {
+    align-self: flex-start;
+    margin-top: 0.25rem;
+    padding: 0.15rem 0.75rem;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border-muted);
+    border-radius: 5px;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  }
+
+  .quiz-next:hover,
+  .quiz-next:focus-visible {
+    border-color: var(--text-muted);
+    background: color-mix(in srgb, var(--border-muted) 15%, transparent);
+    color: var(--text);
+  }
+
+  /* correct - green */
+  .quiz-feedback.is-correct .quiz-next {
+    border-color: var(--success-border);
+    color: var(--success-fg);
+    animation: quiz-next-correct 0.4s ease forwards;
+  }
+  .quiz-feedback.is-correct .quiz-next:hover,
+  .quiz-feedback.is-correct .quiz-next:focus-visible {
+    background: color-mix(in srgb, var(--success-border) 12%, transparent);
+    border-color: var(--success-fg);
+    color: var(--success-fg);
+  }
+
+  /* wrong - red */
+  .quiz-feedback.is-wrong .quiz-next {
+    border-color: var(--accent);
+    color: var(--error-fg);
+    animation: quiz-next-wrong 0.4s ease forwards;
+  }
+  .quiz-feedback.is-wrong .quiz-next:hover,
+  .quiz-feedback.is-wrong .quiz-next:focus-visible {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-color: var(--accent-hover);
+    color: var(--error-fg);
+  }
+
+  @keyframes quiz-next-correct {
+    from { border-color: var(--border-muted); color: var(--text-muted); }
+    to   { border-color: var(--success-border); color: var(--success-fg); }
+  }
+  @keyframes quiz-next-wrong {
+    from { border-color: var(--border-muted); color: var(--text-muted); }
+    to   { border-color: var(--accent); color: var(--error-fg); }
+  }
+
+  /*  Summary  */
+  .quiz-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+  }
+
+  .quiz-score-display {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--heading);
+    letter-spacing: -0.02em;
+  }
+
+  .quiz-score-sep {
+    font-size: 2rem;
+    color: var(--text-muted);
+    margin: 0 0.1rem;
+    font-weight: 400;
+  }
+
+  .quiz-summary.is-perfect .quiz-score-display { color: var(--success-fg); }
+
+  .quiz-score-text {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+
+  .quiz-score-text strong { color: var(--text); }
+
+  .quiz-score-bar-wrap {
+    width: 100%;
+    max-width: 220px;
+    height: 6px;
+    background: var(--surface-elevated);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .quiz-score-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+
+  .quiz-summary.is-perfect .quiz-score-bar { background: var(--success-border); }
+
+  .quiz-retake {
+    padding: 0.4rem 1.1rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+    margin-top: 0.25rem;
+  }
+
+  .quiz-retake:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  @media (max-width: 500px) {
+    .quiz { padding: 1rem 0.9rem 1.2rem; }
+    .quiz-meta { margin-left: 0; }
+  }
+</style>

@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "Why do front-end and back-end servers share a single TCP connection in many architectures?",
+      "o": ["To prevent the back-end from seeing client IP addresses", "For performance: reusing a connection avoids the overhead of creating a new TLS handshake per request", "Because HTTP/2 requires it", "To allow the front-end to buffer and reorder requests"],
+      "a": 1,
+      "x": "Opening a new TCP and TLS connection per request is expensive. Front-ends keep a persistent connection to the back-end and multiplex many client requests over it. This shared pipe is what makes request smuggling possible.",
+      "h": "TLS handshakes and TCP connection setup have a cost. What performance technique reuses an existing connection for multiple requests?"
+    },
+    {
+      "q": "What are the two HTTP/1.1 headers that can describe body length?",
+      "o": ["Content-Type and Transfer-Encoding", "Content-Length and Transfer-Encoding", "Accept-Encoding and Content-Length", "Host and Transfer-Encoding"],
+      "a": 1,
+      "x": "Content-Length states the exact byte count of the body. Transfer-Encoding: chunked sends the body in variable-size pieces ending with a zero-size chunk. Servers that handle these differently on each end of a proxy are vulnerable to smuggling.",
+      "h": "One specifies the total number of bytes. The other says the body comes in chunks. Name both."
+    },
+    {
+      "q": "What is the CL.TE variant of request smuggling?",
+      "o": ["Client-Layer Transport Exploitation", "The front-end uses Content-Length to measure the body while the back-end uses Transfer-Encoding", "The front-end uses Transfer-Encoding while the back-end uses Content-Length", "Both servers use Content-Length but with different values"],
+      "a": 1,
+      "x": "In CL.TE, the front-end counts bytes using Content-Length and forwards that many bytes. The back-end reads using chunked encoding and stops at the zero-chunk. Any bytes after the zero-chunk sit in the buffer and poison the next request.",
+      "h": "CL and TE are abbreviations. Map each abbreviation to its HTTP header. Which server uses which?"
+    },
+    {
+      "q": "What impact can a successful request smuggling attack have on other users?",
+      "o": ["It can only affect the attacker's own session", "Smuggled bytes get prepended to another user's request, potentially exposing their data or routing them to unintended endpoints", "It can only affect requests that arrive at exactly the same millisecond", "It can only modify response headers, not request content"],
+      "a": 1,
+      "x": "The smuggled prefix sits in the back-end buffer and is prepended to the next client's request on that connection. This can redirect them to an error page, expose their request headers to the attacker, or route them to internal endpoints.",
+      "h": "The smuggled bytes do not disappear. They stay in the back-end buffer. What happens when the next real request arrives on the same connection?"
+    },
+    {
+      "q": "What is the most robust mitigation for HTTP request smuggling?",
+      "o": ["Blocking all requests with both Content-Length and Transfer-Encoding headers", "Using HTTP/2 end-to-end, which has unambiguous framing and eliminates the CL vs TE disagreement", "Limiting request body size to 1 MB", "Requiring TLS 1.3 for all connections"],
+      "a": 1,
+      "x": "HTTP/2 replaces HTTP/1.1's text-based framing with binary frame-length fields that cannot be ambiguous. If the front-end and back-end both speak HTTP/2 natively, the CL.TE class of attacks does not apply.",
+      "h": "The vulnerability is specific to HTTP/1.1's two-header ambiguity. Which newer HTTP version eliminates this entirely with a different framing mechanism?"
+    }
+  ]
+}

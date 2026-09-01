@@ -209,3 +209,4 @@ The first task succeeds deleting the file and the second task fails with an erro
 2. **Own-property options**: when calling `fork` / `spawn`, set `execArgv` explicitly (`process.execArgv` or `[]`) so lookups do not fall through to `Object.prototype`
 3. **Avoid `--eval` style sinks**: do not let user-influenced values reach child process CLI flags, shell strings, or dynamic `require` paths
 4. **Sanitize request data**: If possible, never accept prototype pollution sources like `__proto__` in the request body.
+## Quiz

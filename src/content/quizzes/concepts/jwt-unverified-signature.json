@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What critical step must a server perform before trusting a JWT payload?",
+      "o": ["Decode the payload from base64url", "Verify the cryptographic signature against the expected secret or public key", "Check that the token is longer than 100 characters", "Validate the Content-Type header on the request"],
+      "a": 1,
+      "x": "Decoding only reveals the claims. Verification confirms the signature was produced by someone who knows the secret or private key. Without verification, any modified payload is accepted as authentic.",
+      "h": "The server can read the payload without a key. What is the one step that actually proves the token was issued legitimately?"
+    },
+    {
+      "q": "What is the minimum an attacker needs to do to forge a JWT when the server skips signature verification?",
+      "o": ["Crack the signing key using hashcat", "Decode the payload, change a claim like sub, re-encode it in base64url, and reassemble the three token parts", "Generate a new RSA key pair and publish it to JWKS", "Intercept the TLS connection between client and server"],
+      "a": 1,
+      "x": "No key knowledge is required. The attacker decodes the payload, edits the desired claim, base64url-encodes it again, and sends header.newPayload.originalSignature. If the server never checks the signature, the mismatch is irrelevant.",
+      "h": "No cracking required. The server never checks signatures, so you only need to deal with the encoding layer."
+    },
+    {
+      "q": "What happens to the original signature after the attacker modifies the JWT payload?",
+      "o": ["It is automatically recalculated by the browser", "It becomes cryptographically invalid for the new payload, but a server that skips verification accepts it anyway", "The server rejects the token immediately because the signature no longer matches", "The signature field is stripped automatically by HTTP middleware"],
+      "a": 1,
+      "x": "The signature was computed over the original header and payload. After modification it no longer matches. A server that verifies signatures would reject it. A server that only decodes accepts it regardless.",
+      "h": "The signature checks out against the original content, not the modified one. Does the vulnerable server ever look at the signature at all?"
+    },
+    {
+      "q": "What is the none algorithm attack in JWT?",
+      "o": ["Using no encryption on the payload", "Setting alg to none so the server accepts a token with no valid signature, effectively disabling verification", "Removing the header entirely from the token", "Using a null byte in the kid header to bypass path checks"],
+      "a": 1,
+      "x": "The none algorithm tells the verifier to skip signature checking entirely. An attacker changes alg to none and sends header.payload. with an empty or garbage signature. Vulnerable libraries accept it as valid.",
+      "h": "Some JWT libraries accept an algorithm value that means unsigned. What is that alg value?"
+    },
+    {
+      "q": "Why do JWT libraries often have separate decode() and verify() methods, and why is that dangerous?",
+      "o": ["decode() is faster because it skips network calls", "decode() parses the token structure without checking the signature, and using it for authentication instead of verify() lets forged tokens pass unchecked", "verify() only works with RS256, decode() works with all algorithms", "decode() is deprecated and always throws an error in production"],
+      "a": 1,
+      "x": "decode() is useful for inspection but provides zero authentication guarantees. A developer who calls decode() and then trusts the returned claims has effectively disabled signature verification, enabling trivial payload tampering.",
+      "h": "One method is for reading. The other is for trusting. Which one actually validates the signature?"
+    }
+  ]
+}

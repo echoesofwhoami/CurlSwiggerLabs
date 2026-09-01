@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What is a prototype in JavaScript?",
+      "o": ["A class definition before it is instantiated", "An object that other objects inherit properties from when a property is not found on the object itself", "A type annotation added by TypeScript", "A reserved keyword that marks abstract methods"],
+      "a": 1,
+      "x": "Every JavaScript object has a prototype link. When you access a property that does not exist on the object, JavaScript follows the prototype chain upward. Object.prototype is at the top for most plain objects.",
+      "h": "JavaScript does not use class-based inheritance by default. It uses a chain of linked objects. What object does it fall back to when a property is not found locally?"
+    },
+    {
+      "q": "How does an attacker typically inject properties into Object.prototype?",
+      "o": ["By directly calling Object.prototype.pollute = 'x' in a script tag", "By sending a JSON body with a __proto__ key that a vulnerable recursive merge function follows to Object.prototype", "By exploiting a bug in the V8 garbage collector", "By overriding JSON.parse with a custom implementation"],
+      "a": 1,
+      "x": "A recursive merge that does not block the __proto__ key will process {\"__proto__\": {\"shell\": true}} by setting the shell property on Object.prototype. This affects all plain objects in the process.",
+      "h": "The attack goes through a merge function, not through direct code execution. What JSON key causes a naive recursive merge to climb up to Object.prototype?"
+    },
+    {
+      "q": "What is the difference between client-side and server-side prototype pollution?",
+      "o": ["Client-side affects only the server's Node.js process, server-side affects only the user's browser", "Client-side affects only the attacker's browser tab, server-side pollutes the Node.js process for all users and can enable RCE", "They are identical attacks on different URL paths", "Server-side pollution only affects database queries"],
+      "a": 1,
+      "x": "Client-side pollution is limited to the victim's browser. Server-side pollution runs in the Node.js process serving all users. An attacker can add properties that affect global server behavior and potentially trigger RCE via existing gadgets.",
+      "h": "Where does the merge code run? In the user's browser or on the server? How does that change the impact?"
+    },
+    {
+      "q": "What is a prototype pollution gadget?",
+      "o": ["A browser extension that automates payloads", "Existing code in the application that reads a property from an ordinary object and uses it unsafely, becoming dangerous when that property is injected via pollution", "A testing library for Node.js prototype chains", "A JavaScript Proxy that intercepts property access on Object.prototype"],
+      "a": 1,
+      "x": "Gadgets are legitimate code that becomes dangerous when a polluted property appears on objects it processes. The attacker does not inject code directly, they inject a property value that existing code then uses in a dangerous way.",
+      "h": "The attacker only controls a property value, not the code. What kind of existing code would turn an unexpected property into something dangerous?"
+    },
+    {
+      "q": "What is the most effective code-level fix for prototype pollution via merging?",
+      "o": ["Validate that JSON bodies are valid JSON before parsing them", "Block __proto__, prototype, and constructor keys during recursive merges, or use Object.create(null) as the merge target to remove the prototype chain entirely", "Use strict mode ('use strict') in all modules", "Freeze Object.prototype with Object.freeze()"],
+      "a": 1,
+      "x": "Object.create(null) produces a prototype-less object. Merging into it means there is no __proto__ to follow. Alternatively, an explicit key blocklist stops traversal before it reaches the shared prototype.",
+      "h": "The merge follows __proto__ because the target has a prototype. What if the target had no prototype chain at all? How do you create that in JavaScript?"
+    }
+  ]
+}

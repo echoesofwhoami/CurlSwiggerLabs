@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What does the redirect_uri parameter specify in an OAuth authorization flow?",
+      "o": ["The scopes the client is requesting from the user", "The URL where the authorization server sends the user and authorization code after they approve the request", "The endpoint used to fetch the user's profile data", "The secret key used to sign access tokens"],
+      "a": 1,
+      "x": "After the user approves, the authorization server redirects the browser to redirect_uri with the authorization code appended. If an attacker controls that URI, the code is delivered to them instead of the legitimate application.",
+      "h": "The parameter tells the server where to send the user after approval. What sensitive credential travels in that redirect?"
+    },
+    {
+      "q": "What is the difference between secure and vulnerable redirect_uri handling?",
+      "o": ["Secure handling requires HTTPS, vulnerable allows HTTP", "Secure handling only redirects to pre-registered URLs for that client, vulnerable handling accepts any URL the attacker supplies", "Secure handling encrypts the authorization code, vulnerable sends it in plain text", "Secure handling uses POST redirects, vulnerable uses GET redirects"],
+      "a": 1,
+      "x": "A correctly implemented OAuth provider compares redirect_uri against a whitelist registered when the client was set up. Accepting arbitrary URIs lets an attacker intercept authorization codes by pointing the flow at their own server.",
+      "h": "The fix for redirect_uri attacks is validation. What check is missing when any URL is accepted?"
+    },
+    {
+      "q": "Why are authorization codes described as bearer tokens in OAuth?",
+      "o": ["They are printed on a physical bearer document", "Whoever possesses the code can exchange it for an access token without proving they initiated the original authorization request", "They expire after one second by default", "They can only be used from the same IP address that requested them"],
+      "a": 1,
+      "x": "An authorization code is a short-lived credential sent in the browser redirect. Anyone who intercepts it can exchange it for an access token if they also know the client credentials, giving them access to the victim's account.",
+      "h": "Bearer means possession alone is enough. What happens if the code arrives at the attacker's server instead of the legitimate app?"
+    },
+    {
+      "q": "What type of redirect_uri matching is required to prevent bypass via subdomain or path tricks?",
+      "o": ["Prefix matching on the domain name", "Exact-match comparison against pre-registered URIs including scheme, host, port, and path", "Regular expression matching with wildcards for all subdomains", "Case-insensitive string contains check"],
+      "a": 1,
+      "x": "Exact-match whitelisting means only URIs registered during client setup are accepted. Partial matching allows bypasses such as registering https://app.com/callback but accepting https://app.com/callback.evil.com or https://evil.com?app.com/callback.",
+      "h": "The problem is accepting URIs that look similar but are not identical. What comparison mode rejects any deviation from the registered value?"
+    },
+    {
+      "q": "What additional protection does PKCE provide beyond redirect_uri validation?",
+      "o": ["It encrypts the access token at rest", "It binds the authorization code to a code_verifier known only to the original client, so an intercepted code cannot be exchanged without it", "It adds multi-factor authentication to the OAuth login screen", "It limits how many authorization codes a user can receive per day"],
+      "a": 1,
+      "x": "PKCE generates a code_verifier on the client and sends a hash as code_challenge during authorization. The raw verifier is required at token exchange time. An attacker who intercepts the code but lacks the verifier cannot complete the exchange.",
+      "h": "PKCE ties the code to a secret the original requester holds. What happens if an attacker intercepts the code but does not know the verifier?"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "In a CL.TE attack, what does the front-end use to measure the request body?",
+      "o": ["Transfer-Encoding: chunked markers", "Content-Length in bytes", "The Connection: keep-alive header", "A fixed 1 KB boundary"],
+      "a": 1,
+      "x": "The front-end trusts Content-Length and forwards exactly that many bytes. Bytes beyond that limit are left in the TCP buffer and not forwarded as part of the current request.",
+      "h": "CL stands for Content-Length. Which server in CL.TE uses CL, and what does it do with it?"
+    },
+    {
+      "q": "What does the back-end use in a CL.TE attack to find the end of the request body?",
+      "o": ["Content-Length as the authoritative length", "Transfer-Encoding: chunked markers, stopping at the zero-size chunk", "The end of the TCP stream", "A fixed timeout after which it assumes the body is complete"],
+      "a": 1,
+      "x": "The back-end trusts Transfer-Encoding: chunked. It reads chunks until it sees a chunk with size 0, followed by a blank line. Anything after that in the buffer is treated as the start of the next request.",
+      "h": "TE stands for Transfer-Encoding. What signal does chunked encoding use to mark the end of the body?"
+    },
+    {
+      "q": "What is a differential response and how does it confirm the smuggling worked?",
+      "o": ["Two different status codes from the same endpoint prove a parser bug", "The first request returns 200, but a subsequent normal request returns 404, showing the smuggled prefix was prepended to that second request", "The server returns different headers on odd vs even requests", "Timing differences between two requests indicate that buffering occurred"],
+      "a": 1,
+      "x": "After sending the smuggling request, any client's next request on the same back-end connection gets the smuggled bytes prepended. If those bytes spell out 'GET /404', the next client gets a 404 instead of 200, confirming the attack.",
+      "h": "You send one normal request and get 200. You send another and get 404. The path was /. Why would / return 404? What changed before that second request arrived?"
+    },
+    {
+      "q": "Why is the exact byte count of the smuggled payload critical in a CL.TE attack?",
+      "o": ["Incorrect byte counts trigger a WAF alert", "The Content-Length header must match the exact number of bytes the front-end will forward, which must include all of the smuggled payload", "The back-end rejects payloads whose byte count does not match a predefined limit", "The HTTP spec requires Content-Length to be a multiple of 16"],
+      "a": 1,
+      "x": "Content-Length tells the front-end how many bytes to forward. If it is too small, the smuggled payload is cut off. If too large, the front-end waits for more bytes that never arrive. Exact counting, including every CRLF, is required.",
+      "h": "Every byte after the chunked end-marker is part of the smuggled request. The front-end forwards exactly Content-Length bytes. What happens if these two numbers do not match perfectly?"
+    },
+    {
+      "q": "Why must you send the smuggling request twice (or use a separate trigger request) to observe the differential response?",
+      "o": ["The first send establishes the TCP connection, the second sends the actual payload", "The first send leaves the smuggled prefix in the back-end buffer, the second request is the one that picks up those leftover bytes and returns the differential response", "Two sends are needed to bypass rate limiting", "The first send populates the cache, the second reads the cached differential"],
+      "a": 1,
+      "x": "On the first send, the back-end processes your request and the smuggled bytes sit waiting in the buffer. On the second send (or next user's request), the back-end sees those buffered bytes first, prepending them to the new request and returning the differential response.",
+      "h": "After the first send, where do the smuggled bytes go? They do not vanish. What does the back-end do with the next request that arrives on the same connection?"
+    }
+  ]
+}

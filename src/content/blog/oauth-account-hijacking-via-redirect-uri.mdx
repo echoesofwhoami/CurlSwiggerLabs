@@ -138,3 +138,5 @@ The second is the OAuth provider redirecting the victim's browser to our server 
 3. **Use PKCE (Proof Key for Code Exchange)**: PKCE adds a code verifier/challenge mechanism that binds the authorization code to the client that initiated the flow, making stolen codes useless without the original verifier
 4. **Short-lived authorization codes**: Authorization codes should expire quickly (within seconds) and be single-use to minimize the window for exploitation
 5. **Register exact redirect URIs**: Client applications should register specific, complete redirect URIs with the OAuth provider. Never use pattern matching or allow dynamic redirect URIs
+
+## Quiz

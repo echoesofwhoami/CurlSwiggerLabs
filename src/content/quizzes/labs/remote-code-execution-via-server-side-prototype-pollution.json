@@ -1,0 +1,74 @@
+{
+  "questions": [
+    {
+      "q": "What is Object.prototype and why do almost all JavaScript objects share it?",
+      "o": ["It is a hidden copy of each object created at runtime", "It is the top-level prototype that plain objects inherit from by default, meaning all properties added to it appear on every inheriting object", "It is only accessible to built-in JavaScript functions", "It is a read-only object that cannot be modified"],
+      "a": 1,
+      "x": "Every plain object created with {} or new Object() has Object.prototype at the top of its prototype chain. Any property added to Object.prototype becomes accessible on all such objects, including ones inside frameworks and server code.",
+      "h": "JavaScript uses prototype chains for inheritance. What is at the very top of the chain for plain objects? And what happens when you add a property there?"
+    },
+    {
+      "q": "What is prototype pollution?",
+      "o": ["Filling the heap with large objects to cause a denial of service", "Adding or modifying properties on a shared prototype so that all objects inheriting from it unexpectedly gain those properties", "Overwriting built-in methods like Array.prototype.push", "Injecting a malicious __proto__ string into a JSON response"],
+      "a": 1,
+      "x": "Prototype pollution injects properties into a prototype object, typically Object.prototype. Because all objects sharing that prototype inherit the new property, server-side code that reads object properties without checking where they came from becomes vulnerable.",
+      "h": "The word 'pollution' suggests adding something unwanted to a shared resource. Which shared resource do most JavaScript objects rely on for property lookup?"
+    },
+    {
+      "q": "What is a 'gadget' in prototype pollution exploitation?",
+      "o": ["A special npm package designed to test prototype pollution", "Existing application or framework code that reads a property from an ordinary object and uses it in a dangerous way", "A browser extension that automates the pollution payload", "A Node.js built-in function that exposes Object.prototype directly"],
+      "a": 1,
+      "x": "The attacker does not inject code as text. They inject a property into Object.prototype that existing code reads and then uses dangerously, for example as a shell execution option. The danger comes from the interaction between the pollution and the existing code.",
+      "h": "The attacker controls a property value but not the code that uses it. What already-existing piece of code would become dangerous if it suddenly found an unexpected property on an object?"
+    },
+    {
+      "q": "Which Node.js function was the RCE gadget in this lab and what prototype property did the attack exploit?",
+      "o": ["child_process.exec(), which reads a shell string from Object.prototype.command", "child_process.fork(), which on older Node.js versions reads execArgv from the options object via the prototype chain, letting a polluted Object.prototype.execArgv inject CLI flags into the child process", "child_process.spawn(), which reads an executable path from Object.prototype.shell", "require(), which loads a module path inherited from Object.prototype.main"],
+      "a": 1,
+      "x": "The admin jobs endpoint uses fork() to start worker processes. fork() accepts an options object and reads options.execArgv for Node.js CLI flags. On Node.js versions before 18.18.0 and 20.6.0, property lookup followed the prototype chain, so a polluted Object.prototype.execArgv was treated as if it were set directly on the options object.",
+      "h": "The lab has a background section titled 'Node.js execArgv Gadget'. Which function creates a child Node.js process, and what option controls which Node.js CLI flags that child runs with?"
+    },
+    {
+      "q": "What property was polluted on Object.prototype to achieve RCE in this lab, and what value triggered arbitrary code execution?",
+      "o": ["__proto__.shell set to true to enable shell mode on all child_process spawn calls", "__proto__.execArgv set to an array containing --eval=require('child_process').execSync('...'), injecting a Node.js CLI flag that runs arbitrary code in every forked child process", "__proto__.env._ set to a command path to replace the child process executable", "__proto__.argv set to a crafted command array for the Node.js runtime"],
+      "a": 1,
+      "x": "Polluting Object.prototype.execArgv with [\"--eval=require('child_process').execSync('sleep 5')\"] injects that CLI flag into every fork() call that reads options via the prototype chain. The child process immediately runs the eval code on startup.",
+      "h": "The writeup confirms RCE by making the child process run sleep 5 and observing a timeout from the admin jobs endpoint. What Node.js CLI flag runs arbitrary JavaScript at startup, and how was it injected via prototype pollution?"
+    },
+    {
+      "q": "What input handling mistake allows prototype pollution in the first place?",
+      "o": ["Calling JSON.parse() without a reviver function", "Recursively merging user-supplied objects without blocking prototype-traversing keys like __proto__, constructor, or prototype", "Storing user data in plain objects instead of Map", "Using eval() to process incoming JSON bodies"],
+      "a": 1,
+      "x": "A recursive merge that does not check for __proto__ or constructor.prototype will climb the prototype chain when it encounters these keys. A payload like {\"__proto__\":{\"execArgv\":[\"--eval=...\"]}} pollutes Object.prototype.execArgv for the whole Node.js process.",
+      "h": "The merge function receives {\"__proto__\": {\"shell\": true}} and tries to merge it recursively. What key does it follow that leads to Object.prototype?"
+    },
+    {
+      "q": "What makes this attack 'server-side' rather than client-side?",
+      "o": ["The payload is sent through a VPN tunnel to the server", "The vulnerable merge runs inside the Node.js server process, polluting Object.prototype for all server-side code in that process", "Server-side JavaScript has a different Object.prototype than browser JavaScript", "The attack requires direct access to the server filesystem"],
+      "a": 1,
+      "x": "In client-side prototype pollution, the damage is limited to the user's own browser tab. Here the pollution affects the server's Node.js process, potentially impacting all users and enabling command execution on the server.",
+      "h": "Where does the vulnerable merge code run? In the user's browser or on the server? And what is polluted as a result?"
+    },
+    {
+      "q": "What endpoint or feature accepted the user-supplied JSON that was merged in this lab?",
+      "o": ["A file upload endpoint", "A user profile update or address book endpoint that merged POST body JSON into a server-side object", "A search endpoint with a q parameter", "A password reset form"],
+      "a": 1,
+      "x": "The lab's change-address or profile update endpoint accepted a JSON body that a server-side merge function applied to a user object. The merge was recursive and did not sanitize keys, allowing __proto__ traversal.",
+      "h": "Think about which application features accept structured JSON from the user and then merge it into a server-side object. Which one in a typical shop application would do this?"
+    },
+    {
+      "q": "How did you confirm that prototype pollution was working before attempting RCE?",
+      "o": ["By checking if the server sent a callback to Burp Collaborator", "By polling the /admin panel to see if extra properties appeared", "By injecting __proto__[\"json spaces\"] = 10 and checking whether the JSON response from the change-address endpoint came back indented with 10 spaces, confirming Express reads json spaces from Object.prototype", "By checking the Node.js process memory via a debug endpoint"],
+      "a": 2,
+      "x": "Express reads the json spaces option from the prototype chain when formatting JSON responses. Polluting Object.prototype with {\"json spaces\": 10} causes every subsequent JSON response to be pretty-printed with 10 spaces. Seeing the indentation confirmed that Object.prototype was writable via the merge endpoint.",
+      "h": "You need a side-effect that is observable in HTTP responses without triggering anything dangerous. Express has a formatting option that controls JSON indentation. Where does it look up that option?"
+    },
+    {
+      "q": "What is the most direct code-level fix for prototype pollution via merging?",
+      "o": ["Use Map instead of plain objects for all data", "Block __proto__, constructor, and prototype keys before recursing, or use Object.create(null) as the merge target so it has no prototype to pollute", "Validate that JSON bodies are less than 1 KB", "Switch from Node.js to a runtime that does not support prototypes"],
+      "a": 1,
+      "x": "Object.create(null) creates a prototype-less object. Merging into it means there is no prototype chain to traverse. Alternatively, explicitly blocking keys like __proto__ and constructor.prototype prevents the traversal before it reaches the shared prototype.",
+      "h": "The merge follows __proto__ because it exists on the target. What if the target object had no prototype at all? How would you create an object like that in JavaScript?"
+    }
+  ]
+}

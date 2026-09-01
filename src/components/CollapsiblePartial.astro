@@ -2,6 +2,7 @@
 import { getEntry, render } from 'astro:content';
 import { useTranslations } from '../i18n/utils';
 import type { Lang } from '../i18n/utils';
+import Quiz from './Quiz.astro';
 
 interface Props {
   partial: string;
@@ -30,4 +31,5 @@ const { Content } = await render(entry);
   <div class="partial-content">
     <Content />
   </div>
+  <Quiz file={`concepts/${partial}`} slug={`concept-${partial}`} lang={lang} />
 </details>

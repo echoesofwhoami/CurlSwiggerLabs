@@ -1,0 +1,74 @@
+{
+  "questions": [
+    {
+      "q": "A JWT is three parts joined by dots. What is the correct order?",
+      "o": ["payload.header.signature", "header.payload.signature", "signature.header.payload", "header.signature.payload"],
+      "a": 1,
+      "x": "The format is always header.payload.signature. Each part is Base64url encoded. The signature covers both the header and the payload, so it must come last.",
+      "h": "Think about which part is computed from the other two. That one has to come at the end."
+    },
+    {
+      "q": "Is Base64url encoding the same as encryption?",
+      "o": ["Yes, it requires a key to reverse", "No, anyone can decode it without a key", "Only with JWT-specific libraries", "Yes, but only for the payload part"],
+      "a": 1,
+      "x": "Base64url is an encoding scheme, not encryption. It makes binary data safe for URLs and JSON, but the original content is fully readable by anyone who runs a decode command.",
+      "h": "Think about whether you need a secret key to reverse base64. Try it on any base64 string online."
+    },
+    {
+      "q": "What critical step does the server in this lab skip before trusting the JWT payload?",
+      "o": ["Checking the token expiration", "Verifying the cryptographic signature", "Decoding the payload", "Checking the issuer claim"],
+      "a": 1,
+      "x": "The server reads the payload claims and acts on them, but never checks whether the signature is mathematically valid. Without that check, a forged payload passes through unchallenged.",
+      "h": "The server does read and use the payload. What is the one thing it forgets to do before trusting that payload?"
+    },
+    {
+      "q": "Which JWT payload claim identifies the logged-in user in this lab?",
+      "o": ["iss", "iat", "sub", "exp"],
+      "a": 2,
+      "x": "The sub (subject) claim carries the username. Changing it from 'wiener' to 'administrator' is enough to impersonate the admin, since the server never validates the signature.",
+      "h": "You need to change the username. Look for the claim whose name is short for 'subject'."
+    },
+    {
+      "q": "After modifying the payload, what happens to the original signature?",
+      "o": ["It is automatically recalculated", "It is now invalid, but the server accepts it anyway", "The token is rejected because the signature changed", "The signature is stripped out automatically"],
+      "a": 1,
+      "x": "The signature no longer matches the modified payload, making it cryptographically invalid. But because the server never checks the signature, the mismatch is irrelevant and the token is accepted.",
+      "h": "The signature checks out against the original content, not the modified one. Ask yourself: does the server ever look at the signature at all?"
+    },
+    {
+      "q": "To forge a JWT when the server skips signature verification, what is the minimum you need to do?",
+      "o": ["Crack the signing key, then re-sign the token", "Decode the payload, change a claim, re-encode it, and reassemble the three parts", "Delete the signature part entirely", "Add a new header claiming no algorithm is needed"],
+      "a": 1,
+      "x": "No key knowledge is needed. You just decode the payload, edit the claim you want, Base64url-encode it again, and reassemble header.payload.original-signature. The server will accept it.",
+      "h": "No cracking required. The server never checks signatures, so you only need to deal with the encoding layer."
+    },
+    {
+      "q": "What HTTP request component carries the JWT to the server on each request?",
+      "o": ["A custom X-Auth-Token header", "The Cookie or Authorization: Bearer header", "A query parameter named token", "The request body as JSON"],
+      "a": 1,
+      "x": "JWTs are typically sent as a Cookie (for session-based apps) or in an Authorization: Bearer header (for API clients). A forged token travels the same way as a legitimate one.",
+      "h": "Where does your browser normally send session credentials on every request? Check your browser dev tools on an authenticated page."
+    },
+    {
+      "q": "What does the exp claim in a JWT payload represent?",
+      "o": ["The algorithm strength exponent", "The Unix timestamp after which the token should be rejected", "The number of requests the token can authorize", "The encryption padding length"],
+      "a": 1,
+      "x": "exp (expiration time) is a Unix timestamp in seconds. A properly implemented server should reject any token whose exp is in the past. In this lab the server does not enforce it, but the claim exists in the token.",
+      "h": "The name is short for a word meaning the token is no longer valid after a certain point in time."
+    },
+    {
+      "q": "Which tool is commonly used to inspect and craft JWTs interactively without writing code?",
+      "o": ["Wireshark", "jwt.io", "Postman", "Burp Decoder"],
+      "a": 1,
+      "x": "jwt.io is a browser-based tool that decodes, displays, and lets you modify JWT headers and payloads. It also re-encodes and signs tokens if you provide the secret, making it useful for quick inspection.",
+      "h": "The tool lives at a domain named after the technology itself. It is the first result when you search for JWT decoder online."
+    },
+    {
+      "q": "What is the correct server-side fix to prevent this class of attack?",
+      "o": ["Encrypt the payload so it cannot be read", "Always verify the signature against the expected secret before trusting any claim", "Use HTTPS to protect the token in transit", "Add an expiration claim to every token"],
+      "a": 1,
+      "x": "The root fix is mandatory signature verification. If the library or code path skips it, the token provides zero authentication guarantees regardless of other measures.",
+      "h": "The attack works because verification is skipped. What is the logical fix for code that skips a security check?"
+    }
+  ]
+}

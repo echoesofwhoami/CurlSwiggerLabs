@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What is the DOM (Document Object Model)?",
+      "o": ["A server-side database of HTML pages", "The browser's live in-memory tree representation of the page, built by parsing HTML into elements, attributes, and text nodes", "A JavaScript library for building single-page applications", "The network protocol used to transfer HTML from server to browser"],
+      "a": 1,
+      "x": "When the browser receives HTML, a parser builds a tree of objects in memory. JavaScript reads and modifies that tree through APIs like getElementById and querySelector. What you see on screen is backed by this live tree.",
+      "h": "The DOM is what the browser builds after it reads HTML tags. Is it a static file or a live structure JavaScript can change?"
+    },
+    {
+      "q": "What happens when JavaScript changes a node's textContent and the user reloads the page?",
+      "o": ["The change is saved permanently in the DOM database", "The browser re-parses the original HTML from the server and the change is lost", "The change is stored in localStorage automatically", "The server receives a PATCH request with the new text"],
+      "a": 1,
+      "x": "DOM changes exist only in the browser's memory for the current page session. A reload re-fetches and re-parses the original HTML, restoring whatever the server sent.",
+      "h": "The DOM is live in memory during one page load. What happens when the browser starts a fresh parse from the server response?"
+    },
+    {
+      "q": "Why does assigning a string to innerHTML trigger parsing again?",
+      "o": ["innerHTML encrypts the string before display", "The browser runs the HTML parser on the string to create new DOM nodes from it", "innerHTML sends the string back to the server for validation", "innerHTML only accepts pre-sanitized markup from trusted sources"],
+      "a": 1,
+      "x": "innerHTML treats its value as HTML markup, not plain text. The parser interprets tags, attributes, and quotes in the string, which is why user-controlled data in an innerHTML assignment can change the resulting DOM structure.",
+      "h": "innerHTML does not just display text literally. What does the browser do with angle brackets and quotes in the string?"
+    },
+    {
+      "q": "In the example div with id='comments' containing a p tag, what does document.querySelector('#comments p') return?",
+      "o": ["The raw HTML string from the server response", "The p element node inside the comments div in the live DOM tree", "A CSS stylesheet rule matching that selector", "The HTTP headers from the page request"],
+      "a": 1,
+      "x": "querySelector walks the live DOM tree and returns the first element matching the CSS selector. In this case it returns the p element node, which JavaScript can then read or modify.",
+      "h": "querySelector searches the in-memory tree the parser built. What type of object does it return when it finds a match?"
+    },
+    {
+      "q": "Why can a quote character inside a string assigned to innerHTML be dangerous?",
+      "o": ["Quotes cause the browser to crash the tab", "The HTML parser may treat the quote as closing an attribute, changing which attributes exist on the resulting element", "Quotes are always stripped by the browser before parsing", "Quotes only matter in server-side templates, not client-side JavaScript"],
+      "a": 1,
+      "x": "When innerHTML builds markup like '<img src=\"' + userInput + '\">', an unencoded quote in userInput can close the src attribute early. Everything after it may become a new attribute such as onerror, changing what the parser produces.",
+      "h": "Think about what happens when the parser sees a literal double-quote inside a concatenated HTML string meant to set an attribute value."
+    }
+  ]
+}

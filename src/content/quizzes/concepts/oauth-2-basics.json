@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What problem does OAuth 2.0 solve?",
+      "o": ["It encrypts user passwords in transit", "It allows third-party applications to access user resources without the user sharing their password", "It replaces TLS for securing HTTP traffic", "It provides a standard for storing user passwords in databases"],
+      "a": 1,
+      "x": "OAuth lets you say 'this app can read my email' without giving the app your password. The app gets a scoped access token instead, which can be revoked without changing your password.",
+      "h": "Before OAuth, granting a third-party app access to your data meant giving it your password. What does OAuth replace the password with?"
+    },
+    {
+      "q": "What are the three main parties in an OAuth 2.0 flow?",
+      "o": ["Client, Proxy, Resource Owner", "Resource Owner, Client Application, Authorization Server (plus Resource Server)", "User, Attacker, Server", "Browser, API, Database"],
+      "a": 1,
+      "x": "The Resource Owner is the user. The Client Application is the app requesting access (e.g., a blog). The Authorization Server authenticates the user and issues tokens. The Resource Server holds the protected data.",
+      "h": "Think about who wants access (the app), who grants it (the user), and who decides if it is allowed (the auth service)."
+    },
+    {
+      "q": "What is the authorization code flow?",
+      "o": ["The user's password is hashed and sent to the authorization server directly", "The user approves access on the authorization server, which sends a short-lived code to the client, the client then exchanges the code for an access token via a back-channel request", "The access token is embedded in the redirect URL after login", "The client generates the token locally after verifying the user's credentials"],
+      "a": 1,
+      "x": "The code flow separates user-facing redirects from server-to-server token exchange. The code travels through the browser (visible) but the final access token is obtained back-channel (not visible in the URL), making it harder to intercept.",
+      "h": "The flow has two steps: a redirect with a code, then a server-side exchange. Why split it into two steps instead of sending the token directly in the redirect?"
+    },
+    {
+      "q": "What is an access token?",
+      "o": ["The user's session cookie for the authorization server", "A credential the client uses to call the resource server API on the user's behalf, scoped to specific permissions", "A one-time password sent to the user's phone", "The client_secret used to authenticate the application"],
+      "a": 1,
+      "x": "The access token is what the client actually uses to call APIs. It is scoped (limited to specific resources and operations), time-limited, and can be revoked by the user or the provider independently of any password.",
+      "h": "After the code exchange, what does the client receive that it uses for every subsequent API call?"
+    },
+    {
+      "q": "What is the purpose of the state parameter in an OAuth authorization request?",
+      "o": ["It encodes the user's preferred language for the consent screen", "It is a random value the client includes to prevent CSRF attacks, it is returned in the redirect and the client verifies it matches", "It tells the authorization server how long to keep the session", "It contains the list of scopes the client is requesting"],
+      "a": 1,
+      "x": "The state parameter is a CSRF token for the OAuth flow. The client generates a random value, sends it in the authorization request, and when the code comes back in the redirect, the client checks that the state matches what it sent.",
+      "h": "Without state, an attacker could trick a victim into completing an OAuth flow the attacker started. What standard web security mechanism does the state parameter implement?"
+    }
+  ]
+}

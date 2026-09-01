@@ -1,0 +1,39 @@
+{
+  "questions": [
+    {
+      "q": "What happens when you access a property that does not exist on a JavaScript object?",
+      "o": ["JavaScript throws a ReferenceError immediately", "JavaScript traverses the prototype chain upward, checking each prototype for the property until it finds it or reaches null", "JavaScript returns an empty object", "JavaScript converts the object to a string and searches the string"],
+      "a": 1,
+      "x": "Property lookup follows the prototype chain: obj -> obj.__proto__ -> obj.__proto__.__proto__ -> ... -> null. If none of the prototypes have the property, undefined is returned. This chain is the foundation of JavaScript's inheritance model.",
+      "h": "JavaScript does not copy properties from prototypes into objects. Instead, what does it do when a property is not found locally?"
+    },
+    {
+      "q": "What is __proto__?",
+      "o": ["A private property that cannot be accessed in production code", "A non-standard but widely supported accessor that points to the prototype of an object", "A reserved keyword in ES6+", "A method that clones the prototype chain"],
+      "a": 1,
+      "x": "__proto__ is a getter/setter that exposes an object's internal prototype link. In JSON payloads, __proto__ is treated as a regular property key by many merge functions, which is how prototype pollution works.",
+      "h": "Every object in JavaScript has a hidden link to its prototype. __proto__ is one way to access that link. What does setting it in a JSON payload do when a merge function processes it?"
+    },
+    {
+      "q": "What is the difference between Object.getPrototypeOf(obj) and obj.__proto__?",
+      "o": ["They are completely different APIs with different return values", "Both access the same prototype, but Object.getPrototypeOf is the standard safe API while __proto__ is a legacy accessor, prefer Object.getPrototypeOf in code", "Object.getPrototypeOf only works on arrays", "__proto__ is faster but less accurate than Object.getPrototypeOf"],
+      "a": 1,
+      "x": "Both return the same internal [[Prototype]] slot. Object.getPrototypeOf is defined in the ECMAScript spec as the standard API. __proto__ was a browser extension later standardized as a legacy feature. Modern code should use Object.getPrototypeOf.",
+      "h": "They access the same thing by different means. Which one is the officially specified API and which one is a legacy accessor that was added for backward compatibility?"
+    },
+    {
+      "q": "What does Object.create(null) create and why is it useful in security-sensitive code?",
+      "o": ["An object that copies all properties from null, creating an empty object", "A prototype-less object with no inherited properties, preventing prototype pollution when used as a merge target", "An object that throws on any property access", "A frozen object that cannot be modified after creation"],
+      "a": 1,
+      "x": "Object.create(null) creates an object with no prototype chain at all. There is no __proto__ link to follow. Using it as a merge target means an attacker's __proto__ key finds nowhere to go, preventing pollution.",
+      "h": "If the merge target has no prototype, what happens when the merge function tries to follow the __proto__ key to Object.prototype?"
+    },
+    {
+      "q": "Why does adding a property to Object.prototype affect objects created in other modules?",
+      "o": ["JavaScript modules share a global scope but separate prototypes", "All plain objects across the entire JavaScript process share the same Object.prototype, so any property added to it is visible to every object created anywhere in that process", "Only objects in the same file share a prototype", "Prototype changes are scoped to the current function call stack"],
+      "a": 1,
+      "x": "There is one Object.prototype per JavaScript engine instance (one per Node.js process, one per browser tab). Every plain object {} inherits from it. Polluting it in one module affects all objects everywhere in that process.",
+      "h": "JavaScript has one global Object.prototype per engine instance. How many plain objects in the process inherit from it?"
+    }
+  ]
+}

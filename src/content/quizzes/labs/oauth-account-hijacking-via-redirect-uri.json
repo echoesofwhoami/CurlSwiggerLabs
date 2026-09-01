@@ -1,0 +1,74 @@
+{
+  "questions": [
+    {
+      "q": "What is the role of the redirect_uri parameter in the OAuth authorization code flow?",
+      "o": ["It defines the scopes the client is requesting", "It tells the authorization server where to send the authorization code after the user consents", "It specifies the URL to fetch the user's profile from", "It identifies which resource server should receive the access token"],
+      "a": 1,
+      "x": "After the user approves the request, the authorization server sends the code to the redirect_uri. If an attacker can change this URI, the code arrives at the attacker's server instead of the legitimate application.",
+      "h": "The parameter tells the server where to redirect after approval. What happens if an attacker controls that destination?"
+    },
+    {
+      "q": "What is an authorization code used for?",
+      "o": ["It directly authenticates the user on the resource server", "It is a short-lived credential exchanged for an access token in a back-channel request", "It encodes the user's permissions as a signed JWT", "It is a one-time password sent to the user's phone"],
+      "a": 1,
+      "x": "The authorization code is intentionally short-lived and single-use. The client exchanges it for an access token by making a back-channel POST request that includes the client secret, preventing interception during the redirect.",
+      "h": "The code is not the final credential. It is a stepping stone. What do you do with it after receiving it?"
+    },
+    {
+      "q": "What is the fundamental misconfiguration exploited in this lab?",
+      "o": ["The OAuth provider uses implicit flow instead of code flow", "The OAuth provider accepts any redirect_uri without validating it against a registered whitelist", "The access token has no expiration time", "The client secret is exposed in the JavaScript source"],
+      "a": 1,
+      "x": "A correctly implemented OAuth provider compares the redirect_uri in the request to a pre-registered list of allowed URIs for that client. Accepting any URI, including the attacker's server, is the core misconfiguration.",
+      "h": "The fix for this attack is to check the redirect_uri. What check is missing in a vulnerable provider?"
+    },
+    {
+      "q": "What mechanism did the attacker use to make the admin user send their authorization code to the attacker's server?",
+      "o": ["A CSRF form that auto-submits a token exchange request", "A page on the exploit server that initiates the OAuth flow with the attacker's redirect_uri, which the admin opens while logged in", "An XSS payload injected into the OAuth provider's login page", "A DNS rebinding attack on the legitimate redirect domain"],
+      "a": 1,
+      "x": "The exploit page starts an authorization request with redirect_uri pointing to the attacker's server. When the admin opens it, their active OAuth session auto-approves. The code is sent to the attacker's server in the redirect.",
+      "h": "The attacker needs the admin to start an OAuth flow while authenticated. What page on the exploit server would trigger that automatically when opened?"
+    },
+    {
+      "q": "Why does the admin auto-approve the attacker's OAuth request?",
+      "o": ["Admins bypass OAuth consent screens by default", "The OAuth provider has already granted this client access in a previous session, so it skips the consent prompt", "The exploit page tricks the admin into clicking a fake approve button", "Auto-approval is a default setting in the lab's OAuth provider"],
+      "a": 1,
+      "x": "OAuth providers often skip the consent screen for clients the user has already authorized. When the admin opens the exploit link, the provider recognizes the prior approval and immediately redirects with the code, giving the attacker no visible trace of what happened.",
+      "h": "Has the admin used this OAuth client before? If so, does the consent screen appear again? Why or why not?"
+    },
+    {
+      "q": "What does the attacker do after receiving the authorization code?",
+      "o": ["They use it directly as a Bearer token to access /admin", "They exchange it for an access token by sending a back-channel request with the client credentials", "They decode it as a JWT to read the admin's session data", "They store it and use it again later as a refresh token"],
+      "a": 1,
+      "x": "The authorization code must be exchanged for an access token. The exchange request includes the code, the client_id, client_secret, and redirect_uri. After receiving the access token, the attacker can access the API as the admin.",
+      "h": "The code is not a final credential. It is exchanged for something else. What HTTP request does the exchange look like?"
+    },
+    {
+      "q": "What is the correct fix on the authorization server side?",
+      "o": ["Require HTTPS for all redirect_uri values", "Enforce an exact-match whitelist comparison between the requested redirect_uri and the pre-registered URIs for that client", "Use PKCE (Proof Key for Code Exchange) to protect the authorization code", "Reduce the authorization code lifetime to 1 second"],
+      "a": 1,
+      "x": "An exact-match whitelist means only URIs registered during client setup are accepted. Any deviation including different paths, subdomains, or entirely different domains must be rejected, not just partially matched.",
+      "h": "The problem is accepting arbitrary URIs. What validation approach only permits URIs that were pre-approved when the client was registered?"
+    },
+    {
+      "q": "What additional protection does PKCE add on top of redirect_uri validation?",
+      "o": ["It encrypts the access token", "It binds the authorization code to a code verifier known only to the original client, preventing code interception attacks", "It adds multi-factor authentication to the OAuth flow", "It limits the number of authorization codes per user per day"],
+      "a": 1,
+      "x": "PKCE (Proof Key for Code Exchange) generates a code_verifier on the client, hashes it as code_challenge, and sends the hash at authorization time. The raw verifier is sent at exchange time. An intercepted code cannot be exchanged without the verifier.",
+      "h": "PKCE ties the code to a secret the original requester holds. What happens if an attacker intercepts the code but does not know the verifier?"
+    },
+    {
+      "q": "In this attack flow, what is the difference between the authorization code and the access token?",
+      "o": ["They are the same credential with different names depending on the flow", "The code is a short-lived, single-use redirect credential, the access token is a longer-lived credential used to call the API", "The access token is sent in the redirect URL while the code is sent back-channel", "The code is used for read-only access while the token grants write access"],
+      "a": 1,
+      "x": "The authorization code travels through the browser redirect and is intentionally short-lived. The access token is obtained via a back-channel server-to-server exchange and is what actually authorizes API calls. Separating them prevents token interception during the redirect.",
+      "h": "One flows through the browser URL (visible, short-lived). The other is obtained server-to-server (less visible, longer-lived). Which is which?"
+    },
+    {
+      "q": "What is the lab's final goal after hijacking the admin's OAuth session?",
+      "o": ["Changing the admin's email address", "Accessing /admin and deleting the user carlos", "Extracting the OAuth client secret from the admin panel", "Sending a phishing email via the admin account"],
+      "a": 1,
+      "x": "Once logged in as admin via the hijacked token, the attacker navigates to /admin and deletes the user carlos, which is the standard PortSwigger lab completion goal.",
+      "h": "Every PortSwigger lab has a specific goal. In this one, you are impersonating the admin. What does the admin panel let you do to carlos?"
+    }
+  ]
+}

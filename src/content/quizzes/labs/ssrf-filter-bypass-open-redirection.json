@@ -1,0 +1,74 @@
+{
+  "questions": [
+    {
+      "q": "What is Server-Side Request Forgery (SSRF)?",
+      "o": ["Injecting SQL by manipulating server-side variables", "Making the server send HTTP requests to arbitrary destinations on the attacker's behalf", "Stealing session cookies by forging a server response", "Overriding server-side input validation via HTTP headers"],
+      "a": 1,
+      "x": "In SSRF, the attacker controls a URL that the server fetches. The server makes the request from its own network, potentially reaching internal services, cloud metadata endpoints, or admin interfaces that are not exposed to the internet.",
+      "h": "The name has three parts: server-side, request, and forgery. The server is the one being made to send a request somewhere. Who decides where?"
+    },
+    {
+      "q": "Why did a direct SSRF attempt to http://192.168.0.12:8080/admin fail in this lab?",
+      "o": ["The internal server does not respond to HTTP", "The application has a URL filter that blocks direct internal IP addresses", "The admin interface only accepts HTTPS", "Port 8080 is blocked by the server firewall"],
+      "a": 1,
+      "x": "The stockApi parameter is filtered. Direct internal addresses like 192.168.x.x are blocked. The open redirection bypass works because the filter only checks the initial URL, not the destination after a redirect.",
+      "h": "The filter is checking something about the URL you submit. What does it check, and what does it miss when the server follows a redirect?"
+    },
+    {
+      "q": "What is an open redirection vulnerability?",
+      "o": ["An endpoint that exposes the Referer header", "An endpoint that redirects to a URL supplied by the user without validating the destination", "A CORS misconfiguration that allows cross-origin redirects", "An HTTP 301 that uses a relative rather than absolute path"],
+      "a": 1,
+      "x": "An open redirect accepts a user-controlled destination URL and issues an HTTP redirect there without checking whether the destination is safe. Chained with SSRF, it lets an attacker route the server to any internal address.",
+      "h": "The key word is open: the redirect destination is open to whoever requests it. What is the validation step that is missing?"
+    },
+    {
+      "q": "Which endpoint contained the open redirect in this lab?",
+      "o": ["/admin/delete", "/product?productId=", "/product/nextProduct?path=", "/stockApi?url="],
+      "a": 2,
+      "x": "The /product/nextProduct endpoint accepts a path parameter and redirects to it. Providing an internal URL for the path parameter causes the server to follow the redirect when processing the stockApi chain.",
+      "h": "The endpoint is designed to navigate to the next product. It takes a target URL as a parameter and redirects there. Look for one that explicitly accepts a destination URL."
+    },
+    {
+      "q": "How was the open redirect chained with SSRF in the actual exploit?",
+      "o": ["The stockApi parameter was set to the internal IP directly", "The stockApi was set to the redirect endpoint with path= pointing to the internal admin URL", "A second request was sent manually to the internal server after the first", "The Referer header was forged to include the internal IP"],
+      "a": 1,
+      "x": "stockApi=/product/nextProduct?path=http://192.168.0.12:8080/admin. The filter sees a relative-looking path and allows it. The server follows the redirect to the internal admin URL that the filter would have blocked directly.",
+      "h": "The filter checks the stockApi value. If you point it at an internal URL via the redirect endpoint, what does the filter see initially versus what the server actually fetches?"
+    },
+    {
+      "q": "What is a blind SSRF?",
+      "o": ["SSRF that only works on localhost (127.0.0.1)", "SSRF where the server makes the request but the response is not returned to the attacker", "SSRF that only targets HTTPS endpoints", "SSRF exploited without any browser interaction"],
+      "a": 1,
+      "x": "In blind SSRF, the server fetches the URL but the response stays on the server side. The attacker infers success through out-of-band signals like DNS lookups, timing differences, or error messages.",
+      "h": "Blind means you cannot see the response. How would you know the SSRF worked if you cannot read what the server fetched?"
+    },
+    {
+      "q": "Which internal URL was targeted in the lab to solve it?",
+      "o": ["http://localhost/admin", "http://192.168.0.12:8080/admin", "http://10.0.0.1/admin", "http://metadata.internal/admin"],
+      "a": 1,
+      "x": "The stock check feature is designed to call an internal inventory service. The lab's admin interface lives at http://192.168.0.12:8080/admin, accessible only from the server's internal network.",
+      "h": "Private IP ranges include 10.x.x.x, 172.16-31.x.x, and 192.168.x.x. The lab uses one of these ranges."
+    },
+    {
+      "q": "Why does the server follow redirects automatically in this scenario?",
+      "o": ["It is configured to mirror all requests to internal mirrors", "HTTP client libraries follow redirects by default when fetching URLs", "The internal server forces a redirect on the first request", "The filter explicitly instructs the server to follow redirects"],
+      "a": 1,
+      "x": "Most HTTP client libraries (curl, Python requests, Java HttpClient) follow 3xx redirects automatically unless disabled. The server-side code fetching the stockApi URL inherits this default behavior.",
+      "h": "When you use curl or a browser to visit a URL that returns 302, what happens automatically? Server-side HTTP clients work the same way."
+    },
+    {
+      "q": "What category of service is particularly at risk from SSRF attacks in cloud environments?",
+      "o": ["The application's own public API", "The cloud instance metadata service (e.g., http://169.254.169.254)", "Public CDN endpoints", "External payment gateways"],
+      "a": 1,
+      "x": "Cloud metadata services like AWS EC2 metadata at 169.254.169.254 return sensitive data including IAM credentials when fetched from within the instance. SSRF can extract cloud credentials and lead to full account compromise.",
+      "h": "Cloud providers expose a special link-local address accessible only from within the instance. What does it return that could be catastrophic if leaked?"
+    },
+    {
+      "q": "What is the most thorough fix for the SSRF-via-open-redirect chain?",
+      "o": ["Block all requests to port 8080", "Validate the initial URL and block redirects to private IP ranges at the HTTP client level", "Require authentication on the internal admin panel", "Remove the stockApi parameter from the application"],
+      "a": 1,
+      "x": "Fixing only the initial URL filter is not enough when the server follows redirects. The HTTP client must also validate redirect destinations against the same allowlist, blocking any redirect that leads to a private IP range.",
+      "h": "There are two points where the server could catch this: the initial URL and the redirect destination. Which fix addresses both?"
+    }
+  ]
+}

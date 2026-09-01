@@ -9,6 +9,7 @@ import PostHeader from '../components/PostHeader.astro';
 import PostNav from '../components/PostNav.astro';
 import RelatedLabs from '../components/RelatedLabs.astro';
 import TableOfContents from '../components/TableOfContents.astro';
+import Quiz from '../components/Quiz.astro';
 
 interface Props {
   post: CollectionEntry<'blog'>;
@@ -57,6 +58,7 @@ const [{ older, newer }, relatedPosts] = await Promise.all([
       <div class="post-content">
         <Content components={{ PortswiggerDescription }} />
       </div>
+      <Quiz file={`labs/${slug}`} slug={slug} lang={lang} />
       <PostNav older={older} newer={newer} lang={lang} />
       <RelatedLabs posts={relatedPosts} lang={lang} />
     </main>
