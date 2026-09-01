@@ -1,74 +1,124 @@
 {
   "questions": [
     {
-      "q": "What is Server-Side Request Forgery (SSRF)?",
-      "o": ["Injecting SQL by manipulating server-side variables", "Making the server send HTTP requests to arbitrary destinations on the attacker's behalf", "Stealing session cookies by forging a server response", "Overriding server-side input validation via HTTP headers"],
+      "q": "What is Server-Side Request Forgery in this lab?",
+      "o": [
+        "Injecting SQL through a server-side template variable",
+        "Making the server fetch a URL that the attacker chose",
+        "Stealing cookies by forging a signed server response",
+        "Skipping input validation by sending extra HTTP headers"
+      ],
       "a": 1,
-      "x": "In SSRF, the attacker controls a URL that the server fetches. The server makes the request from its own network, potentially reaching internal services, cloud metadata endpoints, or admin interfaces that are not exposed to the internet.",
-      "h": "The name has three parts: server-side, request, and forgery. The server is the one being made to send a request somewhere. Who decides where?"
+      "x": "The stock check posts a stockApi URL and the server fetches it. That request comes from the lab host, so it can reach internal HTTP services the browser cannot.",
+      "h": "The server is the HTTP client. Who chooses the destination URL it retrieves?"
     },
     {
-      "q": "Why did a direct SSRF attempt to http://192.168.0.12:8080/admin fail in this lab?",
-      "o": ["The internal server does not respond to HTTP", "The application has a URL filter that blocks direct internal IP addresses", "The admin interface only accepts HTTPS", "Port 8080 is blocked by the server firewall"],
+      "q": "Why did stockApi=http://192.168.0.12:8080/admin fail?",
+      "o": [
+        "The internal host ignores HTTP and only speaks gRPC",
+        "The stockApi filter blocks that direct internal IP",
+        "The admin UI accepts HTTPS only, never plain HTTP",
+        "Port 8080 is dropped by the lab container firewall"
+      ],
       "a": 1,
-      "x": "The stockApi parameter is filtered. Direct internal addresses like 192.168.x.x are blocked. The open redirection bypass works because the filter only checks the initial URL, not the destination after a redirect.",
-      "h": "The filter is checking something about the URL you submit. What does it check, and what does it miss when the server follows a redirect?"
+      "x": "Direct internal addresses in stockApi are rejected as an invalid external stock check URL. The open-redirect chain works because the filter inspects the first URL, which is a same-site /product/nextProduct path.",
+      "h": "The error is about an invalid stock check URL. What class of destination is that filter trying to stop?"
     },
     {
-      "q": "What is an open redirection vulnerability?",
-      "o": ["An endpoint that exposes the Referer header", "An endpoint that redirects to a URL supplied by the user without validating the destination", "A CORS misconfiguration that allows cross-origin redirects", "An HTTP 301 that uses a relative rather than absolute path"],
+      "q": "Which endpoint is the open redirect, and which parameter holds the destination?",
+      "o": [
+        "/admin/delete with a next= query pointing at any host",
+        "/product/nextProduct with a path= URL it redirects to",
+        "/product?productId= with a url= field in the HTML form",
+        "/stockApi with a redirect= header the browser follows"
+      ],
       "a": 1,
-      "x": "An open redirect accepts a user-controlled destination URL and issues an HTTP redirect there without checking whether the destination is safe. Chained with SSRF, it lets an attacker route the server to any internal address.",
-      "h": "The key word is open: the redirect destination is open to whoever requests it. What is the validation step that is missing?"
+      "x": "GET /product/nextProduct?path= issues a 302 to whatever URL you put in path. The writeup shows path=http://portswigger.net as a 302 Location. That redirect is not SSRF by itself, because the endpoint does not fetch the target.",
+      "h": "The next-product link already contains a path query. Which path does the server copy into Location?"
     },
     {
-      "q": "Which endpoint contained the open redirect in this lab?",
-      "o": ["/admin/delete", "/product?productId=", "/product/nextProduct?path=", "/stockApi?url="],
-      "a": 2,
-      "x": "The /product/nextProduct endpoint accepts a path parameter and redirects to it. Providing an internal URL for the path parameter causes the server to follow the redirect when processing the stockApi chain.",
-      "h": "The endpoint is designed to navigate to the next product. It takes a target URL as a parameter and redirects there. Look for one that explicitly accepts a destination URL."
+      "q": "How was the open redirect chained with the stock check SSRF?",
+      "o": [
+        "stockApi was set to http://192.168.0.12:8080/admin directly",
+        "stockApi pointed at /product/nextProduct?path= the admin URL",
+        "A second browser tab requested the internal admin host directly",
+        "The Referer header was rewritten to the internal admin address"
+      ],
+      "a": 1,
+      "x": "stockApi was a same-site path: /product/nextProduct?currentProductId=1 and path=http://192.168.0.12:8080/admin. The filter allows the relative URL. The stock client then follows the 302 to the internal admin page.",
+      "h": "The filter sees the first hop. Which same-site endpoint can bounce that hop to 192.168.0.12:8080/admin?"
     },
     {
-      "q": "How was the open redirect chained with SSRF in the actual exploit?",
-      "o": ["The stockApi parameter was set to the internal IP directly", "The stockApi was set to the redirect endpoint with path= pointing to the internal admin URL", "A second request was sent manually to the internal server after the first", "The Referer header was forged to include the internal IP"],
+      "q": "Why is the ampersand in the chained stockApi value sent as %26?",
+      "o": [
+        "So the browser treats the admin URL as a fragment identifier",
+        "So path= stays inside stockApi instead of a second POST field",
+        "So the open redirect endpoint ignores currentProductId fully",
+        "So the URL filter sees a hostname and allows the internal IP"
+      ],
       "a": 1,
-      "x": "stockApi=/product/nextProduct?path=http://192.168.0.12:8080/admin. The filter sees a relative-looking path and allows it. The server follows the redirect to the internal admin URL that the filter would have blocked directly.",
-      "h": "The filter checks the stockApi value. If you point it at an internal URL via the redirect endpoint, what does the filter see initially versus what the server actually fetches?"
+      "x": "The stock form is application/x-www-form-urlencoded. A raw & would start another body field, and path would never reach nextProduct. %26 keeps path= inside the stockApi value so the redirect target is the admin URL.",
+      "h": "stockApi is one form field. What happens to path= if you insert a literal & before it?"
     },
     {
-      "q": "What is a blind SSRF?",
-      "o": ["SSRF that only works on localhost (127.0.0.1)", "SSRF where the server makes the request but the response is not returned to the attacker", "SSRF that only targets HTTPS endpoints", "SSRF exploited without any browser interaction"],
-      "a": 1,
-      "x": "In blind SSRF, the server fetches the URL but the response stays on the server side. The attacker infers success through out-of-band signals like DNS lookups, timing differences, or error messages.",
-      "h": "Blind means you cannot see the response. How would you know the SSRF worked if you cannot read what the server fetched?"
+      "q": "Why does /product/nextProduct alone not give you SSRF?",
+      "o": [
+        "It only issues a 302, it does not fetch the target server-side",
+        "It blocks every URL that does not start with /product?productId",
+        "It requires an admin session cookie the attacker cannot obtain",
+        "It rewrites path= to a relative path before sending the 302"
+      ],
+      "a": 0,
+      "x": "nextProduct returns 302 Location and stops. The browser would follow that redirect, not the lab server. SSRF needs the stock check, which performs an HTTP request and, in this lab, follows redirects.",
+      "h": "A 302 is not a server-side fetch. Which feature actually retrieves the Location URL from the lab host?"
     },
     {
-      "q": "Which internal URL was targeted in the lab to solve it?",
-      "o": ["http://localhost/admin", "http://192.168.0.12:8080/admin", "http://10.0.0.1/admin", "http://metadata.internal/admin"],
+      "q": "Why does the stock check reach http://192.168.0.12:8080/admin after the 302?",
+      "o": [
+        "The filter explicitly tells the HTTP client to follow redirects",
+        "The server-side HTTP client follows those redirects by default",
+        "The internal admin host forces a redirect on the first request",
+        "The lab proxies every 302 through an open internal mirror"
+      ],
       "a": 1,
-      "x": "The stock check feature is designed to call an internal inventory service. The lab's admin interface lives at http://192.168.0.12:8080/admin, accessible only from the server's internal network.",
-      "h": "Private IP ranges include 10.x.x.x, 172.16-31.x.x, and 192.168.x.x. The lab uses one of these ranges."
+      "x": "The stock feature is a server-side HTTP client. Clients like this follow 3xx responses unless told not to. After nextProduct returns 302, the same fetch continues to the internal admin URL the filter never saw.",
+      "h": "The filter checked only the first stockApi value. What default HTTP-client behavior continues the request after a 302?"
     },
     {
-      "q": "Why does the server follow redirects automatically in this scenario?",
-      "o": ["It is configured to mirror all requests to internal mirrors", "HTTP client libraries follow redirects by default when fetching URLs", "The internal server forces a redirect on the first request", "The filter explicitly instructs the server to follow redirects"],
+      "q": "Which internal URL was the admin target used to delete carlos?",
+      "o": [
+        "http://127.0.0.1:80/admin",
+        "http://192.168.0.12:8080/admin",
+        "http://10.0.0.1:8080/admin",
+        "http://169.254.169.254/admin"
+      ],
       "a": 1,
-      "x": "Most HTTP client libraries (curl, Python requests, Java HttpClient) follow 3xx redirects automatically unless disabled. The server-side code fetching the stockApi URL inherits this default behavior.",
-      "h": "When you use curl or a browser to visit a URL that returns 302, what happens automatically? Server-side HTTP clients work the same way."
+      "x": "The lab description gives the internal admin at http://192.168.0.12:8080/admin. A second chained stockApi uses path=http://192.168.0.12:8080/admin/delete?username=carlos to remove that user.",
+      "h": "The writeup uses a 192.168 address on port 8080. Which full admin URL is that?"
     },
     {
-      "q": "What category of service is particularly at risk from SSRF attacks in cloud environments?",
-      "o": ["The application's own public API", "The cloud instance metadata service (e.g., http://169.254.169.254)", "Public CDN endpoints", "External payment gateways"],
-      "a": 1,
-      "x": "Cloud metadata services like AWS EC2 metadata at 169.254.169.254 return sensitive data including IAM credentials when fetched from within the instance. SSRF can extract cloud credentials and lead to full account compromise.",
-      "h": "Cloud providers expose a special link-local address accessible only from within the instance. What does it return that could be catastrophic if leaked?"
+      "q": "Which of these statements about this SSRF lab is correct?",
+      "o": [
+        "stockApi blocks a direct internal IP",
+        "nextProduct path= is an open redirect",
+        "The stock client follows the 302",
+        "All of these statements are true"
+      ],
+      "a": 3,
+      "x": "Direct internal IPs in stockApi are filtered. /product/nextProduct?path= redirects to any URL. The stock-check HTTP client follows that 302, which is how the chain reaches 192.168.0.12:8080/admin.",
+      "h": "Filter, redirect, and follow-redirect are the three moving parts. Is any of those claims false in this writeup?"
     },
     {
-      "q": "What is the most thorough fix for the SSRF-via-open-redirect chain?",
-      "o": ["Block all requests to port 8080", "Validate the initial URL and block redirects to private IP ranges at the HTTP client level", "Require authentication on the internal admin panel", "Remove the stockApi parameter from the application"],
-      "a": 1,
-      "x": "Fixing only the initial URL filter is not enough when the server follows redirects. The HTTP client must also validate redirect destinations against the same allowlist, blocking any redirect that leads to a private IP range.",
-      "h": "There are two points where the server could catch this: the initial URL and the redirect destination. Which fix addresses both?"
+      "q": "Which of these statements about the exploit chain is correct?",
+      "o": [
+        "nextProduct only issues a 302 Location",
+        "stockApi allows the internal admin IP",
+        "Only the browser follows the 302 chain",
+        "None of these statements are true"
+      ],
+      "a": 0,
+      "x": "The first statement is true. nextProduct only returns a 302, it does not fetch admin. stockApi still blocks a direct internal IP, and the stock-check server follows the 302. None is wrong because that 302 claim is true.",
+      "h": "Does nextProduct fetch the admin host, or only send a Location header?"
     }
   ]
 }

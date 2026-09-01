@@ -2,73 +2,73 @@
   "questions": [
     {
       "q": "What is the purpose of the kid (Key ID) parameter in a JWT header?",
-      "o": ["It specifies the username who issued the token", "It tells the server which key to retrieve for signature verification", "It encodes the expiration date in a compact format", "It identifies the JWT version number"],
+      "o": ["It names the user who originally issued the token on the client", "It tells the server which key file to load for signature checks", "It encodes the expiration date in a compact header-only format", "It identifies the JWT specification version the client supports"],
       "a": 1,
-      "x": "kid is part of the JWT header and is used by the server to look up the correct verification key when multiple keys exist, for example during key rotation. The server trusts this value to locate the right key.",
-      "h": "Servers can have more than one signing key. kid helps them answer: which key should I use for this specific token?"
+      "x": "kid is a header hint the server uses to pick the right verification key when several keys exist, for example during rotation. This lab treats that value as a filesystem path.",
+      "h": "Servers can have more than one signing key. kid answers which key should be used for this token."
     },
     {
-      "q": "In this lab, where does the server look up the key identified by the kid value?",
-      "o": ["A remote JWKS endpoint on an external CDN", "A PostgreSQL database table", "The local filesystem at a path derived from the kid value", "An in-memory map populated at startup"],
+      "q": "In this lab, where does the server look up the key identified by kid?",
+      "o": ["A remote JWKS endpoint hosted on an external content CDN", "A PostgreSQL table that maps kid values to stored HMAC secrets", "The local filesystem, using kid as a path to the key file", "An in-memory map of keys populated once at process startup"],
       "a": 2,
-      "x": "The server appends the kid value to a base directory path and reads a file from disk. This creates a path traversal vulnerability when kid contains ../ sequences.",
-      "h": "The attack is called path traversal. What type of resource is accessed via a path on a server? Think about what ../ does in a file path."
+      "x": "The server builds a disk path from the kid value and reads that file. If kid contains ../ sequences, the path can escape the intended key directory.",
+      "h": "The attack is called path traversal. What kind of resource is reached with ../ in a path?"
     },
     {
-      "q": "Why is /dev/null the ideal target for this attack?",
-      "o": ["It triggers a kernel panic that disables authentication checks", "Reading it returns an empty string, making the effective HMAC secret an empty string the attacker can predict", "It exposes the real signing key as an error message", "It has world-readable permissions that bypass filesystem ACLs"],
+      "q": "Why is /dev/null the ideal kid target in this attack?",
+      "o": ["Reading it crashes the kernel and disables all auth checks", "It returns no bytes, so the HMAC secret is an empty string", "It prints the real signing key in an error message to the client", "World-readable permissions let any process dump the stored secret"],
       "a": 1,
-      "x": "On Linux, /dev/null is a virtual device that always returns zero bytes when read. The server gets an empty string as the key. The attacker signs their forged token with the same empty string, so both sides match.",
-      "h": "The attacker needs to know the key value that the server will use. What file always has a completely predictable, constant content?"
+      "x": "On Linux, /dev/null always returns zero bytes when read. The server therefore uses an empty HMAC key. Signing with the same empty string makes both sides match.",
+      "h": "The attacker must know the key the server will use. Which file always has completely predictable empty content?"
     },
     {
-      "q": "What path traversal string navigates from an arbitrary directory to the filesystem root?",
-      "o": ["/root", "../", "../../../../../../", "%2F%2F"],
+      "q": "Which kid path is used to walk from an unknown directory up to /dev/null?",
+      "o": ["/root/dev/null, which is assumed to be the device from any dir", "../dev/null, which jumps to the device from the working directory", "../../../../../../dev/null, which walks up until the device", "%2Fdev%2Fnull, which URL-decodes and skips directory checks"],
       "a": 2,
-      "x": "Each ../ goes up one directory. Using many of them in a row guarantees reaching the root regardless of the starting depth. On Linux, going above the root is silently clamped, so too many ../ sequences are harmless.",
-      "h": "A single ../ goes up one level. If you don't know the starting depth, how many would you use to be sure you reach the root?"
+      "x": "Each ../ goes up one directory. A long chain reaches the filesystem root regardless of starting depth. Linux clamps paths at root, so extra ../ sequences are harmless.",
+      "h": "A single ../ goes up one level. If the key directory depth is unknown, how many ../ segments make reaching root likely?"
     },
     {
-      "q": "After pointing kid to /dev/null, what algorithm and secret does the attacker use to sign the forged token?",
-      "o": ["RS256 with a self-generated private key", "HS256 with an empty string as the secret", "HS512 with the string 'null'", "none algorithm with no signature"],
+      "q": "After pointing kid at /dev/null, how is the forged token signed?",
+      "o": ["RS256 with a newly generated RSA private key the attacker owns", "HS256 with an empty string as the HMAC secret on both sides", "HS512 with the literal string null read from the device name", "The none algorithm, sending a two-part token with no signature"],
       "a": 1,
-      "x": "The server uses HS256 and reads the key from /dev/null, getting empty bytes. The attacker therefore signs with HS256 and an empty string. Both parties compute the same HMAC because the key is empty on both sides.",
-      "h": "The server's key file returns nothing. What value would you use to match a secret that is empty?"
+      "x": "The server still uses HS256 and reads the key from /dev/null, getting empty bytes. The attacker signs with HS256 and an empty string so the HMAC matches.",
+      "h": "The server's key file returns nothing. What HMAC secret matches a key that is empty?"
     },
     {
-      "q": "What tool was used in the writeup to craft and sign the forged JWT?",
-      "o": ["jwt.io browser tool", "Python with PyJWT and the cracked secret", "hashcat with mode 16500", "Burp Suite's Intruder module"],
+      "q": "Which of the following is true of this lab's kid path traversal attack?",
+      "o": ["kid is concatenated into a filesystem path without sanitization", "Pointing kid at /dev/null prints the real HMAC secret", "All of these statements are true about this kid traversal lab", "The forged token is signed with RS256 and the public key"],
+      "a": 0,
+      "x": "kid is concatenated into a filesystem path without sanitization, which is the bug. /dev/null returns empty content, not the real secret. The forge uses HS256 with an empty string, not RS256. All is wrong because those last two claims are false.",
+      "h": "How does this server turn kid into a key? Does it look up a database row, or open a file path?"
+    },
+    {
+      "q": "What makes kid path traversal possible in the server code?",
+      "o": ["The JWT library ships a known CVE for unsanitized kid lookups", "The server concatenates kid into a path without validating it", "kid is optional, so the server skips all validation on that field", "Filesystem ACLs are misconfigured and allow world-writable keys"],
       "a": 1,
-      "x": "PyJWT in Python can sign tokens with arbitrary secrets including an empty string. You provide the payload, the algorithm (HS256), and the secret (''), and it produces a valid-looking token.",
-      "h": "The writeup uses the same Python JWT library found in other JWT labs. Which library starts with PyJ?"
+      "x": "The bug is unsanitized concatenation into a file path. If kid is ../../../../../../../dev/null, the resolved path leaves the intended key directory.",
+      "h": "The server builds a filesystem path from a value it did not validate. What happens if that value contains ../ ?"
     },
     {
-      "q": "What makes path traversal in the kid parameter possible at the code level?",
-      "o": ["The JWT library has a known CVE for this exact path", "The server concatenates the kid value into a file path without sanitizing or validating it first", "kid is an optional header so the server ignores validation for it", "The filesystem permissions are misconfigured"],
+      "q": "Which defense most directly stops this kid filesystem attack?",
+      "o": ["Encrypt the JWT so the kid value cannot be read by an attacker", "Allowlist known key identifiers before using kid in any path", "Switch to RS256 so keys are never read from disk in any case", "Rate-limit requests so traversal probes cannot finish in time"],
       "a": 1,
-      "x": "The vulnerability is unsanitized concatenation. The code does something like: open(base_path + kid). If kid is ../../dev/null, the resulting path escapes the intended directory.",
-      "h": "The server builds a filesystem path using a value it did not validate. What happens when you concatenate user-controlled input into a path without checking it?"
+      "x": "An allowlist compares kid to known identifiers and rejects anything else before a file is opened. Encrypting the token does not help, because the attacker issues their own token.",
+      "h": "The server should not accept a kid it never issued. What validation pattern rejects values not on a pre-approved list?"
     },
     {
-      "q": "Which defensive technique would most directly prevent this attack?",
-      "o": ["Encrypt the JWT so the kid value cannot be read", "Validate kid against an allowlist of known key identifiers before using it as a path component", "Use RS256 so the key is never read from disk", "Rate-limit requests to reduce the number of traversal attempts"],
-      "a": 1,
-      "x": "An allowlist compares the kid value against a set of known, expected identifiers such as UUIDs you generated. Any kid that does not match exactly is rejected before any filesystem access occurs.",
-      "h": "The server should not accept any kid value it was not expecting. What validation pattern rejects anything not on a pre-approved list?"
-    },
-    {
-      "q": "Which of these kid values would an allowlist correctly reject?",
-      "o": ["key-2026-01", "prod-primary", "../../../../../../dev/null", "rsa-v2"],
+      "q": "Which of these kid values would a strict allowlist correctly reject?",
+      "o": ["key-2026-01, a dated identifier for the current signing key", "prod-primary, a name for the live production HMAC secret file", "../../../../../../dev/null, a traversal to an empty device", "rsa-v2, a short identifier used during an RSA key rotation"],
       "a": 2,
-      "x": "The traversal string is clearly not a valid key identifier. A strict allowlist that accepts only known strings like key-2026-01 or prod-primary would reject it immediately.",
+      "x": "The traversal string is not a real key identifier. An allowlist that only accepts known names such as key-2026-01 or prod-primary would reject it before any disk read.",
       "h": "Which option looks like a filesystem traversal attempt rather than a normal key identifier?"
     },
     {
-      "q": "Why is this attack dangerous even on servers that store keys securely?",
-      "o": ["Secure key storage prevents the attack entirely", "The attack bypasses key storage by replacing the key with /dev/null, a value independent of any stored keys", "Secure key storage makes the attack harder but not impossible", "The attack only works when keys are stored in environment variables"],
+      "q": "Why does locking down the real key file not stop this attack?",
+      "o": ["Secure key storage fully prevents kid path traversal attacks", "The lookup is redirected to /dev/null, ignoring the stored key", "Secure storage slows the attack but still leaks the real secret", "The attack only works when keys live in environment variables"],
       "a": 1,
-      "x": "The attack does not try to steal the real key. It redirects the key lookup to a file with known, attacker-controlled content. Secure storage of the legitimate key is irrelevant if the lookup mechanism can be hijacked.",
-      "h": "The attack does not target the stored key at all. It replaces the key path with a file the attacker controls. Does securing the original key stop this substitution?"
+      "x": "The attack does not steal the real key. It points key lookup at a file with known empty content. Protecting the legitimate key is irrelevant if the path can be hijacked.",
+      "h": "The attack replaces the key path instead of reading the stored secret. Does hardening that original file stop the substitution?"
     }
   ]
 }

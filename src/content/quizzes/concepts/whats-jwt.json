@@ -4,36 +4,51 @@
       "q": "What are the three parts of a JWT, in order?",
       "o": ["payload.signature.header", "header.payload.signature", "signature.payload.header", "header.signature.payload"],
       "a": 1,
-      "x": "A JWT is always header.payload.signature, each part Base64url encoded, joined by dots. The signature is computed over the first two parts, so it must come last.",
-      "h": "The signature protects the other two parts. Which two? And what must come after something it protects?"
+      "x": "A JWT is header.payload.signature. Each part is Base64URL encoded and joined by dots. The signature is computed over the first two parts, so it comes last.",
+      "h": "The signature covers the other two parts. Which two, and where must the signature sit?"
     },
     {
-      "q": "What is the purpose of the JWT signature?",
-      "o": ["To compress the payload for faster transmission", "To prove the token was created by a party that knows the signing key and that the content has not been modified", "To encrypt the payload so only the server can read it", "To encode the expiration timestamp in a tamper-proof way"],
-      "a": 1,
-      "x": "The signature is a cryptographic proof of authenticity and integrity. If the payload or header is changed, the signature no longer matches. The server verifies the signature before trusting any claim in the token.",
-      "h": "A token could be forged if there were no check on its integrity. What does the signature allow the server to check?"
+      "q": "What does the JWT signature actually prove?",
+      "o": [
+        "That the token was signed with the key and has not been altered",
+        "That the payload is encrypted so only the issuer can read it",
+        "That the token expires at a Unix timestamp stored in the header",
+        "That the kid field uniquely identifies the subject of the token"
+      ],
+      "a": 0,
+      "x": "The signature is created from the encoded header and payload plus a secret, using the algorithm in the header. If either part is changed, the signature no longer matches unless the attacker knows the key.",
+      "h": "If someone edits the payload, what would fail unless they also know the signing key?"
     },
     {
-      "q": "Which JWT claim controls token expiration?",
-      "o": ["sub", "iss", "exp", "iat"],
+      "q": "Which JWT payload claim is usually the username?",
+      "o": ["iss", "exp", "sub", "kid"],
       "a": 2,
-      "x": "exp (expiration time) holds a Unix timestamp in seconds. A correctly implemented server rejects any token with an exp in the past. iat (issued at) records when the token was created. sub identifies the subject (user).",
-      "h": "The claim name is a three-letter abbreviation. What word means 'valid only until a certain time'?"
+      "x": "sub is the subject, usually the username. iss is the issuer. exp is the expiration timestamp. kid is an optional header field that identifies the signing key, not a payload claim.",
+      "h": "Look at the three common payload claims. Which one names who the token is about?"
     },
     {
-      "q": "Can the JWT payload be read by anyone who intercepts the token?",
-      "o": ["No, it is encrypted with AES-256", "Yes, it is only Base64url encoded and anyone can decode it", "Only if they know the signing secret", "No, it is compressed and not human-readable"],
+      "q": "Why can anyone who intercepts a JWT read the payload?",
+      "o": [
+        "The payload is AES-encrypted with a key anyone can recover",
+        "The payload is only Base64URL encoded, not encrypted",
+        "The signing secret is published in the JWT header kid field",
+        "Browsers automatically decrypt JWT payloads sent over HTTPS"
+      ],
       "a": 1,
-      "x": "Base64url is encoding, not encryption. The payload is fully readable by anyone with the token. Sensitive data should never be stored in a JWT payload unless the token is also encrypted (JWE).",
-      "h": "Try running echo 'eyJzdWIiOiJ3aWVuZXIifQ' | base64 -d in a terminal. Is a key needed?"
+      "x": "JWT uses Base64URL encoding so the token is URL-safe. Encoding is not encryption. Anyone with the token can decode the header and payload without the signing key.",
+      "h": "Base64URL makes the token URL-safe. Does decoding it require the HMAC secret?"
     },
     {
-      "q": "What is the difference between a stateless JWT and a server-side session?",
-      "o": ["A JWT must be stored in a database while a session uses a cookie", "A JWT carries all needed data in the token itself so the server needs no storage, a server-side session stores data on the server and the client only holds a session ID", "JWTs are only for mobile apps while sessions are for web apps", "JWTs expire automatically while sessions last forever"],
-      "a": 1,
-      "x": "Stateless JWTs make the server horizontally scalable because no shared session store is needed. The tradeoff is that a JWT cannot be invalidated before its expiration without extra infrastructure like a token blocklist.",
-      "h": "What does 'stateless' mean for the server? Does it need to remember anything between requests when using JWTs?"
+      "q": "Which statement about JWT structure is correct?",
+      "o": [
+        "A JWT has three parts joined by dots",
+        "The payload can include alg and kid",
+        "The header can include iss and sub",
+        "All of these statements are true"
+      ],
+      "a": 0,
+      "x": "A JWT is header.payload.signature joined by dots. alg and kid belong in the header, not the payload. iss and sub belong in the payload, not the header. All is wrong because those last two claims swap the parts.",
+      "h": "Which JWT part carries alg and kid, and which part carries iss and sub?"
     }
   ]
 }

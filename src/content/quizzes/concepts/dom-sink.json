@@ -2,38 +2,38 @@
   "questions": [
     {
       "q": "What is a DOM sink?",
-      "o": ["A server-side database table that stores user HTML", "A place in client-side JavaScript where externally sourced data is processed in a way that can change what the browser parses or executes", "A browser extension that blocks malicious scripts", "A CSS property that hides dangerous elements from the DOM"],
+      "o": ["A server table that stores HTML submitted by users", "Client code that handles outside data in a dangerous way", "A browser add-on that blocks scripts from running", "A CSS rule that hides risky nodes from the page"],
       "a": 1,
-      "x": "A sink is where data flows into something dangerous. Common examples include innerHTML assignments, eval calls, and location changes. If attacker-controlled data reaches a sink without sanitization, it can alter the DOM or run code.",
-      "h": "Sink means data flows into something. What kinds of JavaScript operations can turn user input into executable HTML or code?"
+      "x": "A sink is where data flows into something that can change what the browser parses or runs. innerHTML, eval, and location assignments are common examples. A DOM XSS bug is usually a source connected to a sink.",
+      "h": "Sink means data flows into something. Which client operations can turn outside data into HTML or code the browser will run?"
     },
     {
-      "q": "What is the relationship between a DOM source and a DOM sink in a DOM XSS bug?",
-      "o": ["Sources and sinks are the same thing in DOM XSS", "A source is where attacker data enters the page, and a sink is where that data is processed dangerously, the bug exists when they are connected", "Sources are always server-side and sinks are always client-side", "A sink must come before a source in the JavaScript execution order"],
-      "a": 1,
-      "x": "DOM XSS requires data to flow from a source (URL parameter, postMessage, stored JSON) into a sink (innerHTML, eval). Neither alone is enough. The vulnerability is the path between them.",
-      "h": "Think of water flowing from a tap into a drain. Which is the source and which is the sink?"
+      "q": "When is a DOM XSS bug present?",
+      "o": ["When attacker data from a source reaches a sink", "Whenever a page assigns innerHTML at least once", "Whenever a URL contains any query parameter", "When the server stores comments in a database"],
+      "a": 0,
+      "x": "A source is where data enters the page. A sink is where that data is handled dangerously. Neither alone is the bug. DOM XSS appears when attacker-controlled data flows from a source into a sink.",
+      "h": "Think of water from a tap into a drain. Which pairing actually creates the XSS bug?"
     },
     {
-      "q": "Why is innerHTML considered a classic DOM sink?",
-      "o": ["innerHTML automatically executes all script tags in the string", "The browser parses the assigned string as HTML, so tags and attributes in the data can create real elements and event handlers in the DOM", "innerHTML sends the string to the server for validation before display", "innerHTML only works with trusted same-origin content"],
+      "q": "How do innerHTML and textContent treat a string that contains HTML tags?",
+      "o": ["Both parse the string as HTML and build new nodes", "innerHTML parses HTML while textContent keeps it as text", "Both treat the string as plain text on the page", "textContent parses HTML while innerHTML keeps it as text"],
       "a": 1,
-      "x": "Assigning a string to innerHTML runs the HTML parser on it. A payload like </p><img src=x onerror=alert(1)> can break out of the intended markup structure and inject executable attributes.",
-      "h": "innerHTML does not treat its input as plain text. What does the browser do with angle brackets in the string?"
-    },
-    {
-      "q": "Which of these DOM write operations is NOT a dangerous sink for HTML injection?",
-      "o": ["element.innerHTML = userInput", "element.textContent = userInput", "element.outerHTML = userInput", "element.insertAdjacentHTML('beforeend', userInput)"],
-      "a": 1,
-      "x": "textContent and innerText treat input as plain text. The browser does not parse HTML tags from the string, so script tags and event handlers appear as literal text on screen rather than executing.",
+      "x": "innerHTML runs the HTML parser, so tags and attributes can become real nodes and handlers. textContent and innerText treat the value as plain text, so a script tag stays visible characters on screen.",
       "h": "One of these properties assigns text without running the HTML parser on the value."
     },
     {
-      "q": "What is the difference between reflected DOM XSS and ordinary reflected XSS?",
-      "o": ["Reflected DOM XSS requires stored data, ordinary reflected XSS does not", "In reflected DOM XSS the payload is read by client-side JavaScript from a source like a URL parameter and written to a sink, the server never echoes the payload in the HTML response", "Reflected DOM XSS only works in Firefox", "Ordinary reflected XSS uses innerHTML while DOM XSS uses eval exclusively"],
+      "q": "Which assignment is a classic HTML sink?",
+      "o": ["node.textContent = attackerString", "node.innerHTML = attackerString", "node.innerText = attackerString", "node.dataset.note = attackerString"],
       "a": 1,
-      "x": "Ordinary reflected XSS has the server embed the payload in the HTML response. Reflected DOM XSS has the server send clean HTML while client-side JavaScript reads the payload from the URL and passes it to a sink like innerHTML.",
-      "h": "In one case the payload appears in the page source from the server. In DOM XSS, where does the payload get read and where does it get written?"
+      "x": "Assigning to innerHTML (also outerHTML, insertAdjacentHTML, and document.write) parses markup. textContent and innerText do not. A payload like an img with onerror can become a real element only if the parser runs.",
+      "h": "Which write operation turns a string into parsed HTML nodes rather than literal text?"
+    },
+    {
+      "q": "What separates reflected DOM XSS from ordinary reflected XSS?",
+      "o": ["DOM XSS needs stored data, ordinary XSS does not need it", "DOM XSS only works in Firefox, never in Chromium browsers", "DOM XSS reads the payload in client script, not from page HTML", "Ordinary XSS uses innerHTML while DOM XSS uses eval only"],
+      "a": 2,
+      "x": "Ordinary reflected XSS already has the payload in the server HTML. Reflected DOM XSS can have a clean page source while client script reads a URL parameter and writes it to a sink such as innerHTML.",
+      "h": "In one bug the payload is in the page source. In DOM XSS, who reads the payload and who writes it?"
     }
   ]
 }

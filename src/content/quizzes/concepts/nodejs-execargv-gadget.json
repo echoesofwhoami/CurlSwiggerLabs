@@ -1,39 +1,39 @@
 {
   "questions": [
     {
-      "q": "What is the execArgv option in Node.js child_process.fork()?",
-      "o": ["The working directory for the child process", "An array of Node.js CLI flags passed to the child process at startup, such as --inspect or --eval", "The environment variables inherited by the child", "The maximum memory limit for the child process"],
+      "q": "What is execArgv on child_process.fork() or spawn()?",
+      "o": ["The working directory path given to the child process", "An array of Node CLI flags passed to the child at startup", "The environment block the child inherits from the parent", "The maximum heap size the child is allowed to allocate"],
       "a": 1,
-      "x": "execArgv lets fork() pass the same kind of CLI flags you would type before a script name, like node --eval 'code' app.js. The child Node process receives and applies those flags during its boot sequence.",
-      "h": "Think about flags you pass directly to the node command. fork() can pass the same kind of flags to a child through this options field."
+      "x": "execArgv is an array of strings such as [\"--inspect\"] or [\"--eval=console.log(1)\"]. Those are the same kind of flags you would type before a script name when starting Node yourself. It is not the child's env block and it is not a shell command string.",
+      "h": "Think of flags you pass to the node binary itself, before the script path. fork and spawn can pass that same list through one options field."
     },
     {
-      "q": "Why can a polluted Object.prototype.execArgv become an RCE gadget?",
-      "o": ["fork() always runs execArgv values as shell commands directly", "If the options object passed to fork() has no own execArgv property, a property lookup can inherit the polluted value from Object.prototype and pass attacker-controlled CLI flags to the child", "execArgv overrides the Node.js version at runtime", "Object.prototype is writable by default in all Node.js applications"],
+      "q": "Why can Object.prototype.execArgv affect fork() or spawn()?",
+      "o": ["fork() always treats execArgv values as shell command strings", "A missing own execArgv is read from the prototype chain on options", "execArgv replaces the running Node binary with a new version", "Object.prototype is sealed, so inherited flags cannot be ignored"],
       "a": 1,
-      "x": "When application code calls fork(script, args, options) without setting options.execArgv, the lookup walks the prototype chain. A polluted Object.prototype.execArgv becomes the child's Node CLI flags on older Node.js versions that read options via prototype chain lookup.",
-      "h": "The options object has no own execArgv. Where else might JavaScript look for that property?"
+      "x": "If code builds an options object and never sets execArgv, a normal property read still walks the prototype chain. After Object.prototype.execArgv = [\"--eval=...\"], options.execArgv is that array. The gadget is not 'fork is always RCE'. It is polluted execArgv plus a fork or spawn call whose options inherit that value.",
+      "h": "The options object has no own execArgv. Where else does a JavaScript property read look?"
     },
     {
-      "q": "Which Node.js CLI flag is most useful for turning execArgv pollution into code execution?",
-      "o": ["--version", "--eval or -e, which runs arbitrary JavaScript during child process startup", "--help", "--max-old-space-size"],
+      "q": "Which Node flag is the useful execArgv gadget for running attacker code?",
+      "o": ["--version, which prints the Node release string and then exits", "--eval or -e, which runs JavaScript while the child is booting", "--help, which writes the usage text to stdout and then exits", "--max-old-space-size, which only raises or lowers the heap limit"],
       "a": 1,
-      "x": "The --eval flag makes the child Node process execute JavaScript code immediately on startup. From that code, require('child_process').execSync() can run OS commands, turning prototype pollution into remote code execution.",
-      "h": "You need a flag that runs JavaScript before the worker script loads. Which node flag is used for one-liner code execution?"
+      "x": "--eval makes the child run attacker JavaScript during startup. From that JavaScript you can call require(\"child_process\").execSync(...) and run OS commands. --inspect and --require also change boot, but --eval is the one that runs inline code.",
+      "h": "You need a flag that executes JavaScript before the worker script loads. Which node flag is the one-liner for that?"
     },
     {
-      "q": "On which Node.js versions did the execArgv prototype pollution gadget work without application code copying the value?",
-      "o": ["All Node.js versions including the latest LTS", "Versions before 18.18.0 and 20.6.0, where child_process read options properties including those on the prototype chain", "Only Node.js 4.x and earlier", "Only when running on Windows"],
+      "q": "On which Node.js versions did inherited execArgv still work as a gadget?",
+      "o": ["All current Node.js releases, including every latest LTS build", "Node before 18.18.0 and 20.6.0, which still read inherited options", "Only Node.js 4.x, and only if the process is started with -r", "Only Windows builds, because they resolve flags via cmd.exe"],
       "a": 1,
-      "x": "Starting in Node.js 18.18.0 and 20.6.0, child_process only honors own properties on the options object. Before that, inherited Object.prototype.execArgv was treated as a real option and passed to the child as CLI flags.",
-      "h": "A Node.js security fix changed how fork() reads options properties. The gadget worked when lookups followed the prototype chain."
+      "x": "Before 18.18.0 and 20.6.0, child_process honored execArgv found on the options prototype chain. Those releases started honoring only own properties, so a polluted Object.prototype.execArgv is ignored. The gadget is still about fork and spawn options, not about env._ or shell:true.",
+      "h": "A Node fix stopped treating inherited options as real flags. Which version cutoff is that change?"
     },
     {
-      "q": "What is the correct mitigation when calling fork() or spawn() in code that might run alongside polluted Object.prototype?",
-      "o": ["Disable all child_process functions", "Set execArgv explicitly to process.execArgv or an empty array on the options object so lookups do not fall through to Object.prototype", "Run Node.js with the --no-prototype flag", "Only use spawn() with shell: true instead of fork()"],
+      "q": "What is the execArgv gadget, as opposed to a shell or env._ gadget?",
+      "o": ["Polluting env._ so a child shell expands that value as a command", "Polluting execArgv, then calling fork or spawn with inherited options", "Setting shell:true so spawn joins arguments through /bin/sh -c", "Writing NODE_OPTIONS into process.env from a polluted env object"],
       "a": 1,
-      "x": "Assigning execArgv as an own property on the options object prevents prototype chain lookup from reaching a polluted Object.prototype.execArgv. Using process.execArgv or [] ensures predictable, safe CLI flags for the child.",
-      "h": "The attack works because execArgv is missing as an own property. What is the simplest way to stop the lookup from reaching Object.prototype?"
+      "x": "env._, shell:true, and NODE_OPTIONS are different prototype-pollution gadgets. This one is: pollute execArgv, then hit code that calls fork or spawn with an options object that inherits that array. The child Node process then boots with attacker CLI flags such as --eval.",
+      "h": "The options field is named execArgv and it holds Node CLI flags. It is not the shell string and it is not env._."
     }
   ]
 }

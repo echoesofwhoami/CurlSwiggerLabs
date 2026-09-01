@@ -1,74 +1,74 @@
 {
   "questions": [
     {
-      "q": "What does HS256 stand for?",
-      "o": ["High-Security 256-bit encryption", "HMAC with SHA-256", "Hash-Salt 256", "Hybrid Signing 256-bit mode"],
+      "q": "What does HS256 stand for in a JWT alg header?",
+      "o": ["High-Security 256-bit encryption of the JWT payload body", "HMAC with SHA-256 using one shared secret for both operations", "Hash-Salt 256, a password hashing scheme used in JWT headers", "Hybrid Signing 256-bit mode mixing RSA and HMAC in one token"],
       "a": 1,
-      "x": "HS256 is HMAC-SHA256. It uses a single shared secret to both create and verify the signature. Anyone who knows the secret can forge valid tokens.",
-      "h": "HS and 256 are two separate abbreviations. What common MAC algorithm does HS stand for, and what does 256 refer to?"
+      "x": "HS256 is HMAC-SHA256. One shared secret both creates and verifies the signature. Anyone who knows that secret can forge valid tokens.",
+      "h": "HS and 256 are two abbreviations. What common MAC algorithm does HS stand for, and what hash size is 256?"
     },
     {
-      "q": "Why can JWT secret cracking be done entirely offline, without sending any requests to the server?",
-      "o": ["The server caches verification results for each token", "The token itself contains the header, payload, and signature needed to test any candidate secret", "JWT servers have a key-recovery endpoint", "The secret is embedded in the JWKS endpoint"],
+      "q": "Why can a weak HS256 JWT secret be cracked fully offline?",
+      "o": ["The server caches HMAC results so guesses never need a new request", "The token already holds header, payload, and signature for local tests", "JWT servers expose a dedicated key-recovery debugging endpoint", "The HMAC secret is published in the JWKS document for all clients"],
       "a": 1,
-      "x": "HMAC verification only needs the algorithm, the data (header.payload), and the key. All of that is visible in the captured JWT. An attacker can test candidates locally at GPU speed without touching the server.",
-      "h": "What does HMAC verification need as inputs? Are all those inputs present in the token itself?"
+      "x": "HMAC verification only needs the algorithm, the header.payload bytes, and a candidate key. All of that is in the captured JWT, so wordlist tests run locally at GPU speed.",
+      "h": "What inputs does HMAC verification need? Are all of them already present in a captured JWT?"
     },
     {
-      "q": "What hashcat mode is used to crack JWT HS256 secrets?",
-      "o": ["Mode 1000 (NTLM)", "Mode 16500 (JWT)", "Mode 3200 (bcrypt)", "Mode 18300 (Apple Keychain)"],
+      "q": "Which hashcat mode is used to crack JWT HS256 secrets?",
+      "o": ["Mode 1000, the NTLM hash mode used for Windows passwords", "Mode 16500, the dedicated hashcat mode for JWT HMAC secrets", "Mode 3200, the bcrypt mode used for slow password hashes", "Mode 18300, the Apple Keychain mode for macOS credential dumps"],
       "a": 1,
-      "x": "Hashcat mode 16500 is specifically designed for JWTs. It accepts the full token, tries each wordlist entry as the HMAC secret, and reports a hit when the computed signature matches.",
-      "h": "Hashcat has a dedicated mode for JWTs. Its number is in the range 16000-17000."
+      "x": "Hashcat mode 16500 is built for JWTs. It takes the full token, tries each wordlist entry as the HMAC secret, and reports a hit when the computed signature matches.",
+      "h": "Hashcat has a dedicated JWT mode whose number sits in the 16000 range."
     },
     {
-      "q": "What wordlist is typically used to crack JWT secrets in this class of attack?",
-      "o": ["rockyou.txt, because it contains real leaked passwords", "jwt.secrets.list from SecLists, because it focuses on common JWT signing secrets found in tutorials and configs", "A random hex string dictionary", "The target application's source code"],
+      "q": "Which wordlist is typically used to crack JWT secrets in this attack class?",
+      "o": ["rockyou.txt, because it lists leaked end-user account passwords", "jwt.secrets.list from SecLists, covering common copied JWT secrets", "A random hex dictionary covering every possible 32-byte key", "The target application's compiled binary extracted from the host"],
       "a": 1,
-      "x": "jwt.secrets.list is a curated list of secrets commonly found in JWT tutorials, official docs examples, and leaked configurations. Developers copy these strings directly without changing them.",
-      "h": "General password wordlists work, but there is a purpose-built list specifically for JWT secrets in the SecLists project."
+      "x": "jwt.secrets.list is a curated list of secrets copied from tutorials, docs examples, and leaked configs. Developers often paste those strings unchanged.",
+      "h": "General password lists work, but SecLists has a purpose-built list specifically for JWT signing secrets."
     },
     {
-      "q": "Once the secret is cracked, what do you need to do to forge an admin token?",
-      "o": ["Submit the secret to the server's /authenticate endpoint", "Modify the payload (change sub to administrator) and re-sign it with the cracked secret using HS256", "The cracked secret unlocks a hidden admin route directly", "Decode the token, remove the signature, and add a custom admin header"],
+      "q": "Once the HS256 secret is cracked, how do you forge an admin token?",
+      "o": ["Submit the cracked secret to the server authenticate endpoint", "Change sub to administrator and re-sign the token with HS256", "The cracked secret unlocks a hidden admin route with no token", "Decode the token, drop the signature, and add an admin header"],
       "a": 1,
-      "x": "With the secret you can produce a valid HMAC signature for any payload you choose. Change sub to administrator, sign the new header.payload with HS256 and the cracked secret, and the server will accept the token as legitimate.",
-      "h": "Knowing the secret means you can produce a valid signature. What changes do you need in the payload to gain admin access?"
+      "x": "With the secret you can HMAC any payload you choose. Change sub to administrator, sign header.payload with HS256 and the cracked secret, and the server accepts it.",
+      "h": "Knowing the secret means you can produce a valid signature. What payload change is still required for admin access?"
     },
     {
-      "q": "What is the minimum entropy recommended for a production HS256 JWT secret?",
-      "o": ["8 printable characters (password-style)", "At least 256 bits of cryptographically random entropy", "Any string longer than 20 characters", "A UUID (128-bit)"],
+      "q": "What entropy is recommended for a production HS256 JWT secret?",
+      "o": ["Eight printable characters, similar to a typical user password", "At least 256 bits of cryptographically random secret material", "Any human-chosen string that is longer than twenty characters", "A UUID, which provides 128 bits and is unique per deployment"],
       "a": 1,
-      "x": "The secret should have at least as much entropy as the hash output, which is 256 bits for SHA-256. A 32-byte output from a CSPRNG satisfies this. Human-readable strings almost never reach this bar.",
-      "h": "The number in HS256 is a hint. How many bits of entropy should a secret have to match the strength of the underlying hash?"
+      "x": "The secret should have at least as much entropy as the hash output, 256 bits for SHA-256. A 32-byte CSPRNG value meets that. Human-readable strings almost never do.",
+      "h": "The 256 in HS256 is a hint. How many bits of entropy should the secret have to match the hash?"
     },
     {
-      "q": "Why is a secret copied from a tutorial or README dangerous?",
-      "o": ["Tutorials use keys that expire after a fixed date", "The same string appears in public wordlists and will be cracked immediately", "Tutorial secrets use a weak algorithm by default", "They are encrypted with a public key everyone can download"],
+      "q": "Why is a JWT secret copied from a tutorial or README dangerous?",
+      "o": ["Tutorial keys expire after a published date in the README file", "The same string appears in public wordlists and cracks quickly", "Tutorial secrets force a weak algorithm that cannot be changed", "They are encrypted with a public key that anyone can download"],
       "a": 1,
-      "x": "Strings like 'your-secret-key', 'supersecret', or 'jwt_secret' are included in every JWT-focused wordlist because developers routinely paste them from documentation without changing them.",
-      "h": "What happens to a secret that thousands of developers have copied from the same docs page? Is it still secret?"
+      "x": "Strings such as your-secret-key, supersecret, or jwt_secret appear in JWT-focused wordlists because developers paste them from docs without changing them.",
+      "h": "If thousands of developers copy the same docs string, is that value still a secret?"
     },
     {
-      "q": "After cracking the secret, which claim in the payload is changed to access /admin?",
+      "q": "Which of the following is true of this lab's HS256 cracking attack?",
+      "o": ["HS256 is asymmetric, so a wordlist cannot recover the signing key", "hashcat mode 1000 is the dedicated mode used for JWT HMAC secrets", "None of these statements are true about this weak HS256 JWT lab", "After cracking, you only change alg to none and skip re-signing"],
+      "a": 2,
+      "x": "HS256 is symmetric, so wordlists can recover a weak secret. JWT cracking uses hashcat mode 16500, not 1000. You must re-sign with the cracked secret after changing sub.",
+      "h": "Check each claim against HS256 being symmetric, the JWT hashcat mode number, and whether re-signing is required."
+    },
+    {
+      "q": "After cracking the secret, which payload claim is changed to reach /admin?",
       "o": ["alg", "iat", "sub", "kid"],
       "a": 2,
-      "x": "The sub (subject) claim holds the authenticated username. Changing it to 'administrator' and re-signing with the cracked secret produces a token the server accepts as a valid admin session.",
+      "x": "The sub (subject) claim holds the authenticated username. Changing it to administrator and re-signing with the cracked secret produces a token the server treats as admin.",
       "h": "You need to impersonate a different user. Which JWT claim identifies who is authenticated?"
     },
     {
-      "q": "What is the primary advantage of switching from HS256 to RS256 for JWT signing?",
-      "o": ["RS256 tokens are shorter and faster to transmit", "The signing key is a private key that never leaves the server, so even a leaked public key cannot forge tokens", "RS256 does not use a shared secret at all, so there is nothing to crack", "RS256 is immune to algorithm confusion attacks"],
+      "q": "What is the primary advantage of switching from HS256 to RS256?",
+      "o": ["RS256 tokens are shorter on the wire than HS256 and cheaper to send", "The private signing key never leaves the server, unlike a shared HMAC secret", "RS256 skips cryptography entirely, leaving nothing for an attacker to crack", "RS256 is immune to algorithm confusion even if alg is attacker-controlled"],
       "a": 1,
-      "x": "RS256 uses an asymmetric key pair. The private key signs and stays on the server. The public key verifies and can be shared openly. Even if an attacker gets the public key, they cannot sign new tokens without the private key.",
-      "h": "What is the difference between a symmetric and asymmetric signing approach? Who can create vs. verify with each?"
-    },
-    {
-      "q": "Where should a production JWT secret be stored?",
-      "o": ["Hardcoded in the source code for easy deployment", "In an environment variable or a secrets manager, never in source code", "In the JWT header for easy retrieval", "In the database alongside user records"],
-      "a": 1,
-      "x": "Hardcoded secrets end up in version control and are exposed to anyone with repository access. Environment variables and secrets managers (like Vault, AWS Secrets Manager) keep them out of code and logs.",
-      "h": "What storage location keeps a secret out of version control, logs, and compiled binaries?"
+      "x": "RS256 uses an asymmetric pair. The private key signs and stays on the server. The public key only verifies. A leaked public key cannot forge tokens without the private key.",
+      "h": "Compare symmetric HMAC to asymmetric RSA. Who can create a signature versus who can only verify one?"
     }
   ]
 }

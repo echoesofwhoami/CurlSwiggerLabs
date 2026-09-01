@@ -2,38 +2,63 @@
   "questions": [
     {
       "q": "What problem does OAuth 2.0 solve?",
-      "o": ["It encrypts user passwords in transit", "It allows third-party applications to access user resources without the user sharing their password", "It replaces TLS for securing HTTP traffic", "It provides a standard for storing user passwords in databases"],
+      "o": [
+        "It encrypts user passwords before they travel on the network",
+        "It lets third-party apps access resources without sharing passwords",
+        "It replaces TLS as the way to protect HTTP traffic in transit",
+        "It defines how user passwords should be stored in a database"
+      ],
       "a": 1,
-      "x": "OAuth lets you say 'this app can read my email' without giving the app your password. The app gets a scoped access token instead, which can be revoked without changing your password.",
-      "h": "Before OAuth, granting a third-party app access to your data meant giving it your password. What does OAuth replace the password with?"
+      "x": "OAuth 2.0 is an authorization framework. Third-party apps receive authorization codes and access tokens instead of the user password, so access can be limited and later revoked.",
+      "h": "The valet-key analogy is about limited access. What does the app receive instead of the real password?"
     },
     {
-      "q": "What are the three main parties in an OAuth 2.0 flow?",
-      "o": ["Client, Proxy, Resource Owner", "Resource Owner, Client Application, Authorization Server (plus Resource Server)", "User, Attacker, Server", "Browser, API, Database"],
-      "a": 1,
-      "x": "The Resource Owner is the user. The Client Application is the app requesting access (e.g., a blog). The Authorization Server authenticates the user and issues tokens. The Resource Server holds the protected data.",
-      "h": "Think about who wants access (the app), who grants it (the user), and who decides if it is allowed (the auth service)."
+      "q": "Who are the three main parties in an OAuth 2.0 flow?",
+      "o": [
+        "The client, a reverse proxy, and the resource owner",
+        "The end user, an attacker, and the application database",
+        "Resource owner, client application, and OAuth provider",
+        "The web browser, a REST API, and the session store"
+      ],
+      "a": 2,
+      "x": "The resource owner is the user. The client application is the site that wants access, such as a blog. The OAuth provider, also called the authorization server, authenticates the user and issues tokens.",
+      "h": "Think who owns the data, who wants access to it, and who issues the token after login."
     },
     {
-      "q": "What is the authorization code flow?",
-      "o": ["The user's password is hashed and sent to the authorization server directly", "The user approves access on the authorization server, which sends a short-lived code to the client, the client then exchanges the code for an access token via a back-channel request", "The access token is embedded in the redirect URL after login", "The client generates the token locally after verifying the user's credentials"],
-      "a": 1,
-      "x": "The code flow separates user-facing redirects from server-to-server token exchange. The code travels through the browser (visible) but the final access token is obtained back-channel (not visible in the URL), making it harder to intercept.",
-      "h": "The flow has two steps: a redirect with a code, then a server-side exchange. Why split it into two steps instead of sending the token directly in the redirect?"
+      "q": "Which statement about OAuth 2.0 is correct?",
+      "o": [
+        "None of these statements are true",
+        "OAuth shares the real user password",
+        "The client receives the user password",
+        "Access tokens expire after a short time"
+      ],
+      "a": 3,
+      "x": "Access tokens expire after a short time, like a valet key. OAuth does not share the password, and the client never receives it. None is wrong because that expiry claim is true.",
+      "h": "Compare the valet-key idea. Do access tokens last forever, or only for a limited time?"
     },
     {
-      "q": "What is an access token?",
-      "o": ["The user's session cookie for the authorization server", "A credential the client uses to call the resource server API on the user's behalf, scoped to specific permissions", "A one-time password sent to the user's phone", "The client_secret used to authenticate the application"],
-      "a": 1,
-      "x": "The access token is what the client actually uses to call APIs. It is scoped (limited to specific resources and operations), time-limited, and can be revoked by the user or the provider independently of any password.",
-      "h": "After the code exchange, what does the client receive that it uses for every subsequent API call?"
+      "q": "In the authorization code flow, what does the provider send in the redirect?",
+      "o": [
+        "A short-lived authorization code later exchanged for an access token",
+        "The user password, already hashed, so the client can log in as them",
+        "The access token itself, placed in the URL for the browser to keep",
+        "A client_secret the browser should keep as a permanent session cookie"
+      ],
+      "a": 0,
+      "x": "After consent, the provider redirects to redirect_uri with a code. The client then exchanges that code server-to-server for an access token. The code is short-lived and single-use. The access token is not shown in the browser.",
+      "h": "The flow is two steps. What travels in the browser redirect, and what is fetched only on the back channel?"
     },
     {
-      "q": "What is the purpose of the state parameter in an OAuth authorization request?",
-      "o": ["It encodes the user's preferred language for the consent screen", "It is a random value the client includes to prevent CSRF attacks, it is returned in the redirect and the client verifies it matches", "It tells the authorization server how long to keep the session", "It contains the list of scopes the client is requesting"],
+      "q": "Why is the authorization code exchanged on the back channel?",
+      "o": [
+        "So the user can type the code into a second login form",
+        "So the access token is never exposed in the user browser",
+        "So the provider can skip consent and issue tokens silently",
+        "So the client_id can be omitted from the first redirect"
+      ],
       "a": 1,
-      "x": "The state parameter is a CSRF token for the OAuth flow. The client generates a random value, sends it in the authorization request, and when the code comes back in the redirect, the client checks that the state matches what it sent.",
-      "h": "Without state, an attacker could trick a victim into completing an OAuth flow the attacker started. What standard web security mechanism does the state parameter implement?"
+      "x": "The code is visible in the redirect but expires quickly and can be used only once. The access token, which actually grants access, is exchanged server-to-server and never appears in the browser.",
+      "h": "If the access token appeared in the redirect URL, who else might see it?"
     }
   ]
 }

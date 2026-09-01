@@ -1,39 +1,64 @@
 {
   "questions": [
     {
-      "q": "What does the redirect_uri parameter specify in an OAuth authorization flow?",
-      "o": ["The scopes the client is requesting from the user", "The URL where the authorization server sends the user and authorization code after they approve the request", "The endpoint used to fetch the user's profile data", "The secret key used to sign access tokens"],
-      "a": 1,
-      "x": "After the user approves, the authorization server redirects the browser to redirect_uri with the authorization code appended. If an attacker controls that URI, the code is delivered to them instead of the legitimate application.",
-      "h": "The parameter tells the server where to send the user after approval. What sensitive credential travels in that redirect?"
+      "q": "What does the redirect_uri parameter specify in an OAuth flow?",
+      "o": [
+        "Where the provider should send the user and the authorization code",
+        "The list of scopes the client wants the resource owner to approve",
+        "The API path used later to fetch the user profile document",
+        "The secret used by the provider to sign issued access tokens"
+      ],
+      "a": 0,
+      "x": "After the user authenticates, the OAuth provider redirects the browser to redirect_uri and attaches the authorization code. That URL is where the code is delivered.",
+      "h": "After consent, the browser is sent somewhere with a code. Which parameter names that destination?"
     },
     {
-      "q": "What is the difference between secure and vulnerable redirect_uri handling?",
-      "o": ["Secure handling requires HTTPS, vulnerable allows HTTP", "Secure handling only redirects to pre-registered URLs for that client, vulnerable handling accepts any URL the attacker supplies", "Secure handling encrypts the authorization code, vulnerable sends it in plain text", "Secure handling uses POST redirects, vulnerable uses GET redirects"],
+      "q": "How does secure redirect_uri handling differ from a vulnerable one?",
+      "o": [
+        "Secure handling requires HTTPS, while vulnerable handling allows HTTP",
+        "Secure handling allows only pre-registered URLs, not attacker-chosen ones",
+        "Secure handling encrypts the code, vulnerable handling does not",
+        "Secure handling uses POST redirects, while vulnerable handling uses GET"
+      ],
       "a": 1,
-      "x": "A correctly implemented OAuth provider compares redirect_uri against a whitelist registered when the client was set up. Accepting arbitrary URIs lets an attacker intercept authorization codes by pointing the flow at their own server.",
-      "h": "The fix for redirect_uri attacks is validation. What check is missing when any URL is accepted?"
+      "x": "A secure provider only redirects to URLs registered for that client, such as the real app callback. A vulnerable provider redirects to whatever URL the attacker supplies, so the code lands on the attacker site.",
+      "h": "The fix is validation. What set of URLs should be the only ones a provider will redirect to?"
     },
     {
-      "q": "Why are authorization codes described as bearer tokens in OAuth?",
-      "o": ["They are printed on a physical bearer document", "Whoever possesses the code can exchange it for an access token without proving they initiated the original authorization request", "They expire after one second by default", "They can only be used from the same IP address that requested them"],
-      "a": 1,
-      "x": "An authorization code is a short-lived credential sent in the browser redirect. Anyone who intercepts it can exchange it for an access token if they also know the client credentials, giving them access to the victim's account.",
-      "h": "Bearer means possession alone is enough. What happens if the code arrives at the attacker's server instead of the legitimate app?"
+      "q": "Why is a stolen authorization code so dangerous?",
+      "o": [
+        "The code is a long-lived password for the authorization server itself",
+        "The code never expires, so it can be replayed against any OAuth client",
+        "Authorization codes are bearer tokens, so whoever has the code can use it",
+        "The code includes the user password in a claim the client must echo"
+      ],
+      "a": 2,
+      "x": "Authorization codes are bearer tokens. Possession is enough. Whoever intercepts the code can exchange it for access to the victim account, much like finding another person's car keys.",
+      "h": "Bearer means possession is enough. If the code arrives at the attacker server, what can they do with it?"
     },
     {
-      "q": "What type of redirect_uri matching is required to prevent bypass via subdomain or path tricks?",
-      "o": ["Prefix matching on the domain name", "Exact-match comparison against pre-registered URIs including scheme, host, port, and path", "Regular expression matching with wildcards for all subdomains", "Case-insensitive string contains check"],
+      "q": "What happens if an attacker can set redirect_uri to a site they control?",
+      "o": [
+        "The provider refuses to issue a code until the real app also consents",
+        "The victim code is delivered to the attacker instead of the real app",
+        "The access token is encrypted so the attacker site cannot read it",
+        "The client_secret is rotated automatically before the code is issued"
+      ],
       "a": 1,
-      "x": "Exact-match whitelisting means only URIs registered during client setup are accepted. Partial matching allows bypasses such as registering https://app.com/callback but accepting https://app.com/callback.evil.com or https://evil.com?app.com/callback.",
-      "h": "The problem is accepting URIs that look similar but are not identical. What comparison mode rejects any deviation from the registered value?"
+      "x": "The provider sends the browser, and the authorization code, to the attacker URL. The attacker then holds the code and can try to exchange it for access to the victim account.",
+      "h": "The code follows redirect_uri. If that URI is the attacker site, who receives the code?"
     },
     {
-      "q": "What additional protection does PKCE provide beyond redirect_uri validation?",
-      "o": ["It encrypts the access token at rest", "It binds the authorization code to a code_verifier known only to the original client, so an intercepted code cannot be exchanged without it", "It adds multi-factor authentication to the OAuth login screen", "It limits how many authorization codes a user can receive per day"],
-      "a": 1,
-      "x": "PKCE generates a code_verifier on the client and sends a hash as code_challenge during authorization. The raw verifier is required at token exchange time. An attacker who intercepts the code but lacks the verifier cannot complete the exchange.",
-      "h": "PKCE ties the code to a secret the original requester holds. What happens if an attacker intercepts the code but does not know the verifier?"
+      "q": "What should an OAuth provider do with redirect_uri before redirecting?",
+      "o": [
+        "Sign it with HS256 so the client can verify the callback host",
+        "Open it in a new window so the original app cannot see the code",
+        "Append the user password so the client can finish local login",
+        "Accept it only if it matches a URL already registered for that client"
+      ],
+      "a": 3,
+      "x": "The provider should compare redirect_uri to pre-registered URLs for that client. If any attacker-supplied URL is accepted, the authorization code is delivered to the wrong place.",
+      "h": "Secure handling is a comparison against a known list. What is on that list?"
     }
   ]
 }

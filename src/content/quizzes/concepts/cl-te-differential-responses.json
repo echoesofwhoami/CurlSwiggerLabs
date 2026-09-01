@@ -1,39 +1,39 @@
 {
   "questions": [
     {
-      "q": "In a CL.TE attack, what does the front-end use to measure the request body?",
-      "o": ["Transfer-Encoding: chunked markers", "Content-Length in bytes", "The Connection: keep-alive header", "A fixed 1 KB boundary"],
+      "q": "In CL.TE, how does the front-end decide the request body length?",
+      "o": ["It reads Transfer-Encoding chunk size markers in the body", "It trusts Content-Length and forwards that many bytes", "It stops at the Connection: keep-alive header and ignores CL", "It always forwards a fixed 1 KB slice of the TCP stream"],
       "a": 1,
-      "x": "The front-end trusts Content-Length and forwards exactly that many bytes. Bytes beyond that limit are left in the TCP buffer and not forwarded as part of the current request.",
-      "h": "CL stands for Content-Length. Which server in CL.TE uses CL, and what does it do with it?"
+      "x": "The front-end uses Content-Length. In the usual probe that value covers the zero chunk and the extra SMUGGLED bytes, so the front-end forwards all of them to the back-end.",
+      "h": "CL stands for Content-Length. Which server in CL.TE uses CL, and what does it do with that number?"
     },
     {
-      "q": "What does the back-end use in a CL.TE attack to find the end of the request body?",
-      "o": ["Content-Length as the authoritative length", "Transfer-Encoding: chunked markers, stopping at the zero-size chunk", "The end of the TCP stream", "A fixed timeout after which it assumes the body is complete"],
+      "q": "In CL.TE, where does the back-end think the request body ends?",
+      "o": ["At the exact byte count given in the Content-Length header", "At the zero-size chunk used by Transfer-Encoding: chunked", "When the TCP connection is fully closed by the front-end", "After a fixed idle timeout if no more bytes have arrived"],
       "a": 1,
-      "x": "The back-end trusts Transfer-Encoding: chunked. It reads chunks until it sees a chunk with size 0, followed by a blank line. Anything after that in the buffer is treated as the start of the next request.",
-      "h": "TE stands for Transfer-Encoding. What signal does chunked encoding use to mark the end of the body?"
+      "x": "The back-end uses Transfer-Encoding: chunked and stops at chunk size 0. Bytes after that, such as SMUGGLED, stay in the socket buffer and are treated as the start of the next request.",
+      "h": "TE stands for Transfer-Encoding. What marker ends a chunked body?"
     },
     {
-      "q": "What is a differential response and how does it confirm the smuggling worked?",
-      "o": ["Two different status codes from the same endpoint prove a parser bug", "The first request returns 200, but a subsequent normal request returns 404, showing the smuggled prefix was prepended to that second request", "The server returns different headers on odd vs even requests", "Timing differences between two requests indicate that buffering occurred"],
+      "q": "What happens to bytes after the zero-size chunk in a CL.TE probe?",
+      "o": ["The front-end drops them because Content-Length already ended", "They stay in the back-end buffer and prefix the next request", "The back-end returns them to the client as a 100-continue", "They are logged and then discarded before the next request"],
       "a": 1,
-      "x": "After sending the smuggling request, any client's next request on the same back-end connection gets the smuggled bytes prepended. If those bytes spell out 'GET /404', the next client gets a 404 instead of 200, confirming the attack.",
-      "h": "You send one normal request and get 200. You send another and get 404. The path was /. Why would / return 404? What changed before that second request arrived?"
+      "x": "The front-end already forwarded those leftover bytes as part of Content-Length. The back-end thought the request ended at the zero chunk, so the extra bytes wait in the buffer and are prepended to whatever arrives next on that connection.",
+      "h": "The back-end stopped at chunk 0. The extra bytes did not vanish. Where do they sit until another request arrives?"
     },
     {
-      "q": "Why is the exact byte count of the smuggled payload critical in a CL.TE attack?",
-      "o": ["Incorrect byte counts trigger a WAF alert", "The Content-Length header must match the exact number of bytes the front-end will forward, which must include all of the smuggled payload", "The back-end rejects payloads whose byte count does not match a predefined limit", "The HTTP spec requires Content-Length to be a multiple of 16"],
+      "q": "How do differential responses confirm CL.TE smuggling?",
+      "o": ["Odd-numbered requests get extra headers that even ones lack", "A follow-up GET / comes back 404 instead of the usual 200", "A slow first response and a fast second one prove buffering", "Two status codes inside one response mean the parser split"],
       "a": 1,
-      "x": "Content-Length tells the front-end how many bytes to forward. If it is too small, the smuggled payload is cut off. If too large, the front-end waits for more bytes that never arrive. Exact counting, including every CRLF, is required.",
-      "h": "Every byte after the chunked end-marker is part of the smuggled request. The front-end forwards exactly Content-Length bytes. What happens if these two numbers do not match perfectly?"
+      "x": "Timing delays can hint at smuggling. A stronger proof is a different status than a normal request to the same path. If you smuggle GET /404 and the next request to / gets 404 instead of 200, the leftover prefix was applied.",
+      "h": "You request / and expect 200. After the attack request you get 404 for /. What was prepended onto that second request?"
     },
     {
-      "q": "Why must you send the smuggling request twice (or use a separate trigger request) to observe the differential response?",
-      "o": ["The first send establishes the TCP connection, the second sends the actual payload", "The first send leaves the smuggled prefix in the back-end buffer, the second request is the one that picks up those leftover bytes and returns the differential response", "Two sends are needed to bypass rate limiting", "The first send populates the cache, the second reads the cached differential"],
+      "q": "After the attack request, how should the confirming request be sent?",
+      "o": ["On the same client TCP connection, to a different host header", "On a different client connection, targeting the same URL path", "As HTTP/2 only, so the front-end cannot rewrite the body", "After waiting one minute so the back-end buffer can expire"],
       "a": 1,
-      "x": "On the first send, the back-end processes your request and the smuggled bytes sit waiting in the buffer. On the second send (or next user's request), the back-end sees those buffered bytes first, prepending them to the new request and returning the differential response.",
-      "h": "After the first send, where do the smuggled bytes go? They do not vanish. What does the back-end do with the next request that arrives on the same connection?"
+      "x": "Send the second request on a different client connection, still to the same URL so load balancing can hit the same back-end. A dummy header such as X-Ignore on the smuggled request absorbs the start of that real request so header parsing does not break before /404 is read.",
+      "h": "The leftover bytes live on the back-end socket, not on your first client connection. How do you still hit that same back-end?"
     }
   ]
 }

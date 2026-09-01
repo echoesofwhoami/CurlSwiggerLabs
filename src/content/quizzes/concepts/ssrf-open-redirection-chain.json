@@ -1,39 +1,39 @@
 {
   "questions": [
     {
-      "q": "Why does an open redirect help bypass SSRF URL filters?",
-      "o": ["Open redirects encrypt the internal URL so the filter cannot inspect it", "The filter checks only the initial URL, which can point to an allowed external path, while the server follows a redirect to the blocked internal destination", "Open redirects disable the server's HTTP client entirely", "Open redirects require the attacker to authenticate first"],
+      "q": "Why can an open redirect bypass an SSRF URL filter?",
+      "o": ["The redirect encrypts the internal URL so the filter cannot see it", "The filter checks only the first URL, then the client follows redirects", "The redirect turns off the server HTTP client for that whole request", "The attacker must log in first before the filter will allow the URL"],
       "a": 1,
-      "x": "The SSRF filter validates the stockApi or similar parameter before the request is made. If that value points to an allowed on-domain redirect endpoint, the filter passes it. The server then follows the redirect to an internal address the filter would have blocked directly.",
-      "h": "The filter sees the first URL. What happens after the server follows a redirect to an internal target?"
+      "x": "The filter asks whether the initial URL looks safe, often because it is on the victim host. It does not evaluate the Location the HTTP client follows next, so the second hop can be localhost or another blocked target.",
+      "h": "The filter sees the URL you submit. After a 302, who chooses the next hop, and does the filter run again?"
     },
     {
-      "q": "In the SSRF + open redirect chain, why does the initial URL appear safe to the filter?",
-      "o": ["It uses HTTPS which all filters allow", "It points to the same domain or a relative path on the victim site, which passes same-origin or allowlist checks", "It encodes the internal IP in base64", "It uses a DNS rebinding technique"],
+      "q": "Why does the first URL in this chain look safe to the filter?",
+      "o": ["It is always HTTPS, and every filter allows any HTTPS URL", "It points at the victim site, which passes an allowlist check", "It hides the internal IP inside a long base64 path segment", "It uses DNS rebinding so the resolved IP changes after the check"],
       "a": 1,
-      "x": "Filters often allow URLs that start with / or belong to the application's own domain. Pointing stockApi at /product/nextProduct?path=... looks like a normal internal request rather than a direct internal IP address.",
-      "h": "The filter is checking whether the submitted URL looks external or internal. What does a same-domain redirect endpoint look like to that check?"
+      "x": "Direct internals like http://localhost/admin are blocked. A URL such as https://victim/redirect?url=http://localhost/admin is still on an allowed host, so the first-hop check passes.",
+      "h": "The filter is asking 'is this first URL external and allowed?' What does the victim's own redirect endpoint look like to that check?"
     },
     {
-      "q": "What role does the open redirection endpoint play in the exploit chain?",
-      "o": ["It makes the SSRF request from the attacker's browser", "It acts as a proxy that redirects the server's outbound request to the internal target the filter blocked", "It stores the internal admin credentials for later use", "It encrypts the SSRF payload before transmission"],
+      "q": "What job does the open redirect endpoint do in this chain?",
+      "o": ["It issues the SSRF fetch from the attacker's own browser tab", "It 302s the server's follow-up request onto the internal target", "It stores admin credentials for the attacker to collect later", "It encrypts the SSRF body before the server sends the request"],
       "a": 1,
-      "x": "The open redirect endpoint accepts a user-controlled destination and issues a 302 redirect. When the server's HTTP client follows that redirect, it reaches the internal admin interface without the filter ever inspecting the final URL.",
-      "h": "The redirect endpoint does not fetch the internal URL itself for the attacker. It tells the server's HTTP client where to go next."
+      "x": "The open redirect is a proxy in the redirect sense. The server's HTTP client requested an allowed URL, received a redirect to the internal admin path, and followed it. The attacker browser never needed to reach that admin interface.",
+      "h": "The redirect endpoint does not fetch the internal URL for the attacker. It tells the server's HTTP client where to go next."
     },
     {
-      "q": "Why is checking only the initial URL insufficient when the HTTP client follows redirects?",
-      "o": ["Redirects always fail on HTTPS connections", "The HTTP client may automatically follow 3xx redirects to a different host or IP that the initial URL filter never evaluated", "Redirects strip authentication headers from the request", "Redirects only work for GET requests to public APIs"],
+      "q": "What does the SSRF filter fail to inspect in this attack?",
+      "o": ["The HTTP method used on the first outbound request", "The final URL after the HTTP client follows the redirect", "The Host header value on the attacker-supplied first URL", "The Content-Type header of the product stock API response"],
       "a": 1,
-      "x": "Most server-side HTTP libraries follow redirects by default. The filter sees https://victim.com/redirect?url=... and allows it, but the client ends up at http://192.168.x.x/admin after following the redirect chain.",
-      "h": "Think about what happens after the server receives a 302 response pointing to an internal IP. Does the filter get a second chance to inspect that destination?"
+      "x": "Most server HTTP libraries follow 3xx responses by default. The filter already approved the first URL. The client then lands on an internal address the filter would have rejected if it had been submitted directly.",
+      "h": "There are two URLs in play: the one submitted and the one after the 302. Which of those did the filter never see?"
     },
     {
-      "q": "What is the most thorough fix for SSRF bypass via open redirects?",
-      "o": ["Block all HTTP redirects globally", "Validate the initial URL and also validate redirect destinations against the same allowlist at the HTTP client level", "Require authentication on every internal admin panel", "Remove all redirect endpoints from the application"],
+      "q": "What is the result of a successful SSRF plus open-redirect chain?",
+      "o": ["The attacker browser loads the internal admin page directly", "The server reaches an internal URL the filter would have blocked", "The open redirect stores the admin HTML in a public cache", "The filter is disabled for every later request in that session"],
       "a": 1,
-      "x": "Fixing only the initial URL is not enough when redirects are followed automatically. The HTTP client must reject any redirect that leads to a private IP range, localhost, or other blocked destination.",
-      "h": "There are two points where the server could catch this: the initial URL and the redirect destination. Which fix addresses both?"
+      "x": "The server-side fetch follows the victim redirect onto the internal admin interface. That is the SSRF the first-hop filter was meant to stop. The filter still only ran on the allowed external URL.",
+      "h": "Who actually connects to localhost or the internal admin path, the attacker browser or the vulnerable server?"
     }
   ]
 }

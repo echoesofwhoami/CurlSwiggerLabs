@@ -1,74 +1,124 @@
 {
   "questions": [
     {
-      "q": "What is HTTP request smuggling?",
-      "o": ["Hiding malware inside HTTP response bodies", "Exploiting disagreement between servers about where one HTTP request ends and the next begins", "Forging HTTP headers to bypass authentication", "Sending requests faster than the server can process them"],
+      "q": "In this CL.TE lab, which length header does each server trust?",
+      "o": [
+        "Front-end uses Transfer-Encoding, back-end uses Content-Length",
+        "Front-end uses Content-Length, back-end uses Transfer-Encoding",
+        "Both servers use Content-Length and ignore chunked encoding",
+        "Both servers use Transfer-Encoding and ignore Content-Length"
+      ],
       "a": 1,
-      "x": "Request smuggling exploits the fact that a front-end and back-end server use different rules to determine request boundaries. An attacker crafts a request that the front-end forwards normally but the back-end misinterprets, leaving bytes that get prepended to the next request.",
-      "h": "Think about what happens when two servers disagree on where a request ends. What could an attacker do with that disagreement?"
+      "x": "CL.TE means the front-end measures the body with Content-Length. The back-end ends the body with Transfer-Encoding chunked. The lab front-end does not support chunked encoding, which is why that split exists.",
+      "h": "The name CL.TE lists front-end first, then back-end. CL is Content-Length. TE is Transfer-Encoding."
     },
     {
-      "q": "In HTTP/1.1, what two headers can both describe the body length?",
-      "o": ["Content-Type and Transfer-Encoding", "Content-Length and Transfer-Encoding", "Host and Content-Length", "Accept-Encoding and Transfer-Encoding"],
-      "a": 1,
-      "x": "Content-Length states the exact byte count. Transfer-Encoding: chunked sends the body in pieces ending with a zero-size chunk. When both are present, servers disagree on which to use, which is the foundation of request smuggling.",
-      "h": "One says the body is N bytes long. The other says the body is sent in chunks. Name both."
-    },
-    {
-      "q": "In a CL.TE attack, which server trusts Content-Length and which trusts Transfer-Encoding?",
-      "o": ["Front-end trusts Transfer-Encoding, back-end trusts Content-Length", "Both servers trust Content-Length", "Front-end trusts Content-Length, back-end trusts Transfer-Encoding", "Both servers trust Transfer-Encoding"],
+      "q": "Why were Python raw sockets used instead of curl or the requests library?",
+      "o": [
+        "Those clients lack TLS support for PortSwigger lab hostnames",
+        "Those clients cannot send POST bodies larger than thirty bytes",
+        "Those clients rewrite length headers, which removes the conflict",
+        "Those clients force HTTP/2, and HTTP/2 cannot reach this lab"
+      ],
       "a": 2,
-      "x": "The front-end uses Content-Length to decide how many bytes to forward. The back-end uses Transfer-Encoding chunked to find the end of the body. This split lets the attacker control how many bytes the back-end considers part of the current request.",
-      "h": "CL.TE: the first two letters tell you which server uses which header. CL = Content-Length, TE = Transfer-Encoding. Front-end or back-end for each?"
+      "x": "curl and requests try to send valid HTTP. If Transfer-Encoding is chunked, they drop or rewrite Content-Length. The attack needs both headers on the wire, so ssl plus a raw socket sends the bytes unchanged.",
+      "h": "Well behaved HTTP clients clean conflicting length headers. What does that cleanup destroy?"
     },
     {
-      "q": "What does a chunk size of 0 mean in chunked Transfer-Encoding?",
-      "o": ["The body is empty and was never sent", "End of the chunked body", "The server should discard the chunk", "The body should be compressed"],
+      "q": "What does a chunk size of 0 mean to the back-end?",
+      "o": [
+        "The rest of the TCP stream should be gzip compressed",
+        "The chunked body is finished, later bytes stay buffered",
+        "The front-end must close keep-alive before the next send",
+        "The request method is silently rewritten from POST to GET"
+      ],
       "a": 1,
-      "x": "In chunked encoding, each chunk starts with its size in hex. A size of 0 followed by a blank line signals the end of the body. The back-end reads up to this marker, leaving any subsequent bytes unread in its buffer.",
-      "h": "The body is sent in chunks, each with a size prefix. What does a size of zero logically mean for the stream?"
+      "x": "Chunked bodies end at a zero-size chunk plus a blank line. The back-end then answers the POST and leaves GET /404 plus X-Ignore unread in its receive buffer.",
+      "h": "Each chunk starts with a hex size. What does size zero say about whether more body bytes belong to this request?"
     },
     {
-      "q": "Why was curl insufficient to send the smuggling request?",
-      "o": ["curl does not support HTTP/1.1", "curl normalizes or removes conflicting length headers, preventing the ambiguous request the attack requires", "curl cannot connect to HTTPS endpoints", "curl enforces a maximum body size of 1 KB"],
-      "a": 1,
-      "x": "curl is a well-behaved HTTP client that removes or rewrites Content-Length when Transfer-Encoding is present. The attack requires both headers in the exact form sent. Raw Python socket code was needed to bypass curl's sanitization.",
-      "h": "curl tries to send valid HTTP. The attack requires deliberately invalid HTTP with conflicting headers. What does curl do when it sees conflicting length information?"
+      "q": "How does a differential 404 confirm the smuggle worked?",
+      "o": [
+        "A later request for / returns 404 because leftover GET /404 ran",
+        "The smuggle POST itself returns 404 from the front-end proxy",
+        "The back-end returns 404 only when Transfer-Encoding is omitted",
+        "Both servers return 404 if the Host header does not match the lab"
+      ],
+      "a": 0,
+      "x": "The smuggle POST can still return 200. The leftover prefix turns the next request on that back-end socket into GET /404, so a normal follow-up to / gets 404 Not Found. That flip is the lab solution.",
+      "h": "The first send can look fine. What unexpected status on a later request to / proves leftover bytes were prepended?"
     },
     {
-      "q": "Why was Python's raw socket module used instead of the requests library?",
-      "o": ["The requests library is too slow for timing attacks", "The requests library also normalizes headers, raw sockets send bytes exactly as written with no modification", "Python requests cannot handle HTTPS", "The lab server rejects requests from known HTTP client libraries"],
-      "a": 1,
-      "x": "High-level HTTP libraries apply the same sanitization as curl. Using ssl.wrap_socket() or socket directly lets you send the exact bytes you want, including conflicting Content-Length and Transfer-Encoding headers, without any modification.",
-      "h": "The requests library is convenient because it handles headers for you. Why is that convenience a problem here?"
+      "q": "What does the X-Ignore: X header in the smuggled prefix do?",
+      "o": [
+        "It tells the front-end to drop leftover GET /404 bytes",
+        "It turns off access logging so the 404 is never stored",
+        "It absorbs the next request line as a dummy header value",
+        "It forces the back-end to answer the smuggle with HTTP/2"
+      ],
+      "a": 2,
+      "x": "When the next real request is glued on, its request line becomes the value of X-Ignore. The back-end treats that as an unknown header and still runs the smuggled GET /404.",
+      "h": "The leftover request is incomplete. Where do the first bytes of the victim request land when the two streams are concatenated?"
     },
     {
-      "q": "What is a differential response and why does it confirm the smuggling worked?",
-      "o": ["Two identical responses from the front-end and back-end show they are synchronized", "The first request gets 200 OK but a subsequent normal request to / gets 404, showing the smuggled prefix was prepended to the next request", "The server responds with two different Content-Type headers", "The response time is significantly longer due to the extra bytes"],
-      "a": 1,
-      "x": "The smuggled 'GET /404' bytes sit in the back-end buffer. The next request from any client gets those bytes prepended, so the back-end runs GET /404 instead of the intended path and returns 404. That unexpected 404 is the differential response.",
-      "h": "You send one request and get 200. You send another normal request to / and get 404. What must have happened between those two requests on the back-end?"
+      "q": "Why does the intended solution require HTTP/1.1?",
+      "o": [
+        "HTTP/2 uses one framing model, so this CL.TE split needs HTTP/1.1",
+        "The lab TLS certificate is issued only for HTTP/1.1 user agents",
+        "Chunked encoding is disabled unless the client speaks HTTP/1.1",
+        "PortSwigger rejects HTTP/2 until a 404 has already been confirmed"
+      ],
+      "a": 0,
+      "x": "HTTP/2 has a single framing length. Classic CL.TE smuggling needs HTTP/1.1 ambiguity between Content-Length and Transfer-Encoding. The lab may speak HTTP/2, but this attack is an HTTP/1.1 technique.",
+      "h": "HTTP/2 does not have two competing body-length headers. Which protocol still does?"
     },
     {
-      "q": "What does the X-Ignore: X header in the smuggled payload accomplish?",
-      "o": ["It tells the front-end to ignore the smuggled bytes", "It is a dummy header that absorbs the start of the next real request to prevent it from breaking the smuggled request structure", "It disables request logging on the back-end", "It signals the back-end to use HTTP/2 for the response"],
-      "a": 1,
-      "x": "When the next real request arrives, its method line gets appended to the leftover bytes. X-Ignore: X acts as a header that swallows those bytes harmlessly, preventing the smuggled request from becoming malformed.",
-      "h": "The smuggled request ends with an incomplete header. What happens when the next real request's method line arrives and gets appended to those bytes?"
+      "q": "After the smuggle POST, which unread bytes sit in the back-end buffer?",
+      "o": [
+        "POST / HTTP/1.1 plus the original Content-Length value",
+        "The zero-size chunk the front-end refused to forward",
+        "The curl User-Agent string from the follow-up GET to /",
+        "GET /404 HTTP/1.1 followed by the X-Ignore header prefix"
+      ],
+      "a": 3,
+      "x": "The front-end forwards 35 body bytes. The back-end stops at chunk 0, so GET /404 HTTP/1.1 and X-Ignore: X remain unread and become the prefix of the next request on that connection.",
+      "h": "Look at the bytes after the zero chunk. Which request line is waiting for the next user?"
     },
     {
-      "q": "What is the long-term fix for CL.TE request smuggling?",
-      "o": ["Disable the Content-Length header on all requests", "Reject requests containing both Content-Length and Transfer-Encoding, or use HTTP/2 end-to-end which removes the ambiguity", "Only allow GET requests to the back-end", "Rate-limit connections to the back-end"],
-      "a": 1,
-      "x": "Rejecting ambiguous requests with both headers removes the attack surface immediately. HTTP/2 end-to-end eliminates the CL vs TE ambiguity entirely because HTTP/2 has a single, unambiguous framing mechanism.",
-      "h": "The vulnerability comes from two servers treating the same request differently. What approach removes the ambiguity entirely rather than patching around it?"
+      "q": "In the two-step solve, why can the curl trigger use a new client connection?",
+      "o": [
+        "curl cannot resume a TLS session that a Python socket opened",
+        "CORS rules require Python and curl to use different Origin values",
+        "Leftover bytes wait on a back-end socket the front-end may reuse",
+        "The lab resets every TCP connection after a single request byte"
+      ],
+      "a": 2,
+      "x": "The leftover lives on the back-end keep-alive socket, not on the attacker client socket. A new curl to / still works if the front-end reuses that same back-end connection.",
+      "h": "Python and curl are different clients. Which hop can still reuse a socket that holds the leftover prefix?"
     },
     {
-      "q": "In the two-step solve (Python smuggle then curl trigger), why must they use separate connections?",
-      "o": ["curl cannot reuse a connection opened by Python", "The attack relies on the smuggled bytes sitting in the back-end buffer, the second connection is the next user's connection that the front-end may route to the same back-end socket", "The server resets connections after each request", "Separate connections are needed to satisfy the CORS policy"],
-      "a": 1,
-      "x": "The back-end keeps the TCP connection alive and reuses it for subsequent requests from the front-end. The smuggled bytes remain in the buffer until the next request on that same back-end connection picks them up.",
-      "h": "The smuggled bytes stay in the back-end's buffer. What type of connection behavior allows those bytes to affect the next request?"
+      "q": "Which of these statements about this CL.TE lab is correct?",
+      "o": [
+        "The front-end trusts Content-Length",
+        "The back-end trusts Content-Length",
+        "X-Ignore drops leftover GET /404 bytes",
+        "All of these statements are true"
+      ],
+      "a": 0,
+      "x": "The front-end trusts Content-Length, which is the CL in CL.TE. The back-end trusts Transfer-Encoding, not Content-Length. X-Ignore absorbs the next request line as a dummy header value, it does not drop GET /404. All is wrong because those last two claims are false.",
+      "h": "CL.TE names the front-end header first. Which length header does this front-end actually use?"
+    },
+    {
+      "q": "Which of these statements about this lab is correct?",
+      "o": [
+        "curl leaves both length headers untouched",
+        "The front-end parses the body as chunked",
+        "Solving the lab requires smuggling /admin",
+        "None of these statements are true"
+      ],
+      "a": 3,
+      "x": "curl rewrites conflicting length headers. The front-end uses Content-Length, not chunked encoding. The lab is solved when a later request to / gets 404, not by reaching /admin.",
+      "h": "Would a well behaved HTTP client keep both length headers? Does this front-end speak chunked? Is /admin the goal?"
     }
   ]
 }

@@ -1,74 +1,74 @@
 {
   "questions": [
     {
-      "q": "What does PHP serialization do?",
-      "o": ["It encrypts an object for secure storage", "It converts an in-memory object into a string representation that can be stored or transmitted", "It compresses objects to reduce cookie size", "It validates object properties against a schema"],
+      "q": "What does PHP serialization do to an in-memory object?",
+      "o": ["It encrypts the object so only the server can restore it later", "It converts the object into a string that can be stored or sent", "It compresses the object only to shrink cookie payload size", "It validates every property against a schema before storage"],
       "a": 1,
-      "x": "Serialization captures the state of an object as a string. The reverse operation, deserialization, reconstructs the object from that string. PHP uses serialize() and unserialize() for this.",
-      "h": "Think of it as taking a snapshot of an object in memory and turning it into text. What would the reverse operation be called?"
+      "x": "Serialization snapshots class name and property values as a string. Deserialization rebuilds the object from that string. PHP uses serialize and unserialize for the two directions.",
+      "h": "Think of a text snapshot of an object's type and fields. What is the reverse operation called?"
     },
     {
-      "q": "Which PHP function is at the core of this vulnerability?",
-      "o": ["json_decode()", "unserialize()", "base64_decode()", "eval()"],
+      "q": "Which PHP function is at the core of this lab's object injection?",
+      "o": ["json_decode, which rebuilds arrays from a JSON cookie string", "unserialize, which rebuilds PHP objects from a crafted string", "base64_decode, which alone instantiates classes from cookie bytes", "eval, which runs the cookie contents as raw PHP source code"],
       "a": 1,
-      "x": "unserialize() reconstructs a PHP object from a string. If that string is user-controlled and the codebase contains classes with dangerous magic methods, the attacker can inject an object of any available class.",
-      "h": "The vulnerability is called insecure deserialization. What is the PHP function that performs deserialization?"
+      "x": "unserialize rebuilds a PHP object from a string. If that string is attacker-controlled and a class with a dangerous magic method exists, the attacker can instantiate that class.",
+      "h": "The bug class is insecure deserialization. Which PHP function performs deserialization of objects?"
     },
     {
-      "q": "What is a PHP magic method?",
-      "o": ["A method that requires admin privileges to call", "A special method that PHP calls automatically at defined lifecycle points, such as object creation or destruction", "A method that encrypts its return value automatically", "A method only accessible through reflection"],
+      "q": "What is a PHP magic method in this exploit's context?",
+      "o": ["A method that can run only after an admin privilege check passes", "A method PHP invokes automatically at defined object lifecycle points", "A method that encrypts its return value before handing it back", "A method reachable only through the reflection API in user code"],
       "a": 1,
-      "x": "Magic methods have double-underscore names like __construct(), __destruct(), __wakeup(). PHP calls them automatically at specific moments, not when you explicitly invoke them.",
-      "h": "These methods start with __ and PHP calls them without you writing an explicit function call. When in an object's life do you think they fire?"
+      "x": "Magic methods use double-underscore names such as __construct, __destruct, and __wakeup. PHP calls them at lifecycle moments, not because application code named them in the request.",
+      "h": "These methods start with two underscores. PHP calls them without an explicit call in the request handler. When in an object's life do they fire?"
     },
     {
-      "q": "Why is __destruct() particularly useful in a deserialization exploit?",
-      "o": ["It runs when the object is first created, allowing code injection on deserialization", "It runs when the object is garbage-collected after use, executing attacker-controlled logic without any explicit call", "It encrypts the object before it is destroyed", "It is called when the session ends, making it useful for persistence"],
+      "q": "Why is __destruct especially useful in a deserialization exploit?",
+      "o": ["It runs when the object is first created, during unserialize itself", "It runs when the object is destroyed, with no extra method call needed", "It encrypts leftover properties so they cannot be read after the request", "It runs only when the PHP session file is deleted on disk at logout"],
       "a": 1,
-      "x": "PHP calls __destruct() automatically when an object goes out of scope. If the class has dangerous code there, such as deleting a file or running a command, it executes just by deserializing an object of that class.",
-      "h": "dest- in __destruct hints at the lifecycle moment. When is an object destroyed? And does the attacker need to call this method explicitly?"
+      "x": "PHP calls __destruct when the object goes out of scope, typically at the end of the request. If that method deletes a file or runs a command, deserializing the class is enough to trigger it.",
+      "h": "The dest in __destruct names a lifecycle moment. When is an object destroyed, and must the attacker call that method by name?"
     },
     {
-      "q": "How was the malicious serialized payload delivered to the server in this lab?",
-      "o": ["As a URL query parameter", "As the session cookie value", "As a POST body JSON field", "As a custom HTTP header"],
+      "q": "How was the malicious serialized object delivered in this lab?",
+      "o": ["As a URL query parameter on the product search endpoint page", "As the session cookie, which already held a serialized User object", "As a JSON field in a POST body sent to the account update form", "As a custom HTTP header named X-PHP-Serialized-Session-Data"],
       "a": 1,
-      "x": "PHP applications often store serialized session data in a cookie. Replacing the cookie with a crafted serialized object is the standard injection vector for this class of attack.",
-      "h": "PHP session data is often stored somewhere that travels with every HTTP request. Where does a browser automatically send stored session data?"
+      "x": "Login sets a session cookie that is Base64-wrapped serialized PHP. Replacing that cookie with a crafted CustomTemplate object is the injection vector.",
+      "h": "The writeup decodes the session cookie after login and finds a serialized User. Where do you put the gadget instead?"
     },
     {
-      "q": "What did the backup file expose that made the exploit possible?",
-      "o": ["The admin password in plain text", "The PHP class definition including its properties and magic methods, revealing the gadget", "The server's private SSH key", "The database connection string"],
+      "q": "What did the backup file expose that made the gadget usable?",
+      "o": ["The admin password stored in plain text next to the class", "The CustomTemplate class, including properties and __destruct logic", "The server's private SSH key included in a commented block", "The database connection string used by the template renderer"],
       "a": 1,
-      "x": "Source code access via the backup file (CustomTemplate.php~) revealed the class name, its properties, and the dangerous logic in __destruct(). Without this, crafting a working payload would be guessing.",
-      "h": "To craft a serialized object for a specific class, you need to know the class name, its property names, and what code runs automatically. Where did the writeup find all that?"
+      "x": "Requesting CustomTemplate.php would execute it. CustomTemplate.php~ returned source, showing lock_file_path and the unlink inside __destruct. That is what the payload is built from.",
+      "h": "An HTML comment named CustomTemplate.php. Directly fetching the .php file runs it. What backup suffix did the writeup append instead?"
     },
     {
-      "q": "In PHP serialization format, what does O:14:\"CustomTemplate\":1:{...} mean?",
-      "o": ["An array with 14 elements inside CustomTemplate", "An object of the class CustomTemplate, where 14 is the class name length and 1 is the property count", "A base64 value of length 14 wrapped in a custom template", "An error code object with ID 14"],
+      "q": "In PHP serialization, what does O:14 plus the name CustomTemplate mean?",
+      "o": ["An array of 14 items stored inside a CustomTemplate wrapper", "An object of class CustomTemplate, whose name is 14 characters long", "A 14-byte Base64 blob labeled as a custom template for cookies", "An error object whose numeric identifier in PHP is always 14"],
       "a": 1,
-      "x": "PHP serialization uses O:<name_length>:\"<class>\":<property_count>:{<properties>}. O stands for Object. The number after O is the byte length of the class name string, not an ID.",
-      "h": "Break down the format: the letter, the number after it, the quoted string, then another number. What does each position represent?"
+      "x": "O means object. The number after O is the byte length of the class name, not an id. CustomTemplate is 14 characters, which is why the payload starts that way.",
+      "h": "PHP type prefixes use a letter then a length then the name. What does uppercase O stand for, and what does 14 count?"
     },
     {
-      "q": "What is a 'gadget' in the context of PHP deserialization?",
-      "o": ["A Burp Suite extension for generating payloads", "An existing class in the codebase with a magic method that performs a dangerous operation the attacker can trigger", "A PHP function that bypasses serialization restrictions", "A specially crafted cookie prefix"],
+      "q": "What is a gadget in PHP deserialization attacks?",
+      "o": ["A Burp extension that prints serialize strings from HTTP history", "An existing class whose magic method performs a useful dangerous action", "A PHP setting that disables serialization restrictions for cookies", "A cookie prefix that forces unserialize to skip class name checks"],
       "a": 1,
-      "x": "A gadget is a class already present in the application or its dependencies that contains a magic method with dangerous behavior. The attacker does not introduce new code, just instantiates an existing dangerous class.",
-      "h": "The attacker does not inject PHP code as text. They inject an object of a class that already exists. What makes a class useful as a gadget?"
+      "x": "A gadget is a class already in the application that does something dangerous in a magic method. The attacker does not upload new PHP. They instantiate that existing class via unserialize.",
+      "h": "The attacker injects an object of a class that already exists. What makes that class useful as a gadget?"
     },
     {
-      "q": "What was the dangerous operation performed by the __destruct() method of the exploited class?",
-      "o": ["Executing a shell command", "Deleting a file using the object's lock_file_path property", "Sending an HTTP request to an external server", "Writing to a log file"],
+      "q": "What dangerous action does CustomTemplate's __destruct perform?",
+      "o": ["It runs a shell command stored in the template_file_path property", "It deletes a file by calling unlink on the lock_file_path property", "It sends an HTTP request to a URL taken from the template path", "It appends object contents to a world-writable application log file"],
       "a": 1,
-      "x": "The __destruct() method called unlink() on the lock_file_path property. By setting that property to /home/carlos/morale.txt in the serialized payload, the attacker triggered file deletion when the object was destroyed.",
-      "h": "The lab goal is to delete a specific file. What PHP function deletes a file, and where in the class would you expect to find it being called automatically?"
+      "x": "When the object is destroyed, __destruct calls unlink on lock_file_path if that path exists. Setting the property to /home/carlos/morale.txt deletes the lab target file.",
+      "h": "The lab asks you to delete morale.txt. Which PHP function removes a file, and which property does __destruct pass to it?"
     },
     {
-      "q": "What is the most direct fix for insecure deserialization?",
-      "o": ["Encrypt the serialized data before storing it in a cookie", "Never pass user-controlled data to unserialize(), and use safer formats like JSON for data exchange", "Add HMAC integrity checking to cookies", "Disable all magic methods in PHP classes"],
-      "a": 1,
-      "x": "unserialize() with user input is inherently dangerous regardless of filtering. The correct fix is to not use PHP serialization for user-controlled data and instead use JSON or another format that does not reconstruct arbitrary objects.",
-      "h": "HMAC signing helps but does not fully close the attack surface if the secret leaks. What is the more fundamental fix that removes the deserialization surface entirely?"
+      "q": "Which of the following is true of this lab's PHP object injection?",
+      "o": ["The session cookie stores JSON, so magic methods cannot run at all", "The gadget source is CustomTemplate.php served as live executable PHP", "None of these statements are true about this PHP object injection lab", "__destruct deletes morale.txt when the object is destroyed"],
+      "a": 3,
+      "x": "The last statement is true. PHP calls __destruct when the object is destroyed, and that method unlinks lock_file_path. The cookie is serialized PHP, not JSON, and the leak is CustomTemplate.php~, not the live .php file. None is wrong because that __destruct claim is true.",
+      "h": "unserialize does not call __construct. Which magic method runs when the request ends and the object is destroyed?"
     }
   ]
 }

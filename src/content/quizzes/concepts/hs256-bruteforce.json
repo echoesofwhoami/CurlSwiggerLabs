@@ -2,38 +2,63 @@
   "questions": [
     {
       "q": "What makes HS256 a symmetric signing algorithm?",
-      "o": ["It uses two different keys for signing and verifying", "The same secret key is used to both create and verify the signature", "It only works with public keys stored in JWKS endpoints", "It encrypts the payload so only the server can read it"],
-      "a": 1,
-      "x": "HS256 is HMAC-SHA256. One shared secret signs the token and verifies it. Anyone who knows that secret can forge valid tokens, which is why secret strength matters.",
-      "h": "Symmetric means the same key works in both directions. Who can forge a token if they know the HS256 secret?"
+      "o": [
+        "The same secret both creates and verifies the signature",
+        "A public key verifies tokens that a private key signed",
+        "The payload is encrypted so only the HS256 holder can read it",
+        "Two different HMAC keys are required, one for each direction"
+      ],
+      "a": 0,
+      "x": "HS256 is HMAC-SHA256. One shared secret signs the token and verifies it. That differs from RS256, which uses a private key to sign and a public key to verify.",
+      "h": "Symmetric means one key works both ways. What is shared between signing and verifying?"
     },
     {
-      "q": "Why can an attacker crack a weak HS256 JWT secret offline?",
-      "o": ["The server exposes a key-recovery endpoint for debugging", "The captured JWT contains the header, payload, and signature needed to test candidate secrets locally without contacting the server", "HS256 stores the secret inside the token payload", "Offline cracking requires the server to respond with a hint for each guess"],
-      "a": 1,
-      "x": "HMAC verification only needs the algorithm, the signed data (header.payload), and a candidate key. All of that is visible in the token, so wordlist attacks run at GPU speed with zero server interaction.",
-      "h": "What inputs does HMAC verification need? Are all of them already present in a captured JWT?"
+      "q": "Why can a weak HS256 secret be cracked without talking to the server?",
+      "o": [
+        "The server returns the secret whenever a forged token is rejected",
+        "HS256 embeds a copy of the secret inside the encoded payload",
+        "The JWT already contains everything needed to test candidate secrets",
+        "Each guess must hit the server so it can confirm a matching HMAC"
+      ],
+      "a": 2,
+      "x": "The signature is deterministic: same input and same key always produce the same signature. An attacker takes the header and payload, signs them with wordlist secrets, and compares the result to the original signature.",
+      "h": "HMAC checks need the signed data, the algorithm, and a guessed key. Which of those are already in the captured JWT?"
     },
     {
-      "q": "What hashcat mode is designed specifically for JWT HS256 secret cracking?",
-      "o": ["Mode 1000 (NTLM)", "Mode 16500 (JWT)", "Mode 3200 (bcrypt)", "Mode 7500 (Kerberos)"],
+      "q": "When is brute-forcing an HS256 secret actually feasible?",
+      "o": [
+        "Whenever RS256 is used and the public key is published",
+        "When the secret is weak and already present in common wordlists",
+        "Only when the attacker also has the server private key on disk",
+        "Only after the token expires and the signature is no longer checked"
+      ],
       "a": 1,
-      "x": "Hashcat mode 16500 accepts a full JWT and tries each wordlist entry as the HMAC secret. It reports a hit when the computed signature matches the token signature.",
-      "h": "Hashcat has a dedicated mode number in the 16000 range for JWT tokens."
+      "x": "Offline guessing only works if the secret is weak enough to appear in a wordlist, such as secret, password, or secret1. A long random secret is not practical to brute-force this way.",
+      "h": "The attack tries secrets from a list. What kind of key will that list actually contain?"
     },
     {
-      "q": "Which wordlist is purpose-built for JWT signing secrets rather than general passwords?",
-      "o": ["rockyou.txt", "jwt.secrets.list from SecLists", "A random 256-bit hex dictionary", "The application's robots.txt file"],
-      "a": 1,
-      "x": "jwt.secrets.list collects strings commonly copied from tutorials and documentation, like secret, your-secret-key, and jwt_secret. Developers paste these without changing them.",
-      "h": "General password lists work, but SecLists includes a curated list specifically for JWT signing secrets."
+      "q": "How does an attacker confirm that a guessed HS256 secret is correct?",
+      "o": [
+        "They decrypt the payload and look for the secret as a claim",
+        "They send the guess to /jwks.json and wait for a 200 response",
+        "They check whether the alg header changes from HS256 to none",
+        "They re-sign the same header and payload and compare signatures"
+      ],
+      "a": 3,
+      "x": "Because HMAC is deterministic, a correct guess produces a signature identical to the one on the captured token. A mismatch means that candidate is wrong.",
+      "h": "Same input plus same key always yields the same HMAC. How do you use that fact to test a guess?"
     },
     {
-      "q": "After cracking the HS256 secret, what must the attacker do to gain admin access?",
-      "o": ["Submit the secret to the server login endpoint", "Change a claim like sub to administrator and re-sign the token with the cracked secret using HS256", "Delete the signature and rely on the none algorithm", "Base64-decode the token and send it back unchanged"],
+      "q": "Which kind of HS256 secret is most at risk of a wordlist attack?",
+      "o": [
+        "A long random value never copied from documentation",
+        "A short common string such as secret or password",
+        "A unique 256-bit key stored only in server memory",
+        "A public JWKS key used only for RS256 verification"
+      ],
       "a": 1,
-      "x": "Knowing the secret lets the attacker produce a valid HMAC for any payload. Changing sub to administrator and signing header.payload with HS256 and the cracked secret produces a token the server accepts as legitimate.",
-      "h": "Cracking gives you signing power. What payload change do you still need to impersonate the admin user?"
+      "x": "HS256 security depends entirely on secret strength. Values like secret, password, or secret1 are in common wordlists, so they can be found by comparing signatures offline.",
+      "h": "The partial names a few example secrets. What do those examples have in common?"
     }
   ]
 }

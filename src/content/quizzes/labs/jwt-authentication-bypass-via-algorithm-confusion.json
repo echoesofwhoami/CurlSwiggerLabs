@@ -2,73 +2,73 @@
   "questions": [
     {
       "q": "In RS256, which key creates the signature and which key verifies it?",
-      "o": ["Both keys can sign and verify interchangeably", "The public key signs, the private key verifies", "The private key signs, the public key verifies", "A shared derived key does both"],
+      "o": ["Both keys can sign and verify tokens in either direction freely", "The public key creates the signature, the private key verifies", "The private key creates the signature, the public key verifies", "A single derived HMAC key is used for both signing and verifying"],
       "a": 2,
-      "x": "RS256 is asymmetric RSA. The private key produces the signature and must stay secret on the server. The public key checks the signature and can be shared openly without enabling token forgery.",
-      "h": "In RSA, the two keys have specific, non-interchangeable roles. Think about which one can be given to everyone and which one must stay secret."
+      "x": "RS256 is RSA with SHA-256. The private key produces the signature and must stay on the server. The public key only verifies and can be published without enabling RS256 forgery.",
+      "h": "In RSA the two keys are not interchangeable. Which one can be given out, and which one must stay secret?"
     },
     {
-      "q": "Where does the server in this lab publish its RSA public key?",
-      "o": ["/admin", "/.env", "/jwks.json", "/public.pem"],
+      "q": "Where does this lab's server publish its RSA public key?",
+      "o": ["/admin, behind the same panel the forged token later unlocks", "/.env, a file that also leaks the matching RSA private key", "/jwks.json, the JSON Web Key Set document for verification keys", "/public.pem, a raw PEM file served from the web root directly"],
       "a": 2,
-      "x": "/jwks.json (JSON Web Key Set) is the standard RFC 7517 endpoint for publishing verification keys. Exposing the public key here is by design and safe for RS256, but becomes a critical input for the algorithm confusion attack.",
-      "h": "The endpoint is standardized in RFC 7517. Its filename abbreviates three words: JSON Web Key Set."
+      "x": "/jwks.json is a standard JSON Web Key Set endpoint. Publishing the public key is normal for RS256, but that same material becomes the HMAC secret in this attack.",
+      "h": "The lab says the public key is on a standard endpoint. The filename abbreviates JSON Web Key Set."
     },
     {
-      "q": "Why is publishing the RSA public key considered safe under normal RS256 usage?",
-      "o": ["The key is encrypted before publishing", "Knowing only the public key is mathematically insufficient to produce a valid RS256 signature", "The key expires after publication", "The public key is a hash, not the real key"],
+      "q": "Why is publishing the RSA public key safe under correct RS256 verification?",
+      "o": ["The key is encrypted with a passphrase before it is published", "The public key cannot produce a valid RS256 signature by itself", "The published key expires after a short, server-defined window", "The public key is a hash of the RSA material, not the real key"],
       "a": 1,
-      "x": "RSA signatures require the private key to create. The public key only verifies. No matter how many times an attacker downloads the public key, they cannot use it to sign new tokens under RS256.",
-      "h": "Ask yourself: what operation requires the private key and what operation only requires the public key?"
+      "x": "Creating an RS256 signature requires the private key. The public key only verifies. Downloading it does not let an attacker sign new tokens while the server still enforces RS256.",
+      "h": "Which RSA operation needs the private key, and which one only needs the public key?"
     },
     {
-      "q": "What is the root flaw exploited in the algorithm confusion attack?",
-      "o": ["The RSA key pair is too short to resist brute force", "The server trusts the alg field in the attacker-controlled JWT header instead of enforcing an expected algorithm from its own config", "The JWKS endpoint exposes both keys by mistake", "RS256 has a known vulnerability in the SHA-256 hash step"],
+      "q": "What is the root flaw exploited by algorithm confusion in this lab?",
+      "o": ["The RSA key pair is too short to resist a practical brute-force", "The server trusts the token's alg header instead of its own config", "The JWKS endpoint accidentally publishes the RSA private key too", "RS256 has a known break in the SHA-256 hashing step of the signature"],
       "a": 1,
-      "x": "A vulnerable server reads the alg claim from the incoming token header and switches its verification logic accordingly. The attacker sets alg to HS256, forcing the server into HMAC mode where the public key becomes the secret.",
-      "h": "The attacker controls the JWT header. What field in the header can they change to influence which algorithm the server uses for verification?"
+      "x": "A vulnerable verifier reads alg from the attacker-controlled header and switches logic. Setting alg to HS256 puts the server in HMAC mode, where the public key is treated as the secret.",
+      "h": "The attacker controls the JWT header. Which header field can change which algorithm the server uses to verify?"
     },
     {
-      "q": "In the attack, what value is used as the HS256 HMAC secret?",
-      "o": ["An empty string from /dev/null", "The server's RSA public key material", "A randomly generated 256-bit key", "The original JWT signature bytes"],
+      "q": "In this attack, what value is used as the HS256 HMAC secret?",
+      "o": ["An empty string read from /dev/null after a kid path traversal", "The server's RSA public key material, converted to PEM, as HMAC", "A randomly generated 256-bit key created only on the attacker side", "The original JWT signature bytes reused as the new HMAC secret"],
       "a": 1,
-      "x": "The public key is fetched from /jwks.json and converted to PEM format. The attacker signs with HS256 using that PEM string as the secret. A vulnerable server then verifies the HS256 token using the same public key.",
-      "h": "If the server verifies an HS256 token using its own public key, what must the attacker use as the HMAC secret when signing?"
+      "x": "The public key is fetched from /jwks.json and converted to PEM. The attacker HMACs with those PEM bytes. A confused server verifies the HS256 token with the same public key material.",
+      "h": "If the server verifies HS256 using its own public key, what must the attacker use as the HMAC secret when signing?"
     },
     {
-      "q": "What format does the public key need to be converted into before using it as an HMAC secret?",
-      "o": ["Hex-encoded DER", "PEM (Privacy Enhanced Mail) format", "Base64url without headers", "A JSON string from the JWKS directly"],
+      "q": "What format must the JWKS public key be converted to before HMAC signing?",
+      "o": ["Hex-encoded DER bytes with no header lines around the key", "PEM format, with a BEGIN PUBLIC KEY header wrapping the key", "Bare Base64url of the JWK n and e values, with no PEM wrapper", "The raw JWKS JSON object string used directly as the HMAC secret"],
       "a": 1,
-      "x": "JWT libraries that accept an RSA public key as an HS256 secret typically expect it as a PEM-formatted string starting with -----BEGIN PUBLIC KEY-----. The raw JWKS JSON must be converted to this format first.",
-      "h": "The standard human-readable format for RSA public keys has a recognizable header line starting with -----BEGIN."
+      "x": "The lab server stores the key as PEM. The writeup converts the JWK into X.509 PEM, then uses those PEM bytes as the HMAC-SHA256 secret.",
+      "h": "The usual text form for an RSA public key starts with a BEGIN PUBLIC KEY line."
     },
     {
-      "q": "After forging the token with algorithm confusion, what payload change grants access to /admin?",
-      "o": ["Changing the alg claim in the payload", "Changing sub to administrator", "Adding isAdmin: true to the payload", "Removing the exp claim"],
+      "q": "After the HS256 confusion signature works, which payload change reaches /admin?",
+      "o": ["Changing the alg claim stored inside the JSON payload body", "Changing the sub claim to administrator before signing HS256", "Adding an isAdmin true flag next to the existing payload claims", "Removing the exp claim so the token never expires on the server"],
       "a": 1,
-      "x": "The sub (subject) claim identifies the user. Setting it to 'administrator' and signing with HS256 using the public key as the secret produces a token that passes server verification and grants admin access.",
-      "h": "The algorithm confusion gives you the ability to sign. What payload change do you still need to actually become the admin user?"
+      "x": "Algorithm confusion supplies a valid signature. Setting sub to administrator is still required so the server treats the session as the admin user.",
+      "h": "Confusion lets you sign. What payload field still has to name the admin user?"
     },
     {
-      "q": "What Python tool was used in the writeup to perform the key conversion and signing?",
-      "o": ["PyCryptodome only", "hashcat with mode 16500", "PyJWT combined with the cryptography library", "OpenSSL command line"],
+      "q": "Which of the following is true of this lab's algorithm confusion attack?",
+      "o": ["The public key at /jwks.json is enough to forge a valid RS256 token", "The attack keeps alg as RS256 and only edits the payload sub claim", "None of these statements are true about this algorithm confusion lab", "The HMAC secret is an empty string read from /dev/null on disk"],
       "a": 2,
-      "x": "PyJWT handles JWT creation and signing. The cryptography library converts the JWKS JSON to a PEM-formatted public key object. Together they produce an HS256-signed token using the public key as the secret.",
-      "h": "Two Python packages are combined in the writeup: one for JWT handling and one for cryptographic key operations."
+      "x": "A public key cannot forge RS256. The attack switches alg to HS256 and HMACs with the PEM public key. Empty-string /dev/null signing is the kid lab, not this one.",
+      "h": "Separate RS256 forgery, the actual alg switch, and the /dev/null trick from the kid lab."
     },
     {
-      "q": "What server-side configuration change would fully prevent algorithm confusion attacks?",
-      "o": ["Rotate the RSA key pair more frequently", "Enforce the expected algorithm from server configuration and reject tokens claiming any other algorithm", "Restrict the JWKS endpoint to authenticated users", "Use 4096-bit RSA instead of 2048-bit"],
-      "a": 1,
-      "x": "The server must decide which algorithm it accepts based on its own deployment configuration, not the token header. If it expects RS256, any token claiming HS256 should be rejected before verification even begins.",
-      "h": "The flaw is that the server listens to the attacker's alg value. What is the opposite of that behavior?"
+      "q": "Which libraries did the writeup use to convert the JWK and sign HS256?",
+      "o": ["PyCryptodome alone, with no JWT helpers and no RSA conversion", "hashcat mode 16500, treating the PEM file as a wordlist secret", "Python hmac plus the cryptography library for JWK-to-PEM conversion", "The openssl command line, with no Python involved in signing"],
+      "a": 2,
+      "x": "cryptography builds an RSA public key from the JWK n and e values and exports PEM. The script then signs with hmac and hashlib SHA-256 using those PEM bytes as the secret.",
+      "h": "The writeup script imports hmac and cryptography.hazmat, not hashcat and not openssl."
     },
     {
-      "q": "If the server correctly enforced RS256 only, what would happen when the forged HS256 token arrives?",
-      "o": ["The server would try both algorithms and use whichever passes", "The token would be rejected because the algorithm does not match the expected RS256", "The server would log the attempt but still process the token", "The public key would be regenerated automatically"],
+      "q": "What server-side change fully prevents algorithm confusion on this verifier?",
+      "o": ["Rotate the RSA key pair more frequently without changing the code", "Enforce the expected algorithm from config and reject any other alg", "Restrict /jwks.json to authenticated users so the key stays hidden", "Use 4096-bit RSA instead of 2048-bit without pinning the algorithm"],
       "a": 1,
-      "x": "A hardened server compares the alg claim against its expected value first. HS256 does not match RS256, so the token is rejected immediately. No key material is consulted and no payload is read.",
-      "h": "If the server has already decided it only accepts RS256, what does it do when it sees a different algorithm in the header?"
+      "x": "The server must choose the algorithm from its own configuration, not from the token. If it expects RS256, a token claiming HS256 should be rejected before any key is used as HMAC.",
+      "h": "The flaw is that the server obeys the attacker's alg value. What is the opposite of that behavior?"
     }
   ]
 }

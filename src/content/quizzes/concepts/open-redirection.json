@@ -1,39 +1,39 @@
 {
   "questions": [
     {
-      "q": "What is an open redirect vulnerability?",
-      "o": ["A server that always responds with a 301 redirect to the home page", "An endpoint that redirects users to a URL supplied in the request without validating the destination", "A redirect that leaks the HTTP Referer header to the destination site", "A CORS configuration that allows cross-origin redirects"],
+      "q": "What is an open redirection vulnerability?",
+      "o": ["A server that always 301-redirects every path to /home", "A redirect whose destination comes from unvalidated input", "A redirect that always leaks Referer to a third party", "A CORS rule that allows every cross-origin Location header"],
       "a": 1,
-      "x": "An open redirect lets attackers craft URLs like /redirect?url=https://evil.com. The server issues a 3xx response to the destination without checking if it is safe, sending users (or server-side clients) to attacker-controlled locations.",
-      "h": "The word 'open' means there is no restriction on where the redirect goes. What should be validated but is not in a vulnerable endpoint?"
+      "x": "The app takes a user-controlled value and uses it as the redirect target, often in a Location header or in JavaScript, without checking that the destination is safe.",
+      "h": "Open means the destination is not locked down. What should be validated and is not?"
     },
     {
-      "q": "How is an open redirect typically chained with SSRF?",
-      "o": ["The open redirect is used to leak session cookies to the attacker", "The SSRF filter checks only the initial URL, pointing it at an open redirect endpoint that targets an internal address causes the server to follow the redirect to the blocked destination", "The redirect forces the server to use HTTP instead of HTTPS, bypassing TLS inspection", "The attacker uses the redirect to bypass rate limiting on the SSRF endpoint"],
+      "q": "Where does a typical open redirect put the attacker-chosen URL?",
+      "o": ["In a Set-Cookie header that the browser must store", "In a Location header or in a client-side redirect", "In a Content-Security-Policy report-uri directive", "In a Link preload header used for the next page fetch"],
       "a": 1,
-      "x": "The SSRF filter allows the redirect endpoint's URL (it looks safe). When the server follows the redirect, it arrives at the internal address that the filter would have blocked directly. The filter only ran on the first URL.",
-      "h": "Think about when the filter runs. It checks the URL you submit, not where that URL eventually leads. What happens after a redirect?"
+      "x": "Common patterns are /redirect?url=, /login?return=, or /next?target=. The value is copied into a Location header or a client-side navigation with little or no allowlisting.",
+      "h": "HTTP redirects advertise the next URL in a specific response header. Client-side redirects set location instead."
     },
     {
-      "q": "Why are open redirects also a phishing risk even without SSRF?",
-      "o": ["Attackers can use them to steal session tokens directly", "Attackers craft URLs on the legitimate domain that redirect to a fake login page, making the initial URL look trustworthy to the victim", "They allow attackers to bypass same-origin policy", "They leak the server's private key in the redirect response"],
-      "a": 1,
-      "x": "A URL like https://legit-bank.com/redirect?url=https://fake-bank.com starts with the trusted domain. Users and email security tools may not check beyond the initial hostname. The victim lands on the phishing page after trusting the first domain.",
-      "h": "The initial URL is on a trusted domain. Users often only look at the domain before clicking. What happens when they follow the redirect?"
+      "q": "Consider these claims about open redirection. (1) It only works over HTTP, never HTTPS. (2) The destination is always hardcoded in the app. (3) It cannot be chained with other bugs. Which option is correct?",
+      "o": ["Only the first claim is true", "Only the first two claims are true", "Only the third claim is true", "None of these statements are true"],
+      "a": 3,
+      "x": "Open redirects work on HTTPS just as well as HTTP. The destination comes from user input, not from a hardcoded safe path. They are used for phishing, filter bypass, and chains such as SSRF.",
+      "h": "Which of those three claims matches how an open redirect actually behaves?"
     },
     {
-      "q": "What is the correct fix for an open redirect?",
-      "o": ["Require the redirect target to use HTTPS", "Validate the destination URL against an allowlist of approved paths or domains before issuing the redirect", "Log all redirect requests for monitoring", "Add a CAPTCHA before processing redirect parameters"],
+      "q": "Why is open redirection useful for phishing even without SSRF?",
+      "o": ["It lets the attacker read session cookies from HttpOnly flags", "The first URL is on a trusted host, then the user is sent off-site", "It disables same-origin checks for the rest of the session", "It puts the server private key into the redirect response body"],
       "a": 1,
-      "x": "An allowlist compares the destination against approved values. If the application only needs to redirect to a few known pages, comparing the path against a fixed list of safe paths is the most reliable approach.",
-      "h": "The problem is accepting any destination. What validation approach limits destinations to a pre-approved set?"
+      "x": "A link that starts on the real domain can still land on a fake login page. Users and some mail filters trust the first hostname and never inspect the redirect target.",
+      "h": "The click starts on a domain the victim already trusts. Where do they arrive after the redirect?"
     },
     {
-      "q": "What HTTP status codes indicate a redirect response?",
-      "o": ["200, 201, 204", "301, 302, 307, 308", "400, 401, 403", "500, 502, 503"],
+      "q": "Besides phishing, what else can an open redirect enable?",
+      "o": ["Direct remote code execution in the browser sandbox", "Bypassing URL filters and chaining into bugs like SSRF", "Forging TLS certificates for the victim's own domain", "Reading files from the server disk without any request"],
       "a": 1,
-      "x": "3xx responses tell the client to look elsewhere. 301 and 308 are permanent, 302 and 307 are temporary. The Location header in the response specifies the new destination.",
-      "h": "HTTP status codes are grouped by their first digit. Which range of three-digit codes handles redirects?"
+      "x": "A legitimate host in the first URL can pass a filter that would block a raw internal address. If some other bug follows redirects, that open redirect becomes a stepping stone rather than a standalone phishing trick.",
+      "h": "Filters often allow the site's own host. What happens if that host then redirects somewhere the filter would have blocked?"
     }
   ]
 }

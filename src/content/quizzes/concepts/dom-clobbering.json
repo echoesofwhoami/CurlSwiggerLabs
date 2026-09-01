@@ -1,39 +1,39 @@
 {
   "questions": [
     {
-      "q": "What browser feature makes DOM clobbering possible?",
-      "o": ["The fact that browsers execute inline event handlers on all elements", "The HTML specification's Named Access on the Window object, which exposes elements with id or name attributes as properties of window", "A bug in V8's property lookup optimizations", "The same-origin policy's exception for element references"],
+      "q": "In Chromium, what does an element with id=\"settings\" become on window?",
+      "o": ["A string copy of that element's inner text content", "A property window.settings that points at that node", "A CSS custom property named --settings on :root", "A cookie whose name is settings for the same origin"],
       "a": 1,
-      "x": "The HTML spec (section 7.3.3) requires browsers to create window.foo for any element with id='foo'. This is a legacy feature from the 1990s web, preserved for backward compatibility, and it enables clobbering without any script execution.",
-      "h": "This is a specified behavior, not a browser bug. Where in the HTML spec would you find the rule that creates window properties from element IDs?"
+      "x": "Chromium exposes a top-level element with id=\"settings\" as window.settings. The value is the DOM node, not a config object. A page that reads window.settings || defaults can then skip the fallback, because a node is truthy.",
+      "h": "Named access on window turns some HTML ids into global properties. What type of value is window.settings in that case?"
     },
     {
-      "q": "What does it mean to 'clobber' a variable?",
-      "o": ["To delete it from the global scope with delete window.x", "To overwrite an existing JavaScript variable by creating an HTML element whose id matches the variable name", "To shadow it with a local variable inside a function", "To freeze it with Object.freeze() so it cannot be changed"],
+      "q": "In Chromium, what is window.foo when two elements share id=\"foo\"?",
+      "o": ["Always only the first matching node in the tree", "Often an HTMLCollection that lists both of those nodes", "A Map object whose keys are the two element tags", "undefined, because duplicate ids get ignored entirely"],
       "a": 1,
-      "x": "When JavaScript code reads window.config or just config, and an attacker can inject an element with id='config', the element replaces the original variable value. The original value is 'clobbered' by the DOM element reference.",
-      "h": "The word clobber means to hit or overwrite forcefully. What does the attacker create in the DOM to overwrite the JavaScript variable?"
+      "x": "Duplicate ids often make window.foo an HTMLCollection of both nodes. Named items in that collection can be read like object properties. That is how HTML can fake a nested shape without any script tag.",
+      "h": "One id maps to one node. What does Chromium often expose when the same id appears twice?"
     },
     {
-      "q": "How is a two-level property chain (e.g., config.key) clobbered using nested anchor elements?",
-      "o": ["The outer anchor's href clobbers config, the inner anchor's href clobbers config.key", "An anchor with id='config' creates window.config, a child anchor with name='key' is accessible as window.config.key via the element's HTMLCollection named access", "Two nested anchors merge their id attributes into a dot-separated string", "Nesting anchors is invalid HTML, so the parser creates a flat structure the clobbering uses"],
+      "q": "How can two anchors fake an object shape like { theme: \"dark\" }?",
+      "o": ["Nest one anchor inside the other so href becomes a child key", "Give both the same id, and put name=\"theme\" href=\"dark\" on one", "Set data-theme=\"dark\" on a single div that has id=\"opts\"", "Use a form with method=\"GET\" plus an input named theme"],
       "a": 1,
-      "x": "When window.config is an anchor element, accessing window.config.key looks for a property called key on that element. If the element has a child with name='key', the browser returns it via named access, creating the two-level chain.",
-      "h": "Once you have window.config as an anchor element, you need window.config.key to return something you control. What does accessing a named property on a DOM element do if a child element has that name attribute?"
+      "x": "Two anchors with id=\"opts\", one also having name=\"theme\" href=\"dark\", can make window.opts an HTMLCollection. In Chromium, window.opts.theme is often the string \"dark\" from href. Nested parent and child anchors are not what creates that collection.",
+      "h": "Chromium's fake object shape uses duplicate ids plus a name and href on an anchor, not nesting."
     },
     {
-      "q": "Why can anchor elements be effective clobbering gadgets beyond just their id attribute?",
-      "o": ["Anchor elements are the only tags browsers allow with both id and name attributes", "Anchor elements have a href property that can be set to a javascript: URI or any other URL, giving the attacker control over a string value that code might use as a URL or script source", "Anchor elements are rendered outside the shadow DOM, giving them elevated privileges", "Anchor elements bypass DOMPurify's parser because they are self-closing"],
+      "q": "How does Firefox differ from Chromium on duplicate-id clobbering?",
+      "o": ["Firefox never maps any element id onto a window property", "Firefox keeps a single node, not an HTMLCollection of both", "Firefox maps ids onto window but only inside nested iframes", "Firefox treats duplicate ids as a syntax error and then stops"],
       "a": 1,
-      "x": "Accessing window.config where config is an anchor returns the element. Accessing window.config.href returns the anchor's href value. If the application uses that value as a script src or navigation target, the attacker controls the URL.",
-      "h": "DOM elements have properties beyond just their tag. What property of an anchor element represents its destination URL, and what could an attacker put there?"
+      "x": "Firefox still clobbers flat names, so one element with id=\"foo\" can be window.foo and skip a || fallback. Duplicate ids stay the first matching node, not an HTMLCollection, so window.foo.bar from a second element's name and href does not resolve the Chromium way.",
+      "h": "Firefox still maps a single id onto window. What does it refuse to do with two nodes that share that id?"
     },
     {
-      "q": "What DOMPurify configuration option removes id and name attributes to prevent clobbering?",
-      "o": ["FORCE_BODY: true", "FORBID_ATTR: ['id', 'name']", "ALLOWED_TAGS: []", "WHOLE_DOCUMENT: false"],
+      "q": "Why can const settings = window.settings || defaults skip the fallback?",
+      "o": ["window.settings is always a string, and strings are falsy", "A clobbered DOM node is truthy, so the || right side never runs", "let and const bindings always overwrite window.settings first", "The || operator only runs when the left side is an object"],
       "a": 1,
-      "x": "FORBID_ATTR removes specified attributes from all allowed elements. Stripping id and name prevents any injected element from participating in named access on window, eliminating the clobbering surface.",
-      "h": "DOMPurify has an option that takes a list of attribute names to remove from all sanitized HTML. What is it called?"
+      "x": "|| only treats missing or empty values as a miss. A DOM node is truthy, so the hardcoded defaults never apply. A top-level let or const named settings would not collide with window.settings, but this lookup is a property read on window.",
+      "h": "The check is 'is window.settings missing or empty?' Is a DOM element missing, or is it a real truthy value?"
     }
   ]
 }

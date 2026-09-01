@@ -2,38 +2,63 @@
   "questions": [
     {
       "q": "What are PHP magic methods?",
-      "o": ["Methods that only admin users can call", "Methods with double-underscore names that PHP invokes automatically at specific lifecycle events", "Methods that bypass access control checks", "Deprecated methods removed in PHP 8"],
-      "a": 1,
-      "x": "Magic methods like __construct(), __destruct(), __wakeup(), and __toString() are called by PHP automatically at defined moments. You never call them directly, they fire when their trigger condition is met.",
-      "h": "The double underscore prefix is a naming convention in PHP. What kind of functions does PHP call on your behalf, without you writing an explicit call?"
+      "o": [
+        "Methods that only run when an admin user is logged in",
+        "Methods that skip access checks on private properties",
+        "Methods removed in PHP 8 and replaced by attributes",
+        "Methods named with __ that PHP calls at lifecycle points"
+      ],
+      "a": 3,
+      "x": "Magic methods always start with a double underscore. PHP invokes them automatically at points in an object life, such as creation, destruction, deserialization, or string conversion. You do not call them yourself.",
+      "h": "The names start with __. Who actually invokes them, your code or PHP?"
     },
     {
-      "q": "When does __destruct() run?",
-      "o": ["When you call delete($obj) on the object", "When the object goes out of scope and is garbage-collected by PHP", "When the script encounters a fatal error", "When you call $obj->destroy()"],
+      "q": "When does PHP call __construct() on an object?",
+      "o": [
+        "When the object is deserialized from a cookie string",
+        "When the object is created with new ClassName() in code",
+        "When the object goes out of scope at the end of a request",
+        "When the object is used in echo or string concatenation"
+      ],
       "a": 1,
-      "x": "PHP calls __destruct() automatically when an object's reference count drops to zero or when the script ends. In a deserialization exploit, an injected object's __destruct() runs at script end, executing attacker-controlled logic.",
-      "h": "The name des-truct hints at destruction. Objects are destroyed when they are no longer needed. When exactly does PHP decide an object is no longer needed?"
+      "x": "__construct() runs when an object is created with new. It does not run on unserialize(). Deserialization is a different lifecycle event, handled by __wakeup() instead.",
+      "h": "Which PHP syntax is the normal way to create a brand-new object?"
     },
     {
-      "q": "When does __wakeup() run?",
-      "o": ["When the object is first created with new", "Immediately after unserialize() reconstructs the object", "When the session is destroyed", "When the object is converted to a string"],
-      "a": 1,
-      "x": "__wakeup() fires right after unserialize() finishes building the object. It is intended for post-deserialization initialization but can be used as a gadget if it contains dangerous operations.",
-      "h": "The method name is a metaphor: the object was 'sleeping' in its serialized form. When does it 'wake up'?"
+      "q": "When does PHP call __destruct() on an object?",
+      "o": [
+        "When the object is destroyed, such as at script end",
+        "When your code calls delete() on the object by name",
+        "When unserialize() first finishes rebuilding the object",
+        "When the object is compared to a string with ==="
+      ],
+      "a": 0,
+      "x": "__destruct() runs when the object is destroyed: it goes out of scope, the script ends, or it is garbage collected. After a request that deserialized a cookie object, PHP destroys that object and __destruct() fires on its own.",
+      "h": "The attacker never calls this method. When does PHP destroy objects created during a request?"
     },
     {
-      "q": "When does __toString() get called?",
-      "o": ["When you call intval() on the object", "When the object is used in a string context, for example in echo or string concatenation", "When you call serialize() on the object", "When the object is used as an array key"],
-      "a": 1,
-      "x": "__toString() is invoked whenever PHP needs a string representation of the object: echo $obj, string concatenation, or passing it to a string function. If __toString() contains dangerous code, using the object as a string triggers it.",
-      "h": "The method name tells you the context. When does PHP need to convert an object to a string?"
+      "q": "When does PHP call __wakeup() on an object?",
+      "o": [
+        "When the object is first created with the new keyword",
+        "When the PHP session is closed and written to disk",
+        "When the object is deserialized with unserialize()",
+        "When the object is converted to a string for output"
+      ],
+      "a": 2,
+      "x": "__wakeup() runs when an object is deserialized. That is the unserialize() path, not new. __toString() is the method that runs when the object is treated as a string.",
+      "h": "The object was stored as a string. Which magic method runs as that string becomes an object again?"
     },
     {
-      "q": "Why are magic methods particularly useful in deserialization gadget chains?",
-      "o": ["They bypass PHP's type system entirely", "They execute automatically without any explicit method call, so injecting an object via unserialize() is sufficient to trigger dangerous code", "They are always public and cannot be made private", "PHP optimizes magic methods to run before security checks"],
+      "q": "Why is __destruct() useful to an attacker who can unserialize a cookie?",
+      "o": [
+        "It bypasses PHP type checks so any property can call any function",
+        "PHP calls it automatically when the object is later destroyed",
+        "It is the only magic method allowed to read files from disk",
+        "It runs before __construct(), so authentication has not started"
+      ],
       "a": 1,
-      "x": "An attacker does not need to call any method. Simply constructing the serialized string and passing it to unserialize() causes PHP to build the object. When the object is later destroyed, __destruct() fires. No explicit invocation needed.",
-      "h": "The attacker only controls the serialized input, not the code execution flow. How can they still trigger a specific method on an object they just deserialized?"
+      "x": "Deserializing a cookie creates the object in memory. When the request finishes, PHP destroys it and __destruct() runs without any explicit call. The attacker only needs to supply the serialized object.",
+      "h": "The attacker controls the cookie, not the call stack. Which method still runs when the request ends?"
     }
   ]
 }

@@ -1,39 +1,64 @@
 {
   "questions": [
     {
-      "q": "What does PHP's serialize() function produce?",
-      "o": ["A JSON string of the object", "A string representation of an object's type and property values in PHP's custom format", "A binary-encoded compressed blob", "A base64-encoded copy of the object"],
+      "q": "What does PHP serialize() produce from an in-memory object?",
+      "o": [
+        "A JSON document of the object property names only",
+        "A string encoding of the object class and property values",
+        "A compressed binary blob that browsers cannot display",
+        "A Base64 copy of the object with the class name removed"
+      ],
       "a": 1,
-      "x": "serialize() produces a text string that encodes the object's class name, property count, and each property's type, name, and value. The format uses single-letter type codes (O for object, s for string, i for integer, b for boolean) followed by the data.",
-      "h": "serialize() produces a text string, not binary. What information about the object does PHP need to reconstruct it later?"
+      "x": "serialize() converts an object into a string that can be stored or sent. That string records the class name, how many properties it has, and each property name and value. unserialize() turns the string back into an object.",
+      "h": "Serialization is object-to-string. What details must that string keep so PHP can rebuild the object later?"
     },
     {
-      "q": "What does the letter O at the start of a PHP serialized string indicate?",
-      "o": ["Output type", "Object", "Optional field", "Ordered array"],
-      "a": 1,
-      "x": "PHP uses type prefixes: O = Object, a = array, s = string, i = integer, b = boolean, N = null. O:14:\"CustomTemplate\" means an Object whose class name is 14 characters long and is called CustomTemplate.",
-      "h": "PHP serialization uses single-letter type codes. What type of data structure does uppercase O represent?"
+      "q": "In PHP serialized form, what does a leading O mean?",
+      "o": [
+        "Object, with a class name length after it",
+        "Output type for printed debug dumps",
+        "Optional field that may be omitted later",
+        "Ordered array of scalar string values"
+      ],
+      "a": 0,
+      "x": "O marks an object. Next comes the class name length, then the class name, then the property count. s marks a string, including property names and string values.",
+      "h": "PHP uses a one-letter type prefix. What kind of value does uppercase O stand for?"
     },
     {
-      "q": "Why is passing user-controlled data to unserialize() dangerous?",
-      "o": ["unserialize() runs base64 decode which can cause buffer overflows", "unserialize() can instantiate any class available in the codebase, potentially triggering magic methods with dangerous behavior", "PHP objects cannot be trusted because they ignore type checking", "unserialize() makes a network call that can be redirected"],
-      "a": 1,
-      "x": "unserialize() reconstructs any PHP object from the string. If a class in scope has a magic method like __destruct() or __wakeup() that does something dangerous (deletes a file, sends a request), calling unserialize() with the right string triggers that behavior automatically.",
-      "h": "Think about what unserialize() does step by step. It creates a PHP object. What runs automatically when a PHP object is created or destroyed?"
+      "q": "Why is unserializing data an attacker can edit dangerous?",
+      "o": [
+        "unserialize() always makes a network call that can be redirected",
+        "PHP ignores types, so every property becomes a callable method",
+        "The server rebuilds whatever object the attacker put in the string",
+        "Serialized strings cannot be stored in cookies without crashing"
+      ],
+      "a": 2,
+      "x": "If an application stores serialized objects in cookies and blindly calls unserialize() on them, the attacker can change the string. PHP then reconstructs the object the attacker chose, not the original one.",
+      "h": "unserialize() rebuilds objects from the string. Who controls that string if it lives in a cookie?"
     },
     {
-      "q": "What PHP property access modifier makes a property appear as \\x00*\\x00propertyName in serialized form?",
-      "o": ["public", "protected", "private", "static"],
+      "q": "In the serialized format, what does the number after the class name mean?",
+      "o": [
+        "The PHP version that wrote the string",
+        "How many properties the object contains",
+        "The byte length of the entire cookie value",
+        "The access level of the first property name"
+      ],
       "a": 1,
-      "x": "Protected properties are serialized with a null byte, asterisk, null byte prefix before the name (\\x00*\\x00name). Private properties use the class name between null bytes. Public properties have no prefix.",
-      "h": "PHP encodes visibility in serialized strings using special character sequences. Which modifier is represented by the null-asterisk-null sequence?"
+      "x": "After the class name, the format records the property count. For example a User object with username and access_token has 2 properties. Each property then appears as a name and a value.",
+      "h": "The partial breaks the format into class name, then a count, then properties. What is being counted?"
     },
     {
-      "q": "What is the safest alternative to PHP serialization for storing user session data?",
-      "o": ["Base64-encoded serialize() output", "JSON, which only reconstructs plain data structures and cannot instantiate classes or trigger magic methods", "XML serialization via SimpleXML", "PHP's var_export() output evaluated with eval()"],
-      "a": 1,
-      "x": "JSON decodes into plain arrays and scalars, never into class instances. There are no magic methods to trigger and no gadget chains to exploit. It is also language-neutral, making it easier to validate and inspect.",
-      "h": "The danger of unserialize() is that it creates full PHP objects. What data format only creates arrays and primitive values, never class instances?"
+      "q": "Which statement about PHP serialization is correct?",
+      "o": [
+        "serialize() turns objects into strings",
+        "unserialize() encrypts those objects",
+        "All of these statements are true",
+        "O marks a serialized PHP array"
+      ],
+      "a": 0,
+      "x": "serialize() converts an in-memory object into a string. unserialize() rebuilds the object, it does not encrypt. A leading O means object, not array. All is wrong because those last two claims are false.",
+      "h": "Look at the format notes. What does serialize() produce, and what does a leading O stand for?"
     }
   ]
 }

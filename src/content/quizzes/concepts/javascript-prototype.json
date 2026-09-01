@@ -1,39 +1,39 @@
 {
   "questions": [
     {
-      "q": "What happens when you access a property that does not exist on a JavaScript object?",
-      "o": ["JavaScript throws a ReferenceError immediately", "JavaScript traverses the prototype chain upward, checking each prototype for the property until it finds it or reaches null", "JavaScript returns an empty object", "JavaScript converts the object to a string and searches the string"],
+      "q": "What is an object's prototype in JavaScript?",
+      "o": ["A copied snapshot of properties frozen at creation time", "A fallback object used when an own property is missing", "A TypeScript type annotation stored next to the value", "A reserved keyword that marks methods as abstract ones"],
       "a": 1,
-      "x": "Property lookup follows the prototype chain: obj -> obj.__proto__ -> obj.__proto__.__proto__ -> ... -> null. If none of the prototypes have the property, undefined is returned. This chain is the foundation of JavaScript's inheritance model.",
-      "h": "JavaScript does not copy properties from prototypes into objects. Instead, what does it do when a property is not found locally?"
+      "x": "The prototype link is not a copied set of keys. If a read misses on the object, the engine looks on the prototype, then that prototype's prototype, until it finds the key or hits null.",
+      "h": "JavaScript does not copy prototype keys onto every object. What does it do instead when a key is not found locally?"
     },
     {
-      "q": "What is __proto__?",
-      "o": ["A private property that cannot be accessed in production code", "A non-standard but widely supported accessor that points to the prototype of an object", "A reserved keyword in ES6+", "A method that clones the prototype chain"],
+      "q": "If obj.foo is missing, where does JavaScript look next?",
+      "o": ["In a hidden global map of all string keys in the process", "On obj's prototype, then that prototype's prototype, and so on", "In localStorage under a key made from the object identity", "In the function's arguments object from the current call"],
       "a": 1,
-      "x": "__proto__ is a getter/setter that exposes an object's internal prototype link. In JSON payloads, __proto__ is treated as a regular property key by many merge functions, which is how prototype pollution works.",
-      "h": "Every object in JavaScript has a hidden link to its prototype. __proto__ is one way to access that link. What does setting it in a JSON payload do when a merge function processes it?"
+      "x": "Lookup order is the object itself, then its prototype, then the next link, until a hit or null. A chain can be several objects long, such as user then roleDefaults then Object.prototype then null.",
+      "h": "Property search walks a linked list of objects. What is the next place after the object itself?"
     },
     {
-      "q": "What is the difference between Object.getPrototypeOf(obj) and obj.__proto__?",
-      "o": ["They are completely different APIs with different return values", "Both access the same prototype, but Object.getPrototypeOf is the standard safe API while __proto__ is a legacy accessor, prefer Object.getPrototypeOf in code", "Object.getPrototypeOf only works on arrays", "__proto__ is faster but less accurate than Object.getPrototypeOf"],
+      "q": "An object has its own isAdmin: false and a prototype with isAdmin: true. What does obj.isAdmin return?",
+      "o": ["true, because prototype values always override own keys", "false, because an own property wins and the chain is skipped", "undefined, because duplicate keys cancel each other out", "true, because Object.prototype is checked before own keys"],
       "a": 1,
-      "x": "Both return the same internal [[Prototype]] slot. Object.getPrototypeOf is defined in the ECMAScript spec as the standard API. __proto__ was a browser extension later standardized as a legacy feature. Modern code should use Object.getPrototypeOf.",
-      "h": "They access the same thing by different means. Which one is the officially specified API and which one is a legacy accessor that was added for backward compatibility?"
+      "x": "Own properties always win. If the object already has the key, the prototype chain is not consulted. In the example, user.isAdmin is false even though the prototype has true.",
+      "h": "Does the engine keep walking after it already found the key on the object itself?"
     },
     {
-      "q": "What does Object.create(null) create and why is it useful in security-sensitive code?",
-      "o": ["An object that copies all properties from null, creating an empty object", "A prototype-less object with no inherited properties, preventing prototype pollution when used as a merge target", "An object that throws on any property access", "A frozen object that cannot be modified after creation"],
-      "a": 1,
-      "x": "Object.create(null) creates an object with no prototype chain at all. There is no __proto__ link to follow. Using it as a merge target means an attacker's __proto__ key finds nowhere to go, preventing pollution.",
-      "h": "If the merge target has no prototype, what happens when the merge function tries to follow the __proto__ key to Object.prototype?"
+      "q": "Consider these claims about property lookup. (1) A missing key is searched on the object, then its prototype. (2) The chain ends at null. (3) If nothing is found, the result is undefined. Which option is correct?",
+      "o": ["Only the first claim is true", "Only the first two claims are true", "All of these statements are true", "Only the third claim is true"],
+      "a": 2,
+      "x": "Search starts on the object, walks each prototype, and stops at null. A total miss returns undefined, not an exception. That walk is ordinary JavaScript inheritance, not a copy of keys.",
+      "h": "Which of those three lookup rules does JavaScript actually skip?"
     },
     {
-      "q": "Why does adding a property to Object.prototype affect objects created in other modules?",
-      "o": ["JavaScript modules share a global scope but separate prototypes", "All plain objects across the entire JavaScript process share the same Object.prototype, so any property added to it is visible to every object created anywhere in that process", "Only objects in the same file share a prototype", "Prototype changes are scoped to the current function call stack"],
+      "q": "In user -> roleDefaults -> Object.prototype -> null, where does user.toString come from?",
+      "o": ["It is an own property stored directly on the user object", "It is found on Object.prototype after earlier links miss it", "It is copied into roleDefaults when that object is created", "It is injected by the engine only when console.log is used"],
       "a": 1,
-      "x": "There is one Object.prototype per JavaScript engine instance (one per Node.js process, one per browser tab). Every plain object {} inherits from it. Polluting it in one module affects all objects everywhere in that process.",
-      "h": "JavaScript has one global Object.prototype per engine instance. How many plain objects in the process inherit from it?"
+      "x": "user has username as an own key and isAdmin from roleDefaults. toString is not on either of those, so lookup continues and finds Object.prototype.toString. Most plain objects share that same ending link.",
+      "h": "username is own, isAdmin is on roleDefaults. Which remaining link in that chain still has toString?"
     }
   ]
 }

@@ -1,39 +1,64 @@
 {
   "questions": [
     {
-      "q": "What is a backup file created by a text editor with a tilde suffix?",
-      "o": ["An encrypted copy of the source code stored in /tmp", "An automatic backup copy of a file saved as filename~ while the original is being edited", "A compressed archive of the entire web application", "A log file recording every change made during an editing session"],
+      "q": "What is a filename~ backup created by a text editor?",
+      "o": [
+        "An encrypted copy of the original file stored under /tmp",
+        "An automatic backup saved as the original name plus a tilde",
+        "A compressed archive of the whole web application tree",
+        "A changelog of every edit made during that editor session"
+      ],
       "a": 1,
-      "x": "Editors like Vim and Emacs create filename~ as a backup while you edit filename. If these files are deployed to production, they can expose the original source code to anyone who requests them.",
-      "h": "Many editors append a single special character to the filename when saving a backup. Which character is it?"
+      "x": "Editors such as Vim and Emacs append a tilde to the filename. Editing CustomTemplate.php can create CustomTemplate.php~. That copy is a backup of the file being edited.",
+      "h": "The backup is the original name with one extra character. Which character is appended?"
     },
     {
-      "q": "Why are editor backup files a security risk on production web servers?",
-      "o": ["They execute automatically when the server starts", "They may be served as plain text by the web server, leaking source code including class names, property names, and dangerous logic", "They overwrite the live application files on every request", "They contain hardcoded admin passwords by default"],
-      "a": 1,
-      "x": "Backup files often contain the full source of the original file. If the web server serves them without executing PHP or other server-side code, an attacker can read class definitions, magic methods, and other details needed to craft exploits.",
-      "h": "The risk is not that the backup runs. It is that the backup gets served as readable text instead of being blocked."
+      "q": "Why can editor backup files be a problem on a production web server?",
+      "o": [
+        "They may be served as plain text and leak the original source code",
+        "They run automatically as soon as the HTTP server process starts",
+        "They overwrite live application files on every incoming request",
+        "They always contain hardcoded admin passwords in the first line"
+      ],
+      "a": 0,
+      "x": "Backup files are often deployed by accident. Depending on web server configuration, a request for the ~ file may return the source as plain text instead of executing it.",
+      "h": "The risk is disclosure, not execution. What might the server send back if it treats the backup as a static file?"
     },
     {
-      "q": "In the PHP deserialization lab, how was the CustomTemplate class source code obtained?",
-      "o": ["Through an SQL injection in the login form", "By requesting CustomTemplate.php~, the editor backup file hinted at in an HTML comment", "By decompiling the PHP bytecode from the session cookie", "Through a public GitHub repository linked in the page footer"],
-      "a": 1,
-      "x": "An HTML comment hinted at CustomTemplate.php. Requesting the file directly would execute it, but appending ~ returned the backup as plain text, revealing the class name, properties, and the dangerous __destruct() logic.",
-      "h": "The writeup found a hint in an HTML comment. What suffix did they append to the PHP filename to get source instead of execution?"
+      "q": "If you edit CustomTemplate.php, what backup name might the editor create?",
+      "o": [
+        "CustomTemplate.bak.php in a hidden .backup folder",
+        "CustomTemplate.php.orig at the web server document root",
+        "CustomTemplate.php~ sitting next to the original PHP file",
+        "template~CustomTemplate.php in the editor swap directory"
+      ],
+      "a": 2,
+      "x": "The usual pattern is the original filename with a tilde appended, so CustomTemplate.php becomes CustomTemplate.php~. Anyone who can request that path may receive the backup.",
+      "h": "The partial uses this exact example. What single character is added, and where is it added?"
     },
     {
-      "q": "Why does requesting CustomTemplate.php directly not reveal the source code?",
-      "o": ["PHP files are always encrypted on the server", "The web server executes PHP files and returns only the output, not the source", "PHP files require authentication to access", "The .php extension is blocked by all web servers"],
-      "a": 1,
-      "x": "When a web server processes a .php file, it runs the PHP interpreter and sends the result to the client. The source code never appears in the response. Backup files with a ~ suffix are typically not processed as PHP.",
-      "h": "Think about what happens when you visit a .php URL versus a .php~ URL on a typical Apache or nginx setup."
+      "q": "Which statement about editor backup files is correct?",
+      "o": [
+        "A tilde suffix marks the backup file",
+        "Backup files cannot be fetched",
+        "Servers always run .php~ as PHP",
+        "None of these statements are true"
+      ],
+      "a": 0,
+      "x": "The first statement is true. Editors append a tilde, so CustomTemplate.php~ is the backup. The other two are false. None is wrong because that suffix claim is true.",
+      "h": "Is the tilde added at the start of the name, or at the end?"
     },
     {
-      "q": "What is the most direct deployment fix for editor backup file leaks?",
-      "o": ["Rename all PHP files to .html", "Ensure backup files (~, .bak, .swp) are never deployed to production and configure the web server to block access to them", "Disable PHP magic methods in production", "Move all source code to client-side JavaScript"],
+      "q": "Why might a web server return source for CustomTemplate.php~ but not for CustomTemplate.php?",
+      "o": [
+        "PHP files on disk are encrypted, and only the ~ copy is plaintext",
+        "The .php file is executed, while .php~ may be served as static text",
+        "Requests to .php are blocked, while ~ files skip access control",
+        "The original file is empty, and the backup holds the only copy"
+      ],
       "a": 1,
-      "x": "Backup files should be excluded from deployment via .gitignore and blocked at the web server level. Even if accidentally committed, server rules denying access to *~ and *.bak patterns prevent source code exposure.",
-      "h": "Two layers help: keep backup files out of the deployment, and block them at the web server if they slip through anyway."
+      "x": "A typical server runs .php through the PHP interpreter and returns only the output. A ~ backup may not be treated as PHP, so the server can send the file contents as plain text.",
+      "h": "One path is handled as code. The other may be handled as a static file. Which suffix is less likely to be executed?"
     }
   ]
 }

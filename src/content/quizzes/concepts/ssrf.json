@@ -2,38 +2,38 @@
   "questions": [
     {
       "q": "What is Server-Side Request Forgery?",
-      "o": ["A client sending forged cookies to the server", "Making the server send HTTP requests to destinations chosen by the attacker", "Forging server-side certificates to intercept TLS traffic", "Injecting malicious SQL through a server-side API"],
+      "o": ["A client sending forged session cookies to the origin server", "Making the server send HTTP requests to attacker-chosen URLs", "Forging TLS certificates in order to intercept server traffic", "Injecting SQL through a server-side JSON API request body"],
       "a": 1,
-      "x": "SSRF exploits a server feature that fetches a URL. The attacker controls the target URL, causing the server to make requests from its own network to internal services, cloud metadata endpoints, or other restricted targets.",
-      "h": "The S in SSRF stands for Server-Side. The R stands for Request. The F stands for Forgery. Who is forging what request on behalf of whom?"
+      "x": "SSRF abuses a server feature that fetches a URL. The attacker picks the target, so the request comes from the server's own network and can hit internals that the attacker cannot open directly.",
+      "h": "The S is server-side. The R is request. Who is sending the forged request, and to whose chosen host?"
     },
     {
-      "q": "Why is SSRF particularly dangerous in cloud environments?",
-      "o": ["Cloud servers run slower, giving attackers more time", "Cloud metadata services at 169.254.169.254 return IAM credentials when requested from within the instance, making SSRF a path to cloud account compromise", "Cloud servers cannot apply URL filters", "TLS is disabled by default in cloud networks"],
+      "q": "Which destination is a typical SSRF target?",
+      "o": ["A public search engine on the open internet", "localhost, RFC1918 ranges, or 169.254.x.x metadata", "A third-party CDN used only for static assets", "The site's own public marketing domain over HTTPS"],
       "a": 1,
-      "x": "AWS, GCP, and Azure expose instance metadata at a link-local address only reachable from within the VM. An SSRF to that address can return credentials that give the attacker full control of the cloud account.",
-      "h": "What special address is only accessible from within a cloud instance and returns credentials? Think about the AWS metadata service."
+      "x": "Useful SSRF targets are things the public internet cannot reach: the host itself, 192.168/10.x internals, AWS-style metadata at 169.254.x.x, and internal APIs or admin panels.",
+      "h": "SSRF is valuable because the server can reach places you cannot. Which of these is not on the public internet?"
+    },
+    {
+      "q": "Consider these claims about how SSRF works. (1) The app takes a URL from a parameter. (2) The server then requests that URL. (3) An attacker can swap in an internal address. Which option is correct?",
+      "o": ["All of these statements are true", "Only the first claim is true", "Only the first two claims are true", "Only the third claim is true"],
+      "a": 0,
+      "x": "A typical flow is ?url=https://example.com, the server fetches it, then an attacker changes that value to something like http://localhost/admin. Blind SSRF hides the body. Non-blind SSRF returns it.",
+      "h": "Which step in that three-part flow is actually optional for SSRF to exist?"
     },
     {
       "q": "What is the difference between blind SSRF and non-blind SSRF?",
-      "o": ["Blind SSRF only targets localhost, non-blind targets internal networks", "In blind SSRF, the server fetches the URL but the response is not returned to the attacker, in non-blind, the attacker sees the response", "Blind SSRF uses POST requests, non-blind uses GET", "Blind SSRF requires authentication, non-blind does not"],
+      "o": ["Blind SSRF only hits localhost. Non-blind hits other hosts.", "Blind SSRF hides the fetch result. Non-blind returns it.", "Blind SSRF uses POST requests only. Non-blind uses GET only.", "Blind SSRF needs a valid login. Non-blind works without one."],
       "a": 1,
-      "x": "Non-blind SSRF lets you read internal service responses directly. Blind SSRF still causes the server to make the request, but you infer success via out-of-band methods: DNS callbacks, timing differences, or error messages.",
-      "h": "Blind means you cannot directly see the result. How would you know the SSRF worked if the response stays on the server?"
+      "x": "Non-blind SSRF shows the attacker the body the server fetched. Blind SSRF still makes the server send the request, but you infer success with DNS callbacks, timing, or errors instead of reading the response.",
+      "h": "Blind means you cannot see the fetched body. Did the server still make the request?"
     },
     {
-      "q": "Which of these is a common internal target for SSRF attacks in web applications?",
-      "o": ["https://google.com", "http://localhost:6379 (Redis) or http://192.168.x.x:8080/admin", "https://cdn.cloudflare.com", "The application's own public domain"],
+      "q": "Why is 169.254.x.x a common SSRF goal in the cloud?",
+      "o": ["It is a public DNS resolver that logs every outbound query", "It can reach instance metadata that is not on the internet", "It is the default VPC gateway used to leave the private net", "It is an anycast address that maps only to the app's CDN"],
       "a": 1,
-      "x": "Redis at localhost:6379, internal admin panels at 192.168.x.x, Kubernetes API servers, and cloud metadata services are all common SSRF targets. They are accessible from the server's network but not from the public internet.",
-      "h": "The value of SSRF comes from reaching things that are not publicly accessible. What types of services exist on the internal network of a typical web server?"
-    },
-    {
-      "q": "What is an allowlist-based URL filter and why is it more secure than a blocklist?",
-      "o": ["An allowlist requires HTTPS, while a blocklist blocks HTTP. HTTPS is inherently more secure", "An allowlist explicitly permits only approved domains or IP ranges, a blocklist tries to block known bad addresses, which attackers can bypass with redirects or encoding tricks", "An allowlist is client-side, a blocklist is server-side", "They offer the same security, the choice is stylistic"],
-      "a": 1,
-      "x": "Blocklists fail when attackers use open redirects, decimal IP notation, IPv6 addresses, or DNS rebinding to bypass specific blocked patterns. An allowlist rejects anything not explicitly approved, making bypasses much harder.",
-      "h": "Blocklists try to enumerate all bad inputs. Allowlists enumerate all good inputs. Which is harder to enumerate completely?"
+      "x": "Cloud metadata lives on a link-local address reachable from the instance, not from the public internet. An SSRF to that address can return credentials and other instance data.",
+      "h": "Which special address is only useful from inside a cloud VM and is known for returning instance credentials?"
     }
   ]
 }
