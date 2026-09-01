@@ -35,7 +35,7 @@ In Burp, PortSwigger's solution is to send this request **twice** in Repeater (H
 
 Let's force HTTP/1.1 and try to send both length headers:
 
-<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/curl-both-headers.sh" />
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/curl-both-headers.sh" noRawHttp />
 
 > **Command breakdown**: \
 `--http1.1` = use HTTP/1.1 (needed for this attack; HTTP/2 won't work the same way) \
