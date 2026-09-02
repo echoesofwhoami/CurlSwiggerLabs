@@ -1,10 +1,10 @@
 ---
-import type { Lang } from '../i18n/utils';
-import { getLocalizedHref, getLocalizedPath, useTranslations } from '../i18n/utils';
-import { siteConfig } from '../site.config';
-import ExternalLinkSvg from '../assets/external_link.svg';
-import ExternalLink from './ExternalLink.astro';
-import psLogo from '../assets/ps_logo.png';
+import type { Lang } from '../../i18n/utils';
+import { getLocalizedHref, getLocalizedPath, useTranslations } from '../../i18n/utils';
+import { siteConfig } from '../../site.config';
+import ExternalLinkSvg from '../../assets/external_link.svg';
+import ExternalLink from '../mdx/ExternalLink.astro';
+import psLogo from '../../assets/ps_logo.png';
 import { Image } from 'astro:assets';
 
 interface Props {

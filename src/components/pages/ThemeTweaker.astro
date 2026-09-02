@@ -1,13 +1,13 @@
 ---
 import { Code } from 'astro:components';
-import type { Lang } from '../i18n/utils';
-import { useTranslations } from '../i18n/utils';
-import { placeholderTransformer } from '../shiki/placeholder-transformer';
-import { cssVariablesTheme } from '../styles/shiki-css-theme';
-import { listShikiThemes } from '../styles/shiki-themes';
-import { FONT_OPTIONS, PRESETS } from '../scripts/theme-config';
-import PostHeader from './PostHeader.astro';
-import TableOfContents from './TableOfContents.astro';
+import type { Lang } from '../../i18n/utils';
+import { useTranslations } from '../../i18n/utils';
+import { placeholderTransformer } from '../../shiki/placeholder-transformer';
+import { cssVariablesTheme } from '../../styles/shiki-css-theme';
+import { listShikiThemes } from '../../styles/shiki-themes';
+import { FONT_OPTIONS, PRESETS } from '../../scripts/theme-config';
+import PostHeader from '../post/PostHeader.astro';
+import TableOfContents from '../post/TableOfContents.astro';
 
 interface Props {
   lang: Lang;
@@ -235,7 +235,7 @@ const previewHeadings = [
     resetToDefault,
     save,
     type ThemeConfig,
-  } from '../scripts/theme-config';
+  } from '../../scripts/theme-config';
 
   const root = document.querySelector<HTMLElement>('[data-theme-tweaker]');
   if (root) {

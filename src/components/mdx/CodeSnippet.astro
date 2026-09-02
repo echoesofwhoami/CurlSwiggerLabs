@@ -3,11 +3,11 @@ import { Code } from 'astro:components';
 import type { CodeLanguage } from 'astro';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { useTranslations, type Lang } from '../i18n/utils';
-import { placeholderTransformer } from '../shiki/placeholder-transformer';
-import { cssVariablesTheme } from '../styles/shiki-css-theme';
-import curlplain from '../themes/curlplain.tmLanguage.json';
-import { curlToHttp, isBashFile } from '../utils/curl-to-http';
+import { useTranslations, type Lang } from '../../i18n/utils';
+import { placeholderTransformer } from '../../shiki/placeholder-transformer';
+import { cssVariablesTheme } from '../../styles/shiki-css-theme';
+import curlplain from '../../themes/curlplain.tmLanguage.json';
+import { curlToHttp, isBashFile } from '../../utils/curl-to-http';
 
 interface Props {
   /** Path relative to `src/content/scripts/` */

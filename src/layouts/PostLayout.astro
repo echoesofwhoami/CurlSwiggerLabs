@@ -4,12 +4,12 @@ import { getCategory, getCategoryId } from '../data/categories';
 import type { Lang } from '../i18n/utils';
 import { getAdjacentPosts, getRelatedPosts } from '../utils';
 import Layout from './Layout.astro';
-import PortswiggerDescription from '../components/PortswiggerDescription.astro';
-import PostHeader from '../components/PostHeader.astro';
-import PostNav from '../components/PostNav.astro';
-import RelatedLabs from '../components/RelatedLabs.astro';
-import TableOfContents from '../components/TableOfContents.astro';
-import Quiz from '../components/Quiz.astro';
+import PortswiggerDescription from '../components/post/PortswiggerDescription.astro';
+import PostHeader from '../components/post/PostHeader.astro';
+import PostNav from '../components/post/PostNav.astro';
+import RelatedLabs from '../components/post/RelatedLabs.astro';
+import TableOfContents from '../components/post/TableOfContents.astro';
+import Quiz from '../components/post/Quiz.astro';
 
 interface Props {
   post: CollectionEntry<'blog'>;
