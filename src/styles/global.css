@@ -413,6 +413,10 @@ pre code {
 }
 
 @media (max-width: 640px) {
+  body {
+    font-size: max(14px, calc(var(--font-size-base) - 2px));
+  }
+
   pre {
     font-size: 12px;
   }
