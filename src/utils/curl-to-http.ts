@@ -140,7 +140,7 @@ export interface HttpConversion {
  * Parse `curlCmd` and return an `HttpConversion`, or `null` when the command
  * is not a recognisable curl invocation that can be meaningfully displayed.
  *
- * @param env  Optional map of shell variable names → values collected from
+ * @param env  Optional map of shell variable names -> values collected from
  *             sibling scripts in the same lab directory (e.g. BASE_LAB_URL).
  *             Any `$VAR` / `${VAR}` reference in the command is expanded
  *             before parsing so the raw HTTP output shows real host/paths.

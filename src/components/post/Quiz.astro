@@ -1,10 +1,9 @@
 ---
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { getEntry } from 'astro:content';
 import { useTranslations, type Lang } from '../../i18n/utils';
 
 interface Props {
-  /** Path relative to src/content/quizzes/, without .json extension */
+  /** Collection id relative to `src/data/quizzes/`, without .json */
   file: string;
   /** Stable slug used as the localStorage key */
   slug: string;
@@ -14,19 +13,13 @@ interface Props {
 const { file, slug, lang = 'en' } = Astro.props;
 const t = useTranslations(lang);
 
-const quizzesRoot = join(process.cwd(), 'src/content/quizzes');
 let quizJson = '';
 let quizCount = 0;
 
-try {
-  const raw = readFileSync(join(quizzesRoot, `${file}.json`), 'utf-8');
-  const parsed = JSON.parse(raw) as { questions: unknown[] };
-  if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
-    quizCount  = parsed.questions.length;
-    quizJson   = JSON.stringify(parsed.questions);
-  }
-} catch {
-  /* quiz file not found or invalid — render nothing */
+const entry = await getEntry('quizzes', file as never);
+if (entry && entry.data.questions.length > 0) {
+  quizCount = entry.data.questions.length;
+  quizJson = JSON.stringify(entry.data.questions);
 }
 ---
 

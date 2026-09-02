@@ -10,6 +10,8 @@ import PostNav from '../components/post/PostNav.astro';
 import RelatedLabs from '../components/post/RelatedLabs.astro';
 import TableOfContents from '../components/post/TableOfContents.astro';
 import Quiz from '../components/post/Quiz.astro';
+import Term from '../components/mdx/Term.astro';
+import TooltipReferences from '../components/post/TooltipReferences.astro';
 
 interface Props {
   post: CollectionEntry<'blog'>;
@@ -23,6 +25,7 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
 
 Astro.locals.portswiggerDescription = post.data.portswiggerDescription;
 Astro.locals.postLang = lang;
+Astro.locals.usedTips ??= new Set<string>();
 
 const { Content, headings } = await render(post);
 const [{ older, newer }, relatedPosts] = await Promise.all([
@@ -56,9 +59,10 @@ const [{ older, newer }, relatedPosts] = await Promise.all([
       />
       <TableOfContents headings={headings} lang={lang} />
       <div class="post-content">
-        <Content components={{ PortswiggerDescription }} />
+        <Content components={{ PortswiggerDescription, Term }} />
       </div>
       <Quiz file={`labs/${slug}`} slug={slug} lang={lang} />
+      <TooltipReferences lang={lang} />
       <PostNav older={older} newer={newer} lang={lang} />
       <RelatedLabs posts={relatedPosts} lang={lang} />
     </main>

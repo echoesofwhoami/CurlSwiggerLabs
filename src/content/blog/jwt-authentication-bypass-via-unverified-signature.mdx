@@ -26,7 +26,7 @@ import CodeSnippet from '@components/mdx/CodeSnippet.astro';
 
 <PortswiggerDescription />
 
-Let's explore the lab's login page directly and log in to get a valid JWT session token:
+Let's explore the lab's login page directly and log in to get a valid <Term id="concept.jwt">JWT</Term> session token:
 
 <CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/01-bash.sh" />
 
@@ -67,7 +67,7 @@ Payload output:
 
 <CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/08-json.json" />
 
-The JWT uses **RS256** (RSA-SHA256) for signing, which is an asymmetric algorithm. However, the lab description tells us the server **doesn't verify the signature** at all. This means we can simply modify the payload without worrying about re-signing the token. The signature will be invalid, but the server won't check it.
+The JWT uses **RS256** (RSA-SHA256) for signing, which is an asymmetric algorithm. However, the lab description tells us the server **<Term id="concept.jwt-unverified">doesn't verify the signature</Term>** at all. This means we can simply modify the payload without worrying about re-signing the token. The signature will be invalid, but the server won't check it.
 
 All we need to do is:
 1. Decode the payload

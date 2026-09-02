@@ -6,6 +6,9 @@ import PartialContainer from '../mdx/PartialContainer.astro';
 
 const t = useTranslations('en');
 
+Astro.locals.postLang ??= 'en';
+Astro.locals.usedTips ??= new Set<string>();
+
 const partials = (await getCollection('partials')).sort((a, b) =>
   a.data.title.localeCompare(b.data.title),
 );

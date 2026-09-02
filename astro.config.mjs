@@ -6,6 +6,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { spanishEnabled } from './src/i18n/ui.ts';
 import { placeholderTransformer } from './src/shiki/placeholder-transformer.ts';
+import { tooltipTransformer } from './src/shiki/tooltip-transformer.ts';
 import { cssVariablesTheme } from './src/styles/shiki-css-theme.ts';
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -30,13 +31,14 @@ export default defineConfig({
   markdown: {
     shikiConfig: {
       theme: cssVariablesTheme,
-      transformers: [placeholderTransformer],
+      transformers: [placeholderTransformer, tooltipTransformer('en')],
     },
   },
   vite: {
     resolve: {
       alias: {
         '@components': path.resolve(projectRoot, 'src/components'),
+        '@data': path.resolve(projectRoot, 'src/data'),
       },
     },
   },

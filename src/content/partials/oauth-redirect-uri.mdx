@@ -5,7 +5,7 @@ category: "OAuth"
 
 ### Why is redirect_uri Validation Critical?
 
-The `redirect_uri` parameter specifies where the OAuth provider should send the authorization code after user authentication. Without strict validation, an attacker can modify this parameter to point to a server they control. When the victim authenticates, their authorization code is intercepted by the attacker instead of being delivered to the legitimate application.
+The `redirect_uri` parameter specifies where the <Term id="concept.oauth">OAuth</Term> provider should send the authorization code after user authentication. Without strict validation, an attacker can modify this parameter to point to a server they control. When the victim authenticates, their authorization code is intercepted by the attacker instead of being delivered to the legitimate application.
 
 **In OAuth terms:**
 - **Secure**: The OAuth provider only redirects to pre-registered URLs (like `https://<blog>.com/oauth-callback`)

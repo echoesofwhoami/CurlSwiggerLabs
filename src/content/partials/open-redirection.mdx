@@ -5,7 +5,7 @@ category: "SSRF & Open Redirection"
 
 ### What is Open Redirection?
 
-Open redirection is a vulnerability where an application accepts user-controlled input that determines where to redirect the user, without properly validating the destination URL. This allows attackers to redirect users to malicious websites.
+<Term id="concept.open-redirection">Open redirection</Term> is a vulnerability where an application accepts user-controlled input that determines where to redirect the user, without properly validating the destination URL. This allows attackers to redirect users to malicious websites.
 
 **How open redirection works:**
 1. Application has a redirect endpoint like `?redirect=https://example.com`
@@ -14,7 +14,7 @@ Open redirection is a vulnerability where an application accepts user-controlled
 4. Users are redirected to the attacker's site
 
 **Common vulnerable patterns:**
-```
+```http
 GET /redirect?url=https://<attacker-domain>.com
 GET /login?return=https://<attacker-domain>.com
 GET /next?target=https://<attacker-domain>.com
@@ -23,4 +23,4 @@ GET /next?target=https://<attacker-domain>.com
 **Why open redirection is dangerous:**
 - **Phishing attacks** - redirect users to fake login pages
 - **Bypassing filters** - use the legitimate domain to bypass URL filters
-- **Chain attacks** - combine with other vulnerabilities like SSRF
+- **Chain attacks** - combine with other vulnerabilities like <Term id="concept.ssrf">SSRF</Term>

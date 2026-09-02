@@ -12,7 +12,7 @@ The security of HS256 depends entirely on the secrecy and strength of the key. I
 ### Why is Brute-forcing Possible?
 
 Since the signature is deterministic (same input + same key = same signature), an attacker can:
-1. Take the JWT's header and payload
+1. Take the <Term id="concept.jwt">JWT</Term>'s header and payload
 2. Try signing it with different secret keys from a wordlist
 3. Compare the generated signature with the original
 4. When they match, the secret key has been found

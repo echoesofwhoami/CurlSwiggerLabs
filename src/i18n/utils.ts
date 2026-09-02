@@ -24,7 +24,7 @@ export function getLocalizedPath(lang: Lang, path: string = ''): string {
   return `${base}/${lang}${path ? `/${path}` : ''}`;
 }
 
-/** Pathname without base URL and language prefix (e.g. `/es/foo/` → `foo`). */
+/** Pathname without base URL and language prefix (e.g. `/es/foo/` -> `foo`). */
 export function getPathWithoutLang(pathname: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   let path = pathname;

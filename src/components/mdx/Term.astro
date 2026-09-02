@@ -1,0 +1,34 @@
+---
+import { getEntry, localizedText } from '@data/glossary';
+import type { Lang } from '../../i18n/utils';
+
+interface Props {
+  id: string;
+  /** Optional custom visible text; default localized term */
+}
+
+const { id } = Astro.props;
+const lang = (Astro.locals.postLang ?? 'en') as Lang;
+const entry = getEntry(id);
+const hasSlot = Astro.slots.has('default');
+
+const usedTips = Astro.locals.usedTips ?? new Set<string>();
+Astro.locals.usedTips = usedTips;
+
+if (!entry) {
+  console.warn(`[Term] unknown glossary id: ${id}`);
+} else {
+  usedTips.add(id);
+}
+
+const label = entry ? localizedText(entry, lang).term : id;
+const kindClass = entry?.kind === 'syntax' ? 'tip--syntax' : 'tip--concept';
+---
+
+{entry ? (
+  <button type="button" class:list={['tip', kindClass]} data-tip-id={id} aria-expanded="false">{hasSlot ? <slot /> : label}</button>
+) : hasSlot ? (
+  <slot />
+) : (
+  id
+)}

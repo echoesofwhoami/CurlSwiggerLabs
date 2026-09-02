@@ -1,11 +1,15 @@
 ---
 import { getEntry, render } from 'astro:content';
+import Term from './Term.astro';
 
 interface Props {
   partial: string;
 }
 
 const { partial } = Astro.props;
+
+Astro.locals.postLang ??= 'en';
+Astro.locals.usedTips ??= new Set<string>();
 
 const entry = await getEntry('partials', partial);
 
@@ -14,4 +18,4 @@ if (!entry) throw new Error(`Partial not found: ${partial}`);
 const { Content } = await render(entry);
 ---
 
-<Content />
+<Content components={{ Term }} />

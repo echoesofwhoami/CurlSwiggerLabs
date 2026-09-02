@@ -1,0 +1,330 @@
+---
+import { GLOSSARY, localizedText } from '@data/glossary';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+interface ClientTip {
+  kind: 'syntax' | 'concept';
+  term: string;
+  short: string;
+  refs?: { title: string; url: string }[];
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const payload: Record<string, ClientTip> = {};
+for (const entry of GLOSSARY) {
+  const { term, short } = localizedText(entry, lang);
+  payload[entry.id] = {
+    kind: entry.kind,
+    term,
+    short,
+    ...(entry.refs && entry.refs.length > 0 ? { refs: entry.refs } : {}),
+  };
+}
+
+const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
+---
+
+<script type="application/json" id="csl-glossary" is:inline set:html={glossaryJson}></script>
+
+<div
+  id="csl-tip-popover"
+  hidden
+  role="tooltip"
+  data-tip-learn-more={t('tooltip.learnMore')}
+>
+  <p data-tip-term></p>
+  <p data-tip-short></p>
+  <div data-tip-links></div>
+</div>
+
+<script>
+  type ClientTip = {
+    kind: 'syntax' | 'concept';
+    term: string;
+    short: string;
+    refs?: { title: string; url: string }[];
+  };
+
+  const SHOW_DELAY_MS = 180;
+  const HIDE_DELAY_MS = 140;
+  const VIEWPORT_PAD = 12;
+  const GAP = 8;
+
+  let glossary: Record<string, ClientTip> = {};
+  let currentTrigger: HTMLElement | null = null;
+  let pinned = false;
+  let showTimer = 0;
+  let hideTimer = 0;
+
+  function getPanel(): HTMLElement | null {
+    return document.getElementById('csl-tip-popover');
+  }
+
+  function loadGlossary() {
+    const jsonEl = document.getElementById('csl-glossary');
+    const raw = jsonEl?.textContent?.trim();
+    if (!raw) {
+      glossary = {};
+      return;
+    }
+    try {
+      glossary = JSON.parse(raw) as Record<string, ClientTip>;
+    } catch {
+      glossary = {};
+    }
+  }
+
+  function clearTimers() {
+    window.clearTimeout(showTimer);
+    window.clearTimeout(hideTimer);
+    showTimer = 0;
+    hideTimer = 0;
+  }
+
+  function fillPanel(panel: HTMLElement, entry: ClientTip) {
+    const termEl = panel.querySelector<HTMLElement>('[data-tip-term]');
+    const shortEl = panel.querySelector<HTMLElement>('[data-tip-short]');
+    const linksEl = panel.querySelector<HTMLElement>('[data-tip-links]');
+    if (termEl) termEl.textContent = entry.term;
+    if (shortEl) shortEl.textContent = entry.short;
+    if (!linksEl) return;
+
+    linksEl.replaceChildren();
+    linksEl.setAttribute('aria-label', panel.dataset.tipLearnMore ?? 'Learn more');
+
+    if (entry.refs) {
+      for (const ref of entry.refs) {
+        const a = document.createElement('a');
+        a.href = ref.url;
+        a.textContent = ref.title;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        linksEl.appendChild(a);
+      }
+    }
+  }
+
+  function navTopInset(): number {
+    const nav = document.querySelector<HTMLElement>('[data-navbar]');
+    if (!nav) return VIEWPORT_PAD;
+    const navRect = nav.getBoundingClientRect();
+    if (navRect.bottom <= 0 || navRect.top >= window.innerHeight) return VIEWPORT_PAD;
+    if (navRect.top <= VIEWPORT_PAD) {
+      return Math.ceil(navRect.bottom) + VIEWPORT_PAD;
+    }
+    return VIEWPORT_PAD;
+  }
+
+  function positionPanel(trigger: HTMLElement, panel: HTMLElement) {
+    const rect = trigger.getBoundingClientRect();
+    const panelWidth = panel.offsetWidth;
+    const panelHeight = panel.offsetHeight;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const topMin = navTopInset();
+    const bottomMax = vh - VIEWPORT_PAD;
+
+    const below = rect.bottom + GAP;
+    const above = rect.top - GAP - panelHeight;
+    const belowFits = below >= topMin && below + panelHeight <= bottomMax;
+    const aboveFits = above >= topMin;
+
+    let top: number;
+    if (belowFits) {
+      top = below;
+    } else if (aboveFits) {
+      top = above;
+    } else {
+      const spaceBelow = bottomMax - Math.max(below, topMin);
+      const spaceAbove = rect.top - GAP - topMin;
+      top = spaceAbove > spaceBelow ? above : Math.max(below, topMin);
+      const maxTop = Math.max(topMin, bottomMax - panelHeight);
+      top = Math.min(Math.max(top, topMin), maxTop);
+    }
+
+    let left = rect.left;
+    const maxLeft = vw - panelWidth - VIEWPORT_PAD;
+    left = Math.min(Math.max(VIEWPORT_PAD, left), Math.max(VIEWPORT_PAD, maxLeft));
+
+    panel.style.top = `${Math.round(top)}px`;
+    panel.style.left = `${Math.round(left)}px`;
+  }
+
+  function setExpanded(trigger: HTMLElement | null, expanded: boolean) {
+    if (!trigger) return;
+    trigger.setAttribute('aria-expanded', String(expanded));
+    if (expanded) {
+      trigger.setAttribute('aria-describedby', 'csl-tip-popover');
+    } else {
+      trigger.removeAttribute('aria-describedby');
+    }
+  }
+
+  function hidePanel() {
+    clearTimers();
+    const panel = getPanel();
+    if (currentTrigger) setExpanded(currentTrigger, false);
+    currentTrigger = null;
+    pinned = false;
+    if (panel) {
+      panel.hidden = true;
+      panel.style.visibility = '';
+    }
+  }
+
+  function scheduleHide() {
+    window.clearTimeout(hideTimer);
+    hideTimer = window.setTimeout(() => {
+      if (pinned) return;
+      hidePanel();
+    }, HIDE_DELAY_MS);
+  }
+
+  function showPanel(trigger: HTMLElement) {
+    const id = trigger.dataset.tipId;
+    if (!id) return;
+    const entry = glossary[id];
+    if (!entry) return;
+
+    const panel = getPanel();
+    if (!panel) return;
+
+    window.clearTimeout(hideTimer);
+    hideTimer = 0;
+
+    if (currentTrigger && currentTrigger !== trigger) {
+      setExpanded(currentTrigger, false);
+    }
+
+    currentTrigger = trigger;
+    fillPanel(panel, entry);
+    panel.style.visibility = 'hidden';
+    panel.hidden = false;
+    positionPanel(trigger, panel);
+    panel.style.visibility = '';
+    setExpanded(trigger, true);
+  }
+
+  function scheduleShow(trigger: HTMLElement) {
+    window.clearTimeout(showTimer);
+    showTimer = window.setTimeout(() => {
+      if (pinned && currentTrigger && currentTrigger !== trigger) return;
+      showPanel(trigger);
+    }, SHOW_DELAY_MS);
+  }
+
+  function onPanelEnter() {
+    window.clearTimeout(hideTimer);
+    hideTimer = 0;
+  }
+
+  function onPanelLeave() {
+    if (!pinned) scheduleHide();
+  }
+
+  function bindPanel(panel: HTMLElement) {
+    if (panel.dataset.tipInit === '1') return;
+    panel.dataset.tipInit = '1';
+    panel.addEventListener('mouseenter', onPanelEnter);
+    panel.addEventListener('mouseleave', onPanelLeave);
+  }
+
+  function bindTrigger(trigger: HTMLElement) {
+    if (trigger.dataset.tipInit === '1') return;
+    trigger.dataset.tipInit = '1';
+
+    trigger.addEventListener('mouseenter', () => {
+      window.clearTimeout(hideTimer);
+      if (pinned && currentTrigger !== trigger) return;
+      scheduleShow(trigger);
+    });
+
+    trigger.addEventListener('mouseleave', () => {
+      window.clearTimeout(showTimer);
+      if (!pinned) scheduleHide();
+    });
+
+    trigger.addEventListener('focus', () => {
+      window.clearTimeout(hideTimer);
+      showPanel(trigger);
+    });
+
+    trigger.addEventListener('blur', (event) => {
+      const next = event.relatedTarget;
+      const panel = getPanel();
+      if (next instanceof Node && panel?.contains(next)) return;
+      if (!pinned) scheduleHide();
+    });
+
+    trigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      window.clearTimeout(showTimer);
+      if (pinned && currentTrigger === trigger) {
+        hidePanel();
+        return;
+      }
+      pinned = true;
+      showPanel(trigger);
+    });
+
+    trigger.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab' || event.shiftKey) return;
+      if (!pinned || currentTrigger !== trigger) return;
+      const panel = getPanel();
+      const firstLink = panel?.querySelector<HTMLAnchorElement>('a');
+      if (!firstLink) return;
+      event.preventDefault();
+      firstLink.focus();
+    });
+  }
+
+  function initTips() {
+    loadGlossary();
+    const panel = getPanel();
+    if (panel) bindPanel(panel);
+
+    document.querySelectorAll<HTMLElement>('.tip:not([data-tip-init])').forEach(bindTrigger);
+  }
+
+  function onKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape') return;
+    const panel = getPanel();
+    if (!panel || panel.hidden) return;
+    const trigger = currentTrigger;
+    hidePanel();
+    trigger?.focus();
+  }
+
+  function onPointerDown(event: PointerEvent) {
+    const panel = getPanel();
+    if (!panel || panel.hidden) return;
+    const path = event.composedPath();
+    if (path.includes(panel)) return;
+    if (currentTrigger && path.includes(currentTrigger)) return;
+    hidePanel();
+  }
+
+  function onReposition() {
+    if (!currentTrigger) return;
+    const panel = getPanel();
+    if (!panel || panel.hidden) return;
+    positionPanel(currentTrigger, panel);
+  }
+
+  initTips();
+  document.addEventListener('keydown', onKeydown);
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('scroll', onReposition, true);
+  window.addEventListener('resize', onReposition);
+  document.addEventListener('astro:after-swap', () => {
+    hidePanel();
+    initTips();
+  });
+</script>

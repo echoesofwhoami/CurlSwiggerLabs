@@ -5,9 +5,9 @@ category: "HTTP Request Smuggling"
 
 ### CL.TE Smuggling & Differential Responses
 
-In a **CL.TE** vulnerability the front-end trusts `Content-Length` while the back-end trusts `Transfer-Encoding: chunked`.
+In a <Term id="concept.cl-te">CL.TE</Term> vulnerability the front-end trusts <Term id="concept.content-length">Content-Length</Term> while the back-end trusts <Term id="concept.transfer-encoding">Transfer-Encoding</Term>: <Term id="concept.chunked-encoding">chunked</Term>.
 
-A minimal smuggling request looks like:
+A minimal <Term id="concept.http-request-smuggling">smuggling</Term> request looks like:
 
 ```http
 POST / HTTP/1.1

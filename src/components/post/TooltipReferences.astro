@@ -1,0 +1,88 @@
+---
+import ExternalLink from '../mdx/ExternalLink.astro';
+import { getEntry, localizedText } from '@data/glossary';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const used = Astro.locals.usedTips ?? new Set<string>();
+const seen = new Set<string>();
+const items = [...used]
+  .map((id) => getEntry(id))
+  .filter((entry): entry is NonNullable<typeof entry> => {
+    if (!entry || entry.kind !== 'concept' || seen.has(entry.id)) return false;
+    seen.add(entry.id);
+    return true;
+  })
+  .map((entry) => ({
+    id: entry.id,
+    ...localizedText(entry, lang),
+    refs: entry.refs ?? [],
+  }))
+  .sort((a, b) => a.term.localeCompare(b.term, lang));
+---
+
+{items.length > 0 && (
+  <section class="tooltip-references" aria-labelledby="tooltip-references-title">
+    <h2 id="tooltip-references-title">{t('references.title')}</h2>
+    <p>{t('references.intro')}</p>
+    <ul class="tooltip-references-list">
+      {items.map((item) => (
+        <li>
+          <strong>{item.term}</strong>
+          <p>{item.short}</p>
+          {item.refs.length > 0 && (
+            <ul class="tooltip-references-links">
+              {item.refs.map((ref) => (
+                <li>
+                  <ExternalLink text={ref.title} url={ref.url} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .tooltip-references {
+    margin: 2.5rem 0 0;
+  }
+
+  .tooltip-references h2 {
+    margin: 0 0 0.5rem;
+  }
+
+  .tooltip-references > p {
+    margin: 0 0 1rem;
+  }
+
+  .tooltip-references-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 0;
+  }
+
+  .tooltip-references-list > li strong {
+    color: var(--heading);
+  }
+
+  .tooltip-references-list > li p {
+    margin: 0.25rem 0 0.35rem;
+  }
+
+  .tooltip-references-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0;
+  }
+</style>

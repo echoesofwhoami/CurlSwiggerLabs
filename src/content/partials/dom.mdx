@@ -3,7 +3,7 @@ title: "DOM (Document Object Model)"
 category: "Fundamentals"
 ---
 
-The **DOM** (Document Object Model) is the browser's live representation of a page. When the browser receives HTML, a **parser** reads the tags and builds a **tree** of objects in memory: elements, attributes, and text nodes. That tree is the DOM.
+The <Term id="concept.dom">DOM</Term> (Document Object Model) is the browser's live representation of a page. When the browser receives HTML, a **parser** reads the tags and builds a **tree** of objects in memory: elements, attributes, and text nodes. That tree is the DOM.
 
 What you see on screen and what JavaScript can touch are both backed by this tree. The initial HTML from the server is only the starting point. Scripts can add, remove, or change nodes afterward.
 
@@ -44,7 +44,7 @@ paragraph goes back to `Hello`.
 
 #### Parsing happens more than once
 
-Parsing is not a one-time event on first page load. Whenever code assigns an **HTML string** to a property like `innerHTML`, the browser runs the parser **again** on that string and creates new nodes from it.
+Parsing is not a one-time event on first page load. Whenever code assigns an **HTML string** to a property like <Term id="concept.innerHTML">innerHTML</Term>, the browser runs the parser **again** on that string and creates new nodes from it.
 
 So if a script builds:
 

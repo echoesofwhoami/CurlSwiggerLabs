@@ -144,6 +144,9 @@ export const ui = {
     'quiz.of': 'of',
     'quiz.correctLabel': 'correct',
     'quiz.hint': 'Get a hint',
+    'tooltip.learnMore': 'Learn more',
+    'references.title': 'Concepts referenced',
+    'references.intro': 'These are the concepts highlighted in this writeup.',
   },
   es: {
     'site.title': 'CurlSwiggerLabs',
@@ -274,5 +277,8 @@ export const ui = {
     'quiz.of': 'de',
     'quiz.correctLabel': 'correcto',
     'quiz.hint': 'Ver pista',
+    'tooltip.learnMore': 'Saber más',
+    'references.title': 'Conceptos citados',
+    'references.intro': 'Estos son los conceptos destacados en esta resolución.',
   },
 } as const;

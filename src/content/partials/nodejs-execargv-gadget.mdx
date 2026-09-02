@@ -37,6 +37,6 @@ Object.prototype.execArgv = ["--eval=console.log('polluted')"]
 options.execArgv // ["--eval=console.log('polluted')"]
 ```
 
-After pollution, `fork(script, args, options)` can start the child with attacker-controlled Node flags. `--eval` is the interesting one: the child runs arbitrary JavaScript during startup. From that JavaScript you can call `require("child_process").execSync(...)` and run OS commands.
+After <Term id="concept.prototype-pollution">prototype pollution</Term>, `fork(script, args, options)` can start the child with attacker-controlled Node flags. `--eval` is the interesting one: the child runs arbitrary JavaScript during startup. From that JavaScript you can call `require("child_process").execSync(...)` and run OS commands.
 
 So the gadget is not "fork is always RCE". The gadget is: **pollute `execArgv`, then hit any code path that uses `fork` or `spawn` with an options object that inherits your value.**

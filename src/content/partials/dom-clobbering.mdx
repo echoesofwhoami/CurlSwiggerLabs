@@ -38,7 +38,7 @@ const settings = window.settings || { theme: "light", lang: "en" }
 
 This check only distinguishes “nothing on `window.settings`” from “something truthy.” It does not check that the value is actually a config object. A DOM node is also truthy, so it would pass the same test.
 
-**Chromium** (Chrome, Edge, and other Blink browsers) has an extra rule. An element with `id="settings"` is also exposed as `window.settings`. The value is the DOM node, not a config object. Nodes are truthy, so the `||` fallback never runs. HTML has overwritten the name the script was about to use. That overwrite is **DOM clobbering**. No `<script>` tag is required. Attacker-controlled markup is enough.
+**Chromium** (Chrome, Edge, and other Blink browsers) has an extra rule. An element with `id="settings"` is also exposed as `window.settings`. The value is the <Term id="concept.dom">DOM</Term> node, not a config object. Nodes are truthy, so the `||` fallback never runs. HTML has overwritten the name the script was about to use. That overwrite is <Term id="concept.dom-clobbering">DOM clobbering</Term>. No `<script>` tag is required. Attacker-controlled markup is enough.
 
 #### One element clobbers a fallback
 
@@ -84,7 +84,7 @@ No `<script>` tag was required. Tags that sanitizers often still allow, such as 
 
 #### Why it matters
 
-HTML sanitizers may block `<script>` and inline event handlers while still allowing `<a>`, `<img>`, and similar tags. If the application reads defaults from `window.someName` and later passes the result into a **DOM sink** (for example `innerHTML` or a URL attribute), clobbering can turn that "safe" markup into DOM XSS.
+HTML sanitizers may block `<script>` and inline event handlers while still allowing `<a>`, `<img>`, and similar tags. If the application reads defaults from `window.someName` and later passes the result into a <Term id="concept.dom-sink">DOM sink</Term> (for example <Term id="concept.innerHTML">innerHTML</Term> or a URL attribute), clobbering can turn that "safe" markup into <Term id="concept.xss">DOM XSS</Term>.
 
 #### What happens with Firefox
 

@@ -5,7 +5,7 @@ category: "HTTP Request Smuggling"
 
 ### What is HTTP Request Smuggling?
 
-HTTP request smuggling tricks a site into mixing up where one HTTP request ends and the next one starts.
+<Term id="concept.http-request-smuggling">HTTP request smuggling</Term> tricks a site into mixing up where one HTTP request ends and the next one starts.
 
 Most apps sit behind a front-end (proxy / load balancer) that forwards traffic to a back-end. For speed, the front-end often sends several HTTP/1 requests over the same connection. That only works if both servers agree on where each request stops.
 
@@ -13,12 +13,12 @@ Most apps sit behind a front-end (proxy / load balancer) that forwards traffic t
 
 HTTP/1 has two ways to say how long the body is:
 
-1. **`Content-Length`**: exact size in bytes
-2. **`Transfer-Encoding: chunked`**: body sent in pieces, ending with a zero-size chunk (`0\r\n\r\n`)
+1. <Term id="concept.content-length">Content-Length</Term>: exact size in bytes
+2. <Term id="concept.transfer-encoding">Transfer-Encoding</Term>: <Term id="concept.chunked-encoding">chunked</Term>: body sent in pieces, ending with a zero-size chunk (`0\r\n\r\n`)
 
 If both headers are present and disagree, one server may use `Content-Length` and the other `Transfer-Encoding`. The attacker can then hide extra bytes that the back-end treats as the start of the *next* request.
 
-**Classic variants:**
+**Classic variants**, including <Term id="concept.cl-te">CL.TE</Term>:
 
 | Variant | Front-end uses | Back-end uses |
 |---------|----------------|---------------|

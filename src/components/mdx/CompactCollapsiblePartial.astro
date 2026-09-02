@@ -2,6 +2,7 @@
 import { getEntry, render } from 'astro:content';
 import { useTranslations } from '../../i18n/utils';
 import type { Lang } from '../../i18n/utils';
+import Term from './Term.astro';
 
 interface Props {
   partial: string;
@@ -12,6 +13,9 @@ interface Props {
 
 const { partial, title, lang = 'en', collection } = Astro.props;
 const t = useTranslations(lang);
+
+Astro.locals.postLang ??= lang;
+Astro.locals.usedTips ??= new Set<string>();
 
 const collectionName = collection ?? (lang === 'es' ? 'partials-es' : 'partials');
 const entry = await getEntry(collectionName as any, partial);
@@ -27,6 +31,6 @@ const { Content } = await render(entry);
     <span class="expand-hint">{t('partial.clickToExpand')}</span>
   </summary>
   <div class="compact-collapsible-content">
-    <Content />
+    <Content components={{ Term }} />
   </div>
 </details>

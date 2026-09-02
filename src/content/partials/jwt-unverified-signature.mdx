@@ -5,9 +5,9 @@ category: "JWT"
 
 ### JWT Unverified Signature Vulnerability
 
-When a server receives a JWT, it should **always verify the signature** before trusting the token's contents. However, some implementations fail to do this properly.
+When a server receives a <Term id="concept.jwt">JWT</Term>, it should **always verify the signature** before trusting the token's contents. However, some implementations fail to do this properly.
 
-The JWT specification is flexible. It defines how tokens should be structured and signed, but the actual signature verification is left to the application's code. This creates a dangerous gap: **if the server only decodes the JWT without verifying the signature, an attacker can modify the payload at will**.
+The JWT specification is flexible. It defines how tokens should be structured and signed, but the actual signature verification is left to the application's code. This creates a dangerous gap: if the server only decodes the JWT <Term id="concept.jwt-unverified">without verifying the signature</Term>, an attacker can modify the payload at will.
 
 **How the attack works:**
 

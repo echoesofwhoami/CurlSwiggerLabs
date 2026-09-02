@@ -3,6 +3,7 @@ import { activeLanguages, defaultLang, spanishEnabled } from '../i18n/ui';
 import { getLocalizedHref, useTranslations, type Lang } from '../i18n/utils';
 import '../styles/global.css';
 import CopyCodeButton from '../components/layout/CopyCodeButton.astro';
+import TooltipPopover from '../components/layout/TooltipPopover.astro';
 import Footer from '../components/layout/Footer.astro';
 import Navbar from '../components/layout/Navbar.astro';
 import { SHIKI_THEMES } from '../styles/shiki-themes';
@@ -189,5 +190,6 @@ const themeBootScript = `(function () {
     <slot />
     <Footer lang={lang} />
     <CopyCodeButton lang={lang} />
+    <TooltipPopover lang={lang} />
   </body>
 </html>
