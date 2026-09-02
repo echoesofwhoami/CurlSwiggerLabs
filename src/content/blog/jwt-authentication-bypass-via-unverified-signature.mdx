@@ -14,6 +14,7 @@ series: "jwt-authentication-bypass"
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -87,13 +88,16 @@ Let's create a Python script to forge the admin JWT:
 > 4. **Re-encoding** the modified payload back to base64url
 > 5. **Reassembling** the JWT with the original header and signature.
 
-**Expected output:**
+**Expected output.** Only the middle JWT segment (the payload) changes. Header and signature stay identical:
 
-<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/10-plain.txt" />
+<RequestDiff
+  left="jwt-authentication-bypass-via-unverified-signature/10-original.txt"
+  right="jwt-authentication-bypass-via-unverified-signature/10-plain.txt"
+  leftLabel="Original JWT"
+  rightLabel="Forged JWT"
+/>
 
 > **Note**: The server won't verify the signature anyway. You could even change the header `alg` to `none` and leave the signature empty, like: `header.payload.`
-
-Notice that only the **middle part** (payload) changed. The header and signature remain identical to the original token.
 
 Now let's access the admin panel with our forged JWT:
 

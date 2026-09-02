@@ -4,6 +4,7 @@ import { useTranslations } from '../../i18n/utils';
 import type { Lang } from '../../i18n/utils';
 import Quiz from '../post/Quiz.astro';
 import Term from './Term.astro';
+import RequestDiff from './RequestDiff.astro';
 
 interface Props {
   partial: string;
@@ -33,7 +34,7 @@ const { Content } = await render(entry);
     </span>
   </summary>
   <div class="partial-content">
-    <Content components={{ Term }} />
+    <Content components={{ Term, RequestDiff }} />
   </div>
   <Quiz file={`concepts/${partial}`} slug={`concept-${partial}`} lang={lang} />
 </details>

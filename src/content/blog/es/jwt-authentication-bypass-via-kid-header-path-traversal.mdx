@@ -14,6 +14,7 @@ series: "jwt-authentication-bypass"
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -87,9 +88,14 @@ Creemos un script de Python para forjar el JWT de administrador:
 > 3. **Firma el JWT** con una **cadena vacía** (`b''`) como clave HMAC-SHA256, coincidiendo con lo que el servidor leerá de `/dev/null`
 > 4. **Ensambla** header, payload y firma en un JWT completo
 
-Salida esperada:
+Salida esperada. Cambian el `kid` del header, el `sub` del payload y la firma (HMAC con clave vacía):
 
-<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/10-plain.txt" />
+<RequestDiff
+  left="jwt-authentication-bypass-via-kid-header-path-traversal/10-original.txt"
+  right="jwt-authentication-bypass-via-kid-header-path-traversal/10-plain.txt"
+  leftLabel="JWT original"
+  rightLabel="JWT forjado"
+/>
 
 Verifiquemos decodificando el header forjado:
 

@@ -16,6 +16,7 @@ technologies: ['Node.js', 'Express']
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 import ExternalLink from '@components/mdx/ExternalLink.astro';
 
 ## Necessary Background Concepts To Solve The Lab
@@ -90,6 +91,15 @@ POST `/login` is the authentication endpoint. Use the `session` cookie from abov
 `-b "session=<session-cookie>"` = send the session cookie to perform the action as the wiener user\
 `sessionId` = this app requires the session id in the JSON body so we pass it that way too \
 `"__proto__":{"json spaces":10}` = the pollution payload.
+
+The mutation is just that extra key on an otherwise normal address body:
+
+<RequestDiff
+  left="remote-code-execution-via-server-side-prototype-pollution/04-clean.json"
+  right="remote-code-execution-via-server-side-prototype-pollution/04-body.json"
+  leftLabel="Normal address JSON"
+  rightLabel="Polluted address JSON"
+/>
 
 Raw response shape:
 

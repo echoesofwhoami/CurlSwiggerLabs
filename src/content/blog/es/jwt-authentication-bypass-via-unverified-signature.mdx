@@ -14,6 +14,7 @@ series: "jwt-authentication-bypass"
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -87,13 +88,16 @@ Creemos un script de Python para forjar el JWT de administrador:
 > 4. **Re-codifica** el payload modificado de vuelta a base64url
 > 5. **Reensambla** el JWT con el header y la firma originales. El servidor no verificará la firma de todos modos.
 
-**Salida esperada:**
+**Salida esperada.** Solo cambia el segmento central del JWT (el payload). El header y la firma quedan idénticos:
 
-<CodeSnippet file="jwt-authentication-bypass-via-unverified-signature/10-plain.txt" />
+<RequestDiff
+  left="jwt-authentication-bypass-via-unverified-signature/10-original.txt"
+  right="jwt-authentication-bypass-via-unverified-signature/10-plain.txt"
+  leftLabel="JWT original"
+  rightLabel="JWT forjado"
+/>
 
 > **Nota**: Incluso se podria cambiar el header `alg` a `none` y dejar la firma sin poner, tipo: `header.payload.`
-
-Observa que solo la **parte central** (payload) cambió. El header y la firma permanecen idénticos al token original.
 
 Ahora accedamos al panel de administración con nuestro JWT forjado:
 

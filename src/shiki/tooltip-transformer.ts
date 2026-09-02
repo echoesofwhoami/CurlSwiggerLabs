@@ -7,6 +7,8 @@ import {
   type GlossaryEntry,
   type GlossaryLang,
 } from '../data/glossary';
+import { useTranslations } from '../i18n/utils';
+import { findJwtTips } from '../utils/request-diff';
 
 const PLACEHOLDER = /<[A-Za-z][A-Za-z0-9_-]*>/g;
 const SEEN_KEY = '__curlswiggerTipSeen';
@@ -37,12 +39,26 @@ interface TextRange {
   end: number;
 }
 
-interface Accepted {
+interface GlossaryWrap {
   start: number;
   end: number;
   text: string;
   entry: GlossaryEntry;
   fromExtra: boolean;
+}
+
+interface JwtWrap {
+  start: number;
+  end: number;
+  term: string;
+  decoded?: string;
+  short?: string;
+}
+
+type LineWrap = GlossaryWrap | JwtWrap;
+
+function isJwtWrap(wrap: LineWrap): wrap is JwtWrap {
+  return !('entry' in wrap);
 }
 
 function escapeRegExp(value: string): string {
@@ -240,6 +256,32 @@ function styledText(value: string, style: string): Element {
   };
 }
 
+function jwtTip(wrap: JwtWrap, leaves: Leaf[]): Element {
+  const children: ElementContent[] = [];
+  for (const leaf of leaves) {
+    const start = Math.max(wrap.start, leaf.start);
+    const end = Math.min(wrap.end, leaf.end);
+    if (start >= end) continue;
+    children.push(
+      styledText(leaf.value.slice(start - leaf.start, end - leaf.start), leaf.style),
+    );
+  }
+  return {
+    type: 'element',
+    tagName: 'span',
+    properties: {
+      class: 'tip tip--syntax',
+      'data-tip-term': wrap.term,
+      ...(wrap.decoded ? { 'data-tip-decode': wrap.decoded } : {}),
+      ...(wrap.short ? { 'data-tip-short': wrap.short } : {}),
+      role: 'button',
+      tabindex: '0',
+      'aria-expanded': 'false',
+    },
+    children: children.length > 0 ? children : [{ type: 'text', value: '' } satisfies Text],
+  };
+}
+
 function tipButton(entry: GlossaryEntry, leaves: Leaf[], range: TextRange): Element {
   const children: ElementContent[] = [];
   for (const leaf of leaves) {
@@ -263,7 +305,7 @@ function tipButton(entry: GlossaryEntry, leaves: Leaf[], range: TextRange): Elem
   };
 }
 
-function applyWraps(line: Element, leaves: Leaf[], matches: Accepted[]): void {
+function applyWraps(line: Element, leaves: Leaf[], matches: LineWrap[]): void {
   const out: ElementContent[] = [];
   const lineEnd = leaves.at(-1)?.end ?? 0;
   let pos = 0;
@@ -280,7 +322,9 @@ function applyWraps(line: Element, leaves: Leaf[], matches: Accepted[]): void {
 
   for (const match of matches) {
     emitPlain(pos, match.start);
-    out.push(tipButton(match.entry, leaves, match));
+    out.push(
+      isJwtWrap(match) ? jwtTip(match, leaves) : tipButton(match.entry, leaves, match),
+    );
     pos = match.end;
   }
   emitPlain(pos, lineEnd);
@@ -289,26 +333,55 @@ function applyWraps(line: Element, leaves: Leaf[], matches: Accepted[]): void {
 
 /**
  * Wrap glossary tokens in highlighted code with `<button class="tip">`.
+ * JWT header/payload segments get the same popover with decoded JSON.
  * `lang` is the post locale; copy lives in the glossary JSON, not on the button.
  */
 export function tooltipTransformer(
   lang: GlossaryLang,
   opts?: TransformerOpts,
 ): ShikiTransformer {
-  void lang;
+  const t = useTranslations(lang);
+  const jwtTerms = {
+    header: t('diff.jwtHeader'),
+    payload: t('diff.jwtPayload'),
+    signature: t('diff.jwtSignature'),
+    signatureHint: t('diff.jwtSignatureHint'),
+  };
+
   return {
     name: 'curlswigger-tooltips',
     line(hast: Element) {
-      const codeLang = resolveCodeLang(opts?.codeLang, this.options.lang);
-      const candidates = buildCandidates(codeLang, opts?.extraTips);
-      if (candidates.length === 0) return;
-
       const { text, leaves } = collectLeaves(hast);
       if (!text) return;
 
       const holes = placeholderRanges(text);
       const occupied: TextRange[] = [];
-      const found: Accepted[] = [];
+      const wraps: LineWrap[] = [];
+
+      for (const tip of findJwtTips(text)) {
+        const range = { start: tip.start, end: tip.end };
+        if (holes.some((hole) => overlaps(hole, range))) continue;
+        occupied.push(range);
+        if (tip.kind === 'signature') {
+          wraps.push({
+            start: tip.start,
+            end: tip.end,
+            term: jwtTerms.signature,
+            short: jwtTerms.signatureHint,
+          });
+        } else if (tip.decoded) {
+          wraps.push({
+            start: tip.start,
+            end: tip.end,
+            term: jwtTerms[tip.kind],
+            decoded: tip.decoded,
+          });
+        }
+      }
+
+      const codeLang = resolveCodeLang(opts?.codeLang, this.options.lang);
+      const candidates = buildCandidates(codeLang, opts?.extraTips);
+      const found: GlossaryWrap[] = [];
 
       for (const candidate of candidates) {
         for (const range of locateToken(text, candidate.token)) {
@@ -327,24 +400,21 @@ export function tooltipTransformer(
         }
       }
 
-      if (found.length === 0) return;
-      found.sort((a, b) => a.start - b.start);
-
       const seen = seenIds(this.meta);
-      const accepted: Accepted[] = [];
       for (const match of found) {
         if (!match.fromExtra && isFirstOnly(match.entry) && seen.has(match.entry.id)) {
           continue;
         }
-        accepted.push(match);
+        wraps.push(match);
         opts?.collector?.add(match.entry.id);
         if (!match.fromExtra && isFirstOnly(match.entry)) {
           seen.add(match.entry.id);
         }
       }
 
-      if (accepted.length === 0) return;
-      applyWraps(hast, leaves, accepted);
+      if (wraps.length === 0) return;
+      wraps.sort((a, b) => a.start - b.start);
+      applyWraps(hast, leaves, wraps);
     },
   };
 }

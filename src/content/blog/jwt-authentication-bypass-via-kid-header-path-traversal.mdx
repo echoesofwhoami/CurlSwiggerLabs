@@ -14,6 +14,7 @@ series: "jwt-authentication-bypass"
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -87,9 +88,14 @@ Let's create a Python script to forge the admin JWT:
 > 3. **Signing the JWT** with an **empty string** (`b''`) as the HMAC-SHA256 key, matching what the server will read from `/dev/null`
 > 4. **Assembling** header, payload, and signature into a complete JWT
 
-Expected output:
+Expected output. Header `kid`, payload `sub`, and the signature all change (the empty-key HMAC is a new signature):
 
-<CodeSnippet file="jwt-authentication-bypass-via-kid-header-path-traversal/10-plain.txt" />
+<RequestDiff
+  left="jwt-authentication-bypass-via-kid-header-path-traversal/10-original.txt"
+  right="jwt-authentication-bypass-via-kid-header-path-traversal/10-plain.txt"
+  leftLabel="Original JWT"
+  rightLabel="Forged JWT"
+/>
 
 Let's verify by decoding the forged header:
 

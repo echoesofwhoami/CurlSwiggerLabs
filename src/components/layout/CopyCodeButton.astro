@@ -28,6 +28,7 @@ const t = useTranslations(lang);
 
     for (const codeBlock of codeBlocks) {
       if (codeBlock.parentElement?.classList.contains('code-wrapper')) continue;
+      if (codeBlock.closest('.request-diff')) continue;
 
       const wrapper = document.createElement('div');
       wrapper.className = 'code-wrapper';

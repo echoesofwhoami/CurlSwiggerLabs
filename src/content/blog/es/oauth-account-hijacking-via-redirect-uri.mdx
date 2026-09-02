@@ -13,6 +13,7 @@ tools: ['curl', 'Python']
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -87,6 +88,13 @@ El código de autorización se pasa en la URL al `redirect_uri`. Esta es la piez
 Probemos si el proveedor OAuth valida el parámetro `redirect_uri` apuntándolo a nuestro servidor de exploits:
 
 <CodeSnippet file="oauth-account-hijacking-via-redirect-uri/11-bash.sh" />
+
+<RequestDiff
+  left="oauth-account-hijacking-via-redirect-uri/08-auth.http"
+  right="oauth-account-hijacking-via-redirect-uri/11-auth.http"
+  leftLabel="redirect_uri normal"
+  rightLabel="redirect_uri secuestrado"
+/>
 
 Respuesta:
 

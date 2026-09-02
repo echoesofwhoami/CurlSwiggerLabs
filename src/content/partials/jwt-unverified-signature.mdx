@@ -19,7 +19,14 @@ The JWT specification is flexible. It defines how tokens should be structured an
 5. Attacker sends the modified JWT to the server, which accepts it without checking the signature
 ```
 
-The token's **header and signature can remain completely untouched** only the payload needs to be modified.
+The token's **header and signature can remain completely untouched**. Only the payload needs to be modified:
+
+<RequestDiff
+  left="jwt-authentication-bypass-via-unverified-signature/08-json.json"
+  right="jwt-authentication-bypass-via-unverified-signature/08-admin.json"
+  leftLabel="Original payload"
+  rightLabel="Tampered payload"
+/>
 
 **Alternative attack: Changing algorithm to "none"**
 

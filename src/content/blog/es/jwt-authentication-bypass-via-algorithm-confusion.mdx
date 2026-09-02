@@ -14,6 +14,7 @@ series: "jwt-authentication-bypass"
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -91,6 +92,15 @@ El ataque requiere convertir primero el JWK a formato PEM X.509 (la pista del la
 Salida esperada:
 
 <CodeSnippet file="jwt-authentication-bypass-via-algorithm-confusion/12-plain.txt" />
+
+El token forjado conserva el mismo `kid` y cambia `alg` a HS256. Pasa el cursor por el header y el payload para ver el JSON decodificado:
+
+<RequestDiff
+  left="jwt-authentication-bypass-via-algorithm-confusion/12-original.txt"
+  right="jwt-authentication-bypass-via-algorithm-confusion/12-jwt.txt"
+  leftLabel="JWT original"
+  rightLabel="JWT forjado"
+/>
 
 Ahora accedamos al panel de administración con nuestro JWT forjado:
 

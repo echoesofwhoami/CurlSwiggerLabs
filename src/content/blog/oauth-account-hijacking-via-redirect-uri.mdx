@@ -13,6 +13,7 @@ tools: ['curl', 'Python']
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -93,6 +94,15 @@ Response:
 <CodeSnippet file="oauth-account-hijacking-via-redirect-uri/12-plain.http" />
 
 No error. The OAuth server accepted our arbitrary `redirect_uri` without any validation. This means after authentication, the authorization code will be sent to whatever URL we specify. Including our exploit server.
+
+Comparison of the normal and hijacked `redirect_uri` requests:
+
+<RequestDiff
+  left="oauth-account-hijacking-via-redirect-uri/08-auth.http"
+  right="oauth-account-hijacking-via-redirect-uri/11-auth.http"
+  leftLabel="Normal redirect_uri"
+  rightLabel="Hijacked redirect_uri"
+/>
 
 ### The Exploit
 

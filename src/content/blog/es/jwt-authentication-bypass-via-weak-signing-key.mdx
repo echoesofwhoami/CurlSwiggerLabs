@@ -14,6 +14,7 @@ series: "jwt-authentication-bypass"
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -96,9 +97,14 @@ Creemos un script para forjar el token:
 > 2. Payload modificado con `"sub": "administrator"`
 > 3. Firma válida calculada usando el secreto crackeado `secret1`
 
-Salida de ejemplo:
+Salida de ejemplo. Mismo header, payload con `sub` nuevo, firma válida con `secret1`:
 
-<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/12-plain.txt" />
+<RequestDiff
+  left="jwt-authentication-bypass-via-weak-signing-key/12-original.txt"
+  right="jwt-authentication-bypass-via-weak-signing-key/12-plain.txt"
+  leftLabel="JWT original"
+  rightLabel="JWT forjado"
+/>
 
 Ahora accedamos al panel de administración con nuestro JWT forjado:
 

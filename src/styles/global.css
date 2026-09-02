@@ -584,6 +584,23 @@ pre code .tip {
   font-weight: 500;
 }
 
+#csl-tip-popover [data-tip-short][hidden],
+#csl-tip-popover [data-tip-code][hidden] {
+  display: none;
+}
+
+#csl-tip-popover [data-tip-code] {
+  margin: 0;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.8em;
+  line-height: 1.45;
+  color: var(--heading);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 #csl-tip-popover [data-tip-links] {
   display: flex;
   flex-direction: column;

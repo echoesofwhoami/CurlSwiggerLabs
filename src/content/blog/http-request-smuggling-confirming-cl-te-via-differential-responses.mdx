@@ -13,6 +13,7 @@ tools: ['curl', 'Python']
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -99,14 +100,24 @@ Then trigger the next request as a normal user with curl:
 
 <CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/curl-trigger.sh" />
 
-<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/response-404.http" />
-
 > **Command breakdown**: \
 `-s` = silent mode (no progress meter) \
 `-i` = include response headers in the output \
 `--http1.1` = use HTTP/1.1 on a normal separate connection, like the next user hitting `/`
 
+Output:
+
+<CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/response-404.http" />
+
+
+
 That flip from `200` to `404` is what the lab wants.
+<RequestDiff
+  left="http-request-smuggling-confirming-cl-te-via-differential-responses/response-200.http"
+  right="http-request-smuggling-confirming-cl-te-via-differential-responses/response-404.http"
+  leftLabel="First response"
+  rightLabel="Second response"
+/>
 
 **No carlos were harmed in this lab. Instead of sending him into the digital void, we sent the next user's request there. Close enough.**
 

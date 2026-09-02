@@ -14,6 +14,7 @@ series: "jwt-authentication-bypass"
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -96,9 +97,14 @@ Let's create a script to forge the token:
 > 2. Modified payload with `"sub": "administrator"`
 > 3. Valid signature computed using the cracked secret `secret1`
 
-Example output:
+Example output. Same header, new payload `sub`, new valid signature with `secret1`:
 
-<CodeSnippet file="jwt-authentication-bypass-via-weak-signing-key/12-plain.txt" />
+<RequestDiff
+  left="jwt-authentication-bypass-via-weak-signing-key/12-original.txt"
+  right="jwt-authentication-bypass-via-weak-signing-key/12-plain.txt"
+  leftLabel="Original JWT"
+  rightLabel="Forged JWT"
+/>
 
 Now let's access the admin panel with our forged JWT:
 

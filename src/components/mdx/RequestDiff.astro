@@ -1,0 +1,576 @@
+---
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { useTranslations, type Lang } from '../../i18n/utils';
+import {
+  alignRequestDiff,
+  parseJwt,
+  prettyIfJson,
+  splitPlaceholders,
+  type DiffMark,
+  type DiffToken,
+  type JwtParts,
+} from '../../utils/request-diff';
+
+interface Props {
+  /** Path relative to `src/data/scripts/` */
+  left: string;
+  /** Path relative to `src/data/scripts/` */
+  right: string;
+  leftLabel?: string;
+  rightLabel?: string;
+}
+
+const scriptsRoot = join(process.cwd(), 'src/data/scripts');
+const { left: leftFile, right: rightFile, leftLabel, rightLabel } = Astro.props;
+const postLang = (Astro.locals.postLang ?? 'en') as Lang;
+const t = useTranslations(postLang);
+
+const leftRaw = prettyIfJson(
+  readFileSync(join(scriptsRoot, leftFile), 'utf-8').replace(/\n$/, ''),
+  leftFile,
+);
+const rightRaw = prettyIfJson(
+  readFileSync(join(scriptsRoot, rightFile), 'utf-8').replace(/\n$/, ''),
+  rightFile,
+);
+const rows = alignRequestDiff(leftRaw, rightRaw);
+const leftJwt = parseJwt(leftRaw);
+const rightJwt = parseJwt(rightRaw);
+const jwtMode = Boolean(leftJwt && rightJwt);
+const jsonMode = !jwtMode && (leftFile.endsWith('.json') || rightFile.endsWith('.json'));
+const httpMode = !jwtMode && !jsonMode && (leftFile.endsWith('.http') || rightFile.endsWith('.http'));
+const headerChanged = Boolean(leftJwt && rightJwt && leftJwt.header !== rightJwt.header);
+const payloadChanged = Boolean(leftJwt && rightJwt && leftJwt.payload !== rightJwt.payload);
+const signatureChanged = Boolean(leftJwt && rightJwt && leftJwt.signature !== rightJwt.signature);
+const leftTitle = leftLabel ?? t('diff.left');
+const rightTitle = rightLabel ?? t('diff.right');
+const diffId = `rd-${leftFile.replace(/[^a-z0-9]/gi, '-')}-${rightFile.replace(/[^a-z0-9]/gi, '-')}`;
+
+const sides = [
+  { id: 'left' as const, jwt: leftJwt, title: leftTitle, tokens: 'left' as const, active: false },
+  { id: 'right' as const, jwt: rightJwt, title: rightTitle, tokens: 'right' as const, active: true },
+];
+
+function tokenParts(tokens: DiffToken[]) {
+  return tokens.flatMap((token) =>
+    splitPlaceholders(token.value).map((part) => ({
+      text: part.text,
+      type: token.type,
+      placeholder: part.placeholder,
+    })),
+  );
+}
+
+function jwtMark(changed: boolean, side: 'left' | 'right'): DiffMark {
+  if (!changed) return 'eq';
+  return side === 'left' ? 'del' : 'add';
+}
+
+function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
+  return [
+    {
+      text: jwt.header,
+      decoded: jwt.headerJson,
+      short: undefined as string | undefined,
+      term: t('diff.jwtHeader'),
+      mark: jwtMark(headerChanged, side),
+      dot: true,
+    },
+    {
+      text: jwt.payload,
+      decoded: jwt.payloadJson,
+      short: undefined as string | undefined,
+      term: t('diff.jwtPayload'),
+      mark: jwtMark(payloadChanged, side),
+      dot: true,
+    },
+    {
+      text: jwt.signature,
+      decoded: null as string | null,
+      short: t('diff.jwtSignatureHint'),
+      term: t('diff.jwtSignature'),
+      mark: jwtMark(signatureChanged, side),
+      dot: false,
+    },
+  ];
+}
+---
+
+<div class:list={['request-diff', { 'is-json': jsonMode, 'is-http': httpMode }]} data-diff={diffId} role="region" aria-label={t('diff.region')}>
+  <textarea class="request-diff-source" data-side="left" readonly hidden>{leftRaw}</textarea>
+  <textarea class="request-diff-source" data-side="right" readonly hidden>{rightRaw}</textarea>
+
+  <div class="request-diff-split">
+    <div class="request-diff-toolbar">
+      {sides.map((side) => (
+        <div class="request-diff-heading">
+          <span class:list={['request-diff-label', side.id === 'left' ? 'is-del' : 'is-add']}>
+            {side.title}
+          </span>
+          <button
+            type="button"
+            class="copy-code request-diff-copy"
+            data-side={side.id}
+            data-copied-label={t('code.copied')}
+          >
+            <span class="request-diff-copy-label">{t('code.copy')}</span>
+          </button>
+        </div>
+      ))}
+    </div>
+    <div class="request-diff-split-body">
+      {sides.map((side) => (
+        <div class:list={['request-diff-cell', side.id]}>
+          {jwtMode && side.jwt ? (
+            <div class="request-diff-single-line request-diff-jwt">
+              {jwtLine(side.jwt, side.id).map((seg) => {
+                const hoverable = Boolean(seg.decoded || seg.short);
+                return (
+                <span
+                  class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
+                  data-tip-term={hoverable ? seg.term : undefined}
+                  data-tip-decode={seg.decoded ?? undefined}
+                  data-tip-short={seg.short}
+                  role={hoverable ? 'button' : undefined}
+                  tabindex={hoverable ? 0 : undefined}
+                  aria-expanded={hoverable ? 'false' : undefined}
+                ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
+                );
+              })}
+            </div>
+          ) : (
+            rows.map((row) =>
+              row[side.tokens].length === 0 ? null : (
+                <div class:list={['request-diff-single-line', row.kind]}>
+                  {tokenParts(row[side.tokens]).map((part) => (
+                    <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
+                  ))}
+                </div>
+              )
+            )
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <div class="request-diff-mobile" data-active="right">
+    <div class="request-diff-tabs" role="tablist" aria-label={t('diff.region')}>
+      {sides.map((side) => (
+        <button
+          class:list={['request-diff-tab', { 'is-active': side.active }]}
+          type="button"
+          role="tab"
+          aria-selected={side.active ? 'true' : 'false'}
+          data-panel={side.id}
+        >
+          <span class:list={['request-diff-swatch', side.id === 'left' ? 'del' : 'add']} aria-hidden="true"></span>
+          <span>{side.title}</span>
+        </button>
+      ))}
+    </div>
+    <div class="request-diff-panel-wrap">
+      <button
+        type="button"
+        class="copy-code request-diff-copy"
+        data-side="right"
+        data-copied-label={t('code.copied')}
+      >
+        <span class="request-diff-copy-label">{t('code.copy')}</span>
+      </button>
+      {sides.map((side) => (
+        <div
+          class="request-diff-panel"
+          data-panel={side.id}
+          hidden={side.active ? undefined : true}
+        >
+          <div class="request-diff-body">
+            {jwtMode && side.jwt ? (
+              <div class="request-diff-single-line request-diff-jwt">
+                {jwtLine(side.jwt, side.id).map((seg) => {
+                  const hoverable = Boolean(seg.decoded || seg.short);
+                  return (
+                  <span
+                    class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
+                    data-tip-term={hoverable ? seg.term : undefined}
+                    data-tip-decode={seg.decoded ?? undefined}
+                    data-tip-short={seg.short}
+                    role={hoverable ? 'button' : undefined}
+                    tabindex={hoverable ? 0 : undefined}
+                    aria-expanded={hoverable ? 'false' : undefined}
+                  ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
+                  );
+                })}
+              </div>
+            ) : (
+              rows.map((row) =>
+                row[side.tokens].length === 0 ? null : (
+                  <div class:list={['request-diff-single-line', row.kind]}>
+                    {tokenParts(row[side.tokens]).map((part) => (
+                      <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
+                    ))}
+                  </div>
+                )
+              )
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  function initRequestDiff() {
+    const roots = document.querySelectorAll<HTMLElement>(
+      '.request-diff:not([data-rd-init])',
+    );
+
+    for (const root of roots) {
+      root.dataset.rdInit = '1';
+      const mobile = root.querySelector<HTMLElement>('.request-diff-mobile');
+      const tabs = mobile?.querySelectorAll<HTMLButtonElement>('.request-diff-tab') ?? [];
+      const panels = mobile?.querySelectorAll<HTMLElement>('.request-diff-panel') ?? [];
+      const mobileCopy = mobile?.querySelector<HTMLButtonElement>('.request-diff-copy');
+
+      function showPanel(name: string) {
+        if (mobile) mobile.dataset.active = name;
+        tabs.forEach((tab) => {
+          const on = tab.dataset.panel === name;
+          tab.classList.toggle('is-active', on);
+          tab.setAttribute('aria-selected', String(on));
+        });
+        panels.forEach((panel) => {
+          if (panel.dataset.panel === name) {
+            panel.removeAttribute('hidden');
+          } else {
+            panel.setAttribute('hidden', '');
+          }
+        });
+        if (mobileCopy) mobileCopy.dataset.side = name;
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      }
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const name = tab.dataset.panel;
+          if (name) showPanel(name);
+        });
+      });
+
+      for (const button of root.querySelectorAll<HTMLButtonElement>('.request-diff-copy')) {
+        const labelEl = button.querySelector<HTMLElement>('.request-diff-copy-label');
+        const idleLabel = labelEl?.textContent?.trim() ?? 'Copy';
+
+        button.addEventListener('click', async () => {
+          const side = button.dataset.side;
+          const source = root.querySelector<HTMLTextAreaElement>(
+            `textarea.request-diff-source[data-side="${side}"]`,
+          );
+          await navigator.clipboard.writeText(source?.value ?? '');
+          if (labelEl) {
+            labelEl.textContent = button.dataset.copiedLabel ?? 'Copied!';
+            window.setTimeout(() => {
+              labelEl.textContent = idleLabel;
+            }, 700);
+          }
+        });
+      }
+    }
+  }
+
+  initRequestDiff();
+  document.addEventListener('astro:after-swap', initRequestDiff);
+</script>
+
+<style>
+  .request-diff {
+    margin: 18px 0;
+    max-width: 100%;
+  }
+
+  .request-diff-mobile {
+    display: none;
+  }
+
+  .request-diff-split {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--code-bg);
+    overflow: hidden;
+  }
+
+  .request-diff-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--surface);
+  }
+
+  .request-diff-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 8px 6px 12px;
+  }
+
+  .request-diff-heading + .request-diff-heading {
+    border-left: 1px solid var(--border);
+  }
+
+  .request-diff-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .request-diff-label.is-del {
+    border-left: 3px solid var(--accent);
+    padding-left: 8px;
+  }
+
+  .request-diff-label.is-add {
+    border-left: 3px solid var(--success-border);
+    padding-left: 8px;
+  }
+
+  .request-diff-heading .request-diff-copy {
+    position: static;
+    flex-shrink: 0;
+  }
+
+  .request-diff-split-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .request-diff-cell {
+    min-width: 0;
+    border-left: 3px solid transparent;
+  }
+
+  .request-diff-cell.right {
+    border-left: 1px solid var(--border);
+  }
+
+  .request-diff-body,
+  .request-diff-split-body {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    font-size: var(--code-font-size);
+    line-height: 1.5;
+    color: var(--shiki-foreground, var(--text));
+  }
+
+  .request-diff-single-line {
+    padding: 10px 12px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .request-diff.is-json .request-diff-cell,
+  .request-diff.is-http .request-diff-cell {
+    padding: 10px 0;
+  }
+
+  .request-diff.is-json .request-diff-single-line,
+  .request-diff.is-http .request-diff-single-line {
+    padding: 3px 12px;
+    line-height: 1.4;
+  }
+
+  .request-diff.is-http .request-diff-single-line {
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .request-diff-single-line.eq {
+    color: var(--text-muted);
+  }
+
+  .request-diff-jwt {
+    font-size: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .request-diff-jwt > :global(*) {
+    display: inline;
+    font-size: var(--code-font-size);
+    font-family: inherit;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+
+  .request-diff-jwt :global(.jwt-seg),
+  .request-diff-jwt :global(.jwt-dot) {
+    display: inline;
+  }
+
+  .request-diff-jwt :global(.jwt-dot) {
+    background: none;
+    color: var(--text-muted);
+  }
+
+  .request-diff-single-line :global(.tip.del),
+  .request-diff-single-line span.del {
+    background-color: color-mix(in srgb, var(--accent) 38%, transparent);
+    color: var(--heading);
+    border-radius: 2px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .request-diff-single-line :global(.tip.add),
+  .request-diff-single-line span.add {
+    background-color: color-mix(in srgb, var(--success-border) 38%, transparent);
+    color: var(--heading);
+    border-radius: 2px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .request-diff-single-line span.eq,
+  .request-diff-single-line :global(.tip.eq) {
+    color: var(--text-muted);
+  }
+
+  .request-diff-single-line span.ph {
+    color: var(--code-placeholder);
+    font-weight: 700;
+  }
+
+  .request-diff-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .request-diff-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .request-diff-tab + .request-diff-tab {
+    margin-left: -1px;
+  }
+
+  .request-diff-tab:hover {
+    background-color: var(--surface-elevated);
+    color: var(--text);
+  }
+
+  .request-diff-tab.is-active {
+    z-index: 1;
+    background-color: var(--code-bg);
+    color: var(--heading);
+  }
+
+  .request-diff-tab[data-panel='left'].is-active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 10%, var(--code-bg));
+  }
+
+  .request-diff-tab[data-panel='right'].is-active {
+    border-color: var(--success-border);
+    color: var(--success-fg);
+    background-color: color-mix(in srgb, var(--success-border) 10%, var(--code-bg));
+  }
+
+  .request-diff-swatch {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  .request-diff-swatch.del {
+    background-color: var(--accent);
+  }
+
+  .request-diff-swatch.add {
+    background-color: var(--success-border);
+  }
+
+  .request-diff-panel-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) var(--radius);
+    background-color: var(--code-bg);
+    overflow: hidden;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+
+  .request-diff-mobile[data-active='left'] .request-diff-panel-wrap {
+    border-color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 10%, var(--code-bg));
+  }
+
+  .request-diff-mobile[data-active='right'] .request-diff-panel-wrap {
+    border-color: var(--success-border);
+    background-color: color-mix(in srgb, var(--success-border) 10%, var(--code-bg));
+  }
+
+  .request-diff-panel {
+    background: transparent;
+  }
+
+  .request-diff-panel-wrap .request-diff-copy {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+  }
+
+  .request-diff-panel-wrap .request-diff-single-line {
+    padding-top: 28px;
+  }
+
+  .request-diff.is-json .request-diff-panel-wrap .request-diff-body,
+  .request-diff.is-http .request-diff-panel-wrap .request-diff-body {
+    padding: 28px 0 10px;
+  }
+
+  .request-diff.is-json .request-diff-panel-wrap .request-diff-single-line,
+  .request-diff.is-http .request-diff-panel-wrap .request-diff-single-line {
+    padding: 3px 12px;
+  }
+
+  @media (max-width: 800px) {
+    .request-diff-split {
+      display: none;
+    }
+
+    .request-diff-mobile {
+      display: block;
+    }
+
+    .request-diff-body,
+    .request-diff-jwt > :global(*) {
+      font-size: 13px;
+    }
+  }
+</style>

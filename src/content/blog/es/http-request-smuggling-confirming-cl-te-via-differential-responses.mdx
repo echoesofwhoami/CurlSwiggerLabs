@@ -13,6 +13,7 @@ tools: ['curl', 'Python']
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Conceptos Previos Necesarios Para Resolver El Lab
 
@@ -100,6 +101,13 @@ Luego disparamos la siguiente petición como un usuario normal con curl:
 <CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/curl-trigger.sh" />
 
 <CodeSnippet file="http-request-smuggling-confirming-cl-te-via-differential-responses/response-404.http" />
+
+<RequestDiff
+  left="http-request-smuggling-confirming-cl-te-via-differential-responses/response-200.http"
+  right="http-request-smuggling-confirming-cl-te-via-differential-responses/response-404.http"
+  leftLabel="Primer envío"
+  rightLabel="Siguiente petición"
+/>
 
 > **Desglose del comando**: \
 `-s` = modo silencioso (sin barra de progreso) \

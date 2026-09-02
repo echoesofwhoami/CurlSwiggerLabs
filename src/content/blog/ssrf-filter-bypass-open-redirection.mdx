@@ -13,6 +13,7 @@ tools: ['curl']
 import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro';
 import PartialContainer from '@components/mdx/PartialContainer.astro';
 import CodeSnippet from '@components/mdx/CodeSnippet.astro';
+import RequestDiff from '@components/mdx/RequestDiff.astro';
 
 ## Necessary Background Concepts To Solve The Lab
 
@@ -153,6 +154,13 @@ Let's craft our exploit:
 **Note**: In this lab, the target IP `192.168.0.12:8080` and admin panel location are provided in the lab description. In a real-world scenario, you would need to discover this information through internal network enumeration, port scanning, and path discovery techniques.
 
 <CodeSnippet file="ssrf-filter-bypass-open-redirection/15-bash.sh" />
+
+<RequestDiff
+  left="ssrf-filter-bypass-open-redirection/13-stock.http"
+  right="ssrf-filter-bypass-open-redirection/15-stock.http"
+  leftLabel="Blocked SSRF"
+  rightLabel="Open-redirect bypass"
+/>
 
 This works because:
 1. `stockApi` starts with `/` (allowed - same domain)

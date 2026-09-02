@@ -22,6 +22,13 @@ When a server receives a JWT, it reads the `alg` header to determine which algor
 
 The server then sees `alg: HS256`, picks its "verification key" (which is the RSA public key), and uses it as the HMAC secret exactly matching the attacker's signature.
 
+<RequestDiff
+  left="jwt-authentication-bypass-via-algorithm-confusion/08-json.json"
+  right="jwt-authentication-bypass-via-algorithm-confusion/08-hs256.json"
+  leftLabel="Expected header"
+  rightLabel="Confused header"
+/>
+
 ```
 Normal flow: RS256 -> verify with public key (asymmetric)
 Attack flow: HS256 -> verify with public key (used as symmetric secret)

@@ -3,6 +3,7 @@ import { getEntry, render } from 'astro:content';
 import { useTranslations } from '../../i18n/utils';
 import type { Lang } from '../../i18n/utils';
 import Term from './Term.astro';
+import RequestDiff from './RequestDiff.astro';
 
 interface Props {
   partial: string;
@@ -31,6 +32,6 @@ const { Content } = await render(entry);
     <span class="expand-hint">{t('partial.clickToExpand')}</span>
   </summary>
   <div class="compact-collapsible-content">
-    <Content components={{ Term }} />
+    <Content components={{ Term, RequestDiff }} />
   </div>
 </details>

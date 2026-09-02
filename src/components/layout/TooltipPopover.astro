@@ -10,6 +10,7 @@ interface ClientTip {
   kind: 'syntax' | 'concept';
   term: string;
   short: string;
+  code?: string;
   refs?: { title: string; url: string }[];
 }
 
@@ -40,6 +41,7 @@ const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
 >
   <p data-tip-term></p>
   <p data-tip-short></p>
+  <div data-tip-code hidden></div>
   <div data-tip-links></div>
 </div>
 
@@ -48,6 +50,7 @@ const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
     kind: 'syntax' | 'concept';
     term: string;
     short: string;
+    code?: string;
     refs?: { title: string; url: string }[];
   };
 
@@ -90,9 +93,17 @@ const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
   function fillPanel(panel: HTMLElement, entry: ClientTip) {
     const termEl = panel.querySelector<HTMLElement>('[data-tip-term]');
     const shortEl = panel.querySelector<HTMLElement>('[data-tip-short]');
+    const codeEl = panel.querySelector<HTMLElement>('[data-tip-code]');
     const linksEl = panel.querySelector<HTMLElement>('[data-tip-links]');
     if (termEl) termEl.textContent = entry.term;
-    if (shortEl) shortEl.textContent = entry.short;
+    if (shortEl) {
+      shortEl.textContent = entry.short;
+      shortEl.hidden = Boolean(entry.code);
+    }
+    if (codeEl) {
+      codeEl.textContent = entry.code ?? '';
+      codeEl.hidden = !entry.code;
+    }
     if (!linksEl) return;
 
     linksEl.replaceChildren();
@@ -186,10 +197,31 @@ const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
     }, HIDE_DELAY_MS);
   }
 
-  function showPanel(trigger: HTMLElement) {
+  function readTip(trigger: HTMLElement): ClientTip | null {
+    const decode = trigger.dataset.tipDecode;
+    if (decode) {
+      return {
+        kind: 'syntax',
+        term: trigger.dataset.tipTerm ?? 'Decoded',
+        short: '',
+        code: decode,
+      };
+    }
+    const short = trigger.dataset.tipShort;
+    if (short) {
+      return {
+        kind: 'syntax',
+        term: trigger.dataset.tipTerm ?? 'Signature',
+        short,
+      };
+    }
     const id = trigger.dataset.tipId;
-    if (!id) return;
-    const entry = glossary[id];
+    if (!id) return null;
+    return glossary[id] ?? null;
+  }
+
+  function showPanel(trigger: HTMLElement) {
+    const entry = readTip(trigger);
     if (!entry) return;
 
     const panel = getPanel();

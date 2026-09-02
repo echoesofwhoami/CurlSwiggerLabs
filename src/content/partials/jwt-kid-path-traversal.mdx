@@ -20,11 +20,11 @@ The server receives the JWT, reads the `kid` value, and uses it to look up the c
 
 When the server fetches the signing key **from the filesystem** using the `kid` value, it becomes vulnerable to <Term id="concept.path-traversal">directory traversal</Term> if the input is not sanitized. An attacker can manipulate `kid` to point to any file with known contents:
 
-```json
-{
-  "kid": "../../../../../../../dev/null",
-  "alg": "HS256"
-}
-```
+<RequestDiff
+  left="jwt-authentication-bypass-via-kid-header-path-traversal/06-json.json"
+  right="jwt-authentication-bypass-via-kid-header-path-traversal/12-json.json"
+  leftLabel="Normal kid"
+  rightLabel="Traversed kid"
+/>
 
 On Linux, `/dev/null` is a special file that always returns **empty content**. By pointing `kid` to it, the server will use an **empty string** as the signing key. The attacker can then sign their forged JWT with an empty string, and the server will accept it as valid.
