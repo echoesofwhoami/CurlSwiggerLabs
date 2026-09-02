@@ -150,6 +150,8 @@ export const FONT_OPTIONS: FontOption[] = [
   },
 ];
 
+export const DEFAULT_PRESET_ID = 'echoes';
+
 export const DEFAULT_CONFIG: ThemeConfig = {
   pageBg: '#0b0d13',
   surface: '#0A0F1B',
@@ -177,7 +179,7 @@ export const DEFAULT_CONFIG: ThemeConfig = {
 };
 
 export const PRESETS: ThemePreset[] = [
-  { id: 'echoes', label: 'Echoes (default)', config: { ...DEFAULT_CONFIG } },
+  { id: DEFAULT_PRESET_ID, label: 'Echoes (default)', config: { ...DEFAULT_CONFIG } },
   {
     id: 'echoes-light',
     label: 'Echoes Light',
@@ -593,6 +595,7 @@ function normalizeConfig(config: Partial<ThemeConfig>): ThemeConfig {
   for (const key of COLOR_KEYS) {
     merged[key] = normalizeHexColor(String(merged[key])) as never;
   }
+  merged.shikiTheme = getShikiTheme(merged.shikiTheme).id;
   return merged;
 }
 
@@ -604,7 +607,9 @@ export function configsMatch(a: ThemeConfig, b: ThemeConfig): boolean {
 
 export function matchPresetId(config: ThemeConfig): string | '' {
   const preset = PRESETS.find((p) => configsMatch(p.config, config));
-  return preset?.id ?? '';
+  if (preset) return preset.id;
+  if (configsMatch(config, DEFAULT_CONFIG)) return DEFAULT_PRESET_ID;
+  return '';
 }
 
 export function ensureFontLoaded(family: string): void {
@@ -644,10 +649,10 @@ export function apply(config: ThemeConfig, options: { persist?: boolean } = {}):
 export function getActive(): ThemeConfig {
   try {
     const raw = localStorage.getItem(STORAGE_ACTIVE);
-    if (!raw) return { ...DEFAULT_CONFIG };
+    if (!raw) return normalizeConfig({});
     return normalizeConfig(JSON.parse(raw) as Partial<ThemeConfig>);
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return normalizeConfig({});
   }
 }
 
@@ -691,5 +696,5 @@ export function resetToDefault(): ThemeConfig {
     /* ignore */
   }
   clearCssVars();
-  return apply({ ...DEFAULT_CONFIG }, { persist: false });
+  return apply(normalizeConfig({}), { persist: false });
 }

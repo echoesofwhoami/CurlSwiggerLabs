@@ -97,5 +97,6 @@ export function listShikiThemes(): ShikiThemePack[] {
 }
 
 export function getShikiTheme(id: string): ShikiThemePack {
+  if (!id) return SHIKI_THEMES.echoes;
   return SHIKI_THEMES[id] ?? SHIKI_THEMES.echoes;
 }

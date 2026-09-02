@@ -7,7 +7,7 @@ import TooltipPopover from '../components/layout/TooltipPopover.astro';
 import Footer from '../components/layout/Footer.astro';
 import Navbar from '../components/layout/Navbar.astro';
 import { SHIKI_THEMES } from '../styles/shiki-themes';
-import { FONT_OPTIONS } from '../scripts/theme-config';
+import { DEFAULT_CONFIG, FONT_OPTIONS, configToCssVars } from '../scripts/theme-config';
 
 interface Props {
   title?: string;
@@ -55,15 +55,19 @@ const shikiBootMap = Object.fromEntries(
 const fontBootMap = Object.fromEntries(
   FONT_OPTIONS.filter((font) => font.google).map((font) => [font.family, font.google]),
 );
+const defaultThemeVars = configToCssVars(DEFAULT_CONFIG);
 const themeBootScript = `(function () {
   try {
     var SHIKI = ${JSON.stringify(shikiBootMap)};
     var FONT_MAP = ${JSON.stringify(fontBootMap)};
+    var DEFAULT_VARS = ${JSON.stringify(defaultThemeVars)};
+    var DEFAULT_ACTIVE = ${JSON.stringify(DEFAULT_CONFIG)};
     var varsRaw = localStorage.getItem('csl-theme-vars');
     var activeRaw = localStorage.getItem('csl-theme-active');
-    if (!varsRaw && !activeRaw) return;
-    var vars = varsRaw ? JSON.parse(varsRaw) : null;
-    var active = activeRaw ? JSON.parse(activeRaw) : null;
+    var vars = null;
+    var active = null;
+    try { if (varsRaw) vars = JSON.parse(varsRaw); } catch (e) {}
+    try { if (activeRaw) active = JSON.parse(activeRaw); } catch (e) {}
     if (!vars && active) {
       vars = {
         '--page-bg': active.pageBg,
@@ -90,7 +94,14 @@ const themeBootScript = `(function () {
         '--code-placeholder': active.codePlaceholder
       };
     }
-    if (!vars) return;
+    if (!vars) {
+      vars = DEFAULT_VARS;
+      active = DEFAULT_ACTIVE;
+      try {
+        localStorage.setItem('csl-theme-vars', JSON.stringify(DEFAULT_VARS));
+        localStorage.setItem('csl-theme-active', JSON.stringify(DEFAULT_ACTIVE));
+      } catch (e) {}
+    }
     var shikiId = (active && active.shikiTheme) || 'echoes';
     var shikiVars = SHIKI[shikiId] || SHIKI.echoes;
     if (shikiVars) {

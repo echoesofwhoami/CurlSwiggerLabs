@@ -5,7 +5,7 @@ import { useTranslations } from '../../i18n/utils';
 import { placeholderTransformer } from '../../shiki/placeholder-transformer';
 import { cssVariablesTheme } from '../../styles/shiki-css-theme';
 import { listShikiThemes } from '../../styles/shiki-themes';
-import { FONT_OPTIONS, PRESETS } from '../../scripts/theme-config';
+import { DEFAULT_CONFIG, DEFAULT_PRESET_ID, FONT_OPTIONS, PRESETS } from '../../scripts/theme-config';
 import PostHeader from '../post/PostHeader.astro';
 import TableOfContents from '../post/TableOfContents.astro';
 
@@ -56,7 +56,9 @@ const previewHeadings = [
           <select name="preset" data-preset-select>
             <option value="">Custom</option>
             {PRESETS.map((preset) => (
-              <option value={preset.id}>{preset.label}</option>
+              <option value={preset.id} selected={preset.id === DEFAULT_PRESET_ID}>
+                {preset.label}
+              </option>
             ))}
           </select>
         </label>
@@ -87,7 +89,9 @@ const previewHeadings = [
         <legend>{t('tweaker.shiki')}</legend>
         <select name="shikiTheme" data-field="shikiTheme">
           {shikiThemes.map((theme) => (
-            <option value={theme.id}>{theme.label}</option>
+            <option value={theme.id} selected={theme.id === DEFAULT_CONFIG.shikiTheme}>
+              {theme.label}
+            </option>
           ))}
         </select>
       </fieldset>
@@ -297,6 +301,11 @@ const previewHeadings = [
         const value = draft[key];
         if (el.type === 'color') {
           el.value = normalizeHex(String(value));
+        } else if (key === 'shikiTheme' && el instanceof HTMLSelectElement) {
+          const id = String(value);
+          el.value = [...el.options].some((option) => option.value === id)
+            ? id
+            : DEFAULT_CONFIG.shikiTheme;
         } else {
           el.value = String(value);
         }
