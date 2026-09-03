@@ -21,9 +21,14 @@ interface Props {
   publishedTime?: string;
   /** Align site chrome with wide landing-page content. */
   wide?: boolean;
+  /** Near-viewport width for interactive lab pages. */
+  full?: boolean;
+  /** Optional back link shown in the navbar on interactive lab pages. */
+  backHref?: string;
+  backLabel?: string;
 }
 
-const { lang, type = 'website', publishedTime, wide = false } = Astro.props;
+const { lang, type = 'website', publishedTime, wide = false, full = false, backHref, backLabel } = Astro.props;
 const t = useTranslations(lang);
 
 const title = Astro.props.title ?? t('site.title');
@@ -196,10 +201,10 @@ const themeBootScript = `(function () {
 
     <title>{title}</title>
   </head>
-  <body>
-    <Navbar lang={lang} currentPath={pathname} wide={wide} />
+  <body class:list={{ 'is-ilab': full }}>
+    <Navbar lang={lang} currentPath={pathname} wide={wide} full={full} backHref={backHref} backLabel={backLabel} />
     <slot />
-    <Footer lang={lang} />
+    {!full && <Footer lang={lang} />}
     <CopyCodeButton lang={lang} />
     <TooltipPopover lang={lang} />
   </body>

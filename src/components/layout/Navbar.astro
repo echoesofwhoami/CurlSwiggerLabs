@@ -8,9 +8,12 @@ interface Props {
   lang: Lang;
   currentPath: string;
   wide?: boolean;
+  full?: boolean;
+  backHref?: string;
+  backLabel?: string;
 }
 
-const { lang, currentPath, wide = false } = Astro.props;
+const { lang, currentPath, wide = false, full = false, backHref, backLabel } = Astro.props;
 const t = useTranslations(lang);
 const homePath = getLocalizedHref(lang, '/');
 const aboutPath = getLocalizedPath(lang, 'about');
@@ -21,7 +24,7 @@ const menuId = 'site-nav-menu';
 ---
 
 <header class="navbar" data-navbar>
-  <nav class:list={['nav-container', { wide }]} aria-label="Primary">
+  <nav class:list={['nav-container', { wide: wide && !full, full }]} aria-label="Primary">
     <div class="nav-brand">
       <a href={homePath} class="brand-link" aria-label="CurlSwiggerLabs">
         <img src="/echoes.png" alt="" class="brand-icon" />
@@ -29,6 +32,9 @@ const menuId = 'site-nav-menu';
           <span>Curl</span><span class="brand-primary">Swigger</span><span>Labs</span>
         </span>
       </a>
+      {backHref && backLabel && (
+        <a class="nav-back" href={backHref}>{backLabel}</a>
+      )}
     </div>
 
     <button
@@ -134,10 +140,45 @@ const menuId = 'site-nav-menu';
     width: min(1180px, calc(100% - 40px));
   }
 
+  .nav-container.full {
+    width: min(1680px, calc(100% - 32px));
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+  }
+
   .brand-wordmark {
     display: inline-flex;
     color: var(--heading);
     white-space: nowrap;
+  }
+
+  .nav-back {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .nav-back:hover,
+  .nav-back:focus-visible {
+    color: var(--accent-hover);
+    text-decoration: underline;
+  }
+
+  .nav-back:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
   }
 
   .brand-primary {
@@ -220,14 +261,30 @@ const menuId = 'site-nav-menu';
       padding-block: 0;
     }
 
+    .nav-container.full {
+      width: min(1680px, calc(100% - 28px));
+    }
+
     .nav-toggle {
       display: inline-flex;
       margin-left: auto;
       flex-shrink: 0;
     }
 
+    .nav-brand {
+      flex: 1;
+      min-width: 0;
+      gap: 0.55rem;
+    }
+
     .brand-link {
       flex-shrink: 0;
+    }
+
+    .nav-back {
+      flex-shrink: 1;
+      min-width: 0;
+      font-size: 0.78rem;
     }
 
     .nav-right {

@@ -1,0 +1,41 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection } from 'astro:content';
+import InteractiveLabPage from '../../../components/pages/InteractiveLabPage.astro';
+import { spanishEnabled } from '../../../i18n/ui';
+import { INTERACTIVE_LABS } from '../../../lib/interactive-labs';
+import { getLocalizedPath, useTranslations } from '../../../i18n/utils';
+import Layout from '../../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  if (!spanishEnabled) return [];
+  const posts = await getCollection('blog', ({ data }) => (data.lang ?? 'en') === 'es');
+  return Object.entries(INTERACTIVE_LABS).flatMap(([slug, config]) => {
+    const post = posts.find((entry) => entry.id.replace(/^es\//, '').replace(/\.mdx?$/, '') === slug);
+    if (!post) return [];
+    return [{ params: { slug }, props: { post, scenario: config.scenario } }];
+  });
+}
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  scenario: 'dom-clobbering';
+}
+
+const { post, scenario } = Astro.props;
+const slug = Astro.params.slug ?? '';
+Astro.locals.postLang = 'es';
+const t = useTranslations('es');
+const title = `${t('scenario.openLab')}: ${post.data.title}`;
+---
+
+<Layout
+  title={title}
+  description={t('interactive.description')}
+  lang="es"
+  full
+  backHref={`${getLocalizedPath('es', slug)}/`}
+  backLabel={t('scenario.backToWriteup')}
+>
+  <InteractiveLabPage scenario={scenario} />
+</Layout>

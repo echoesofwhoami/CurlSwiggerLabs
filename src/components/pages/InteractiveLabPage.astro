@@ -1,0 +1,29 @@
+---
+import ScenarioPlayer from '../mdx/ScenarioPlayer.astro';
+
+interface Props {
+  scenario: 'dom-clobbering';
+}
+
+const { scenario } = Astro.props;
+---
+
+<main class="ilab-page">
+  <ScenarioPlayer scenario={scenario} />
+</main>
+
+<style>
+  .ilab-page {
+    width: min(1680px, calc(100% - 32px));
+    max-width: none;
+    margin-inline: auto;
+    box-sizing: border-box;
+    padding: 0.4rem 0 0.35rem;
+  }
+
+  @media (max-width: 640px) {
+    .ilab-page {
+      width: min(1680px, calc(100% - 28px));
+    }
+  }
+</style>
