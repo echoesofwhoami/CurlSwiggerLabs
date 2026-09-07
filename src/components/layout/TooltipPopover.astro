@@ -351,6 +351,7 @@ const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
   }
 
   initTips();
+  document.addEventListener('csl:tips-refresh', () => initTips());
   document.addEventListener('keydown', onKeydown);
   document.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('scroll', onReposition, true);

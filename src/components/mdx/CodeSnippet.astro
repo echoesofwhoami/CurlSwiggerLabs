@@ -6,6 +6,7 @@ import { join, dirname } from 'node:path';
 import { useTranslations, type Lang } from '../../i18n/utils';
 import { placeholderTransformer } from '../../shiki/placeholder-transformer';
 import { tooltipTransformer } from '../../shiki/tooltip-transformer';
+import { lineNumberTransformer } from '../../shiki/line-number-transformer';
 import { cssVariablesTheme } from '../../styles/shiki-css-theme';
 import curlplain from '../../themes/curlplain.tmLanguage.json';
 import { curlToHttp, isBashFile } from '../../utils/curl-to-http';
@@ -55,14 +56,17 @@ const matchLang = PLAINTEXT_ALIASES.has(String(inferred))
 const tipOpts = { extraTips: tips, collector: usedTips };
 const transformers = [
   placeholderTransformer,
+  lineNumberTransformer,
   tooltipTransformer(postLang, { ...tipOpts, codeLang: matchLang }),
 ];
 const httpTransformers = [
   placeholderTransformer,
+  lineNumberTransformer,
   tooltipTransformer(postLang, { ...tipOpts, codeLang: 'http' }),
 ];
 const jsonTransformers = [
   placeholderTransformer,
+  lineNumberTransformer,
   tooltipTransformer(postLang, { ...tipOpts, codeLang: 'json' }),
 ];
 
