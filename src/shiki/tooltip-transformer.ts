@@ -4,7 +4,7 @@ import {
   entriesMatching,
   getEntry,
   isFirstOnly,
-} from '@data/glossary'
+} from '../data/glossary'
 import type {
   Candidate,
   GlossaryEntry,
@@ -14,8 +14,8 @@ import type {
   LineWrap,
   TextRange,
   TransformerOpts,
-} from '@types'
-import { findJwtTips, jwtTipTerms } from '@utils/request-diff'
+} from '../types'
+import { findJwtTips, jwtTipTerms } from '../utils/request-diff'
 
 export const tooltipActions = [
   'mouseenter->tooltip#enter',
