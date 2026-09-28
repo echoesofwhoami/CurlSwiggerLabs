@@ -1,11 +1,8 @@
 ---
 import BackgroundConceptsPage from '../components/pages/BackgroundConceptsPage.astro';
-import { useTranslations } from '../i18n/utils';
 import Layout from '../layouts/Layout.astro';
-
-const t = useTranslations('en');
 ---
 
-<Layout title={t('concepts.title')} description={t('concepts.description')} lang="en" wide>
+<Layout title="Background Concepts" description="Reusable background concepts used across CurlSwiggerLabs writeups." wide>
   <BackgroundConceptsPage />
 </Layout>

@@ -1,28 +1,26 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { formatDate } from '../../utils';
-import { getLocalizedPath, useTranslations, type Lang } from '../../i18n/utils';
 
 interface Props {
   posts: CollectionEntry<'blog'>[];
-  lang: Lang;
 }
 
-const { posts, lang } = Astro.props;
-const t = useTranslations(lang);
+const { posts } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const slugFor = (post: CollectionEntry<'blog'>) =>
-  post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+  post.id.replace(/\.mdx?$/, '');
 ---
 
 {posts.length > 0 && (
   <section class="related-labs" aria-labelledby="related-labs-title">
-    <h2 id="related-labs-title">{t('post.related')}</h2>
+    <h2 id="related-labs-title">Related labs</h2>
     <ul>
       {posts.map((post) => (
         <li>
-          <a href={getLocalizedPath(lang, slugFor(post))}>
+          <a href={`${base}/${slugFor(post)}`}>
             <strong>{post.data.title}</strong>
-            <span>{post.data.difficulty} · {formatDate(post.data.date, lang)}</span>
+            <span>{post.data.difficulty} · {formatDate(post.data.date)}</span>
           </a>
         </li>
       ))}

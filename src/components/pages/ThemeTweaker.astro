@@ -1,7 +1,5 @@
 ---
 import { Code } from 'astro:components';
-import type { Lang } from '../../i18n/utils';
-import { useTranslations } from '../../i18n/utils';
 import { placeholderTransformer } from '../../shiki/placeholder-transformer';
 import { cssVariablesTheme } from '../../styles/shiki-css-theme';
 import { listShikiThemes } from '../../styles/shiki-themes';
@@ -9,12 +7,6 @@ import { DEFAULT_CONFIG, DEFAULT_PRESET_ID, FONT_OPTIONS, PRESETS } from '../../
 import PostHeader from '../post/PostHeader.astro';
 import TableOfContents from '../post/TableOfContents.astro';
 
-interface Props {
-  lang: Lang;
-}
-
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 const shikiThemes = listShikiThemes();
 const sampleBash = `curl -s "https://<lab-url>.web-security-academy.net/login" \\
   -H "Cookie: session=<session>" \\
@@ -34,7 +26,7 @@ def forge_token(header: str, payload: str) -> str:
 
 print(forge_token("<header>", "<payload>"))`;
 const previewHeadings = [
-  { depth: 2, slug: 'preview-writeup', text: t('post.writeup') },
+  { depth: 2, slug: 'preview-writeup', text: 'Writeup' },
   { depth: 3, slug: 'preview-request', text: 'The request' },
   { depth: 3, slug: 'preview-script', text: 'The script' },
 ];
@@ -42,17 +34,17 @@ const previewHeadings = [
 
 <section class="theme-tweaker" data-theme-tweaker>
   <header class="tweaker-intro">
-    <h1>{t('tweaker.title')}</h1>
-    <p>{t('tweaker.intro')}</p>
+    <h1>I don't like this website</h1>
+    <p>Change how writeups look on this device. Pick a preset, tune the knobs, and apply. The active look is stored in localStorage so it survives reloads and applies across the site. Save a named config to keep multiple setups in this browser only. Nothing is uploaded.</p>
   </header>
 
   <div class="tweaker-layout">
     <form class="tweaker-controls" data-tweaker-form>
       <div class="tweaker-controls__scroll">
       <fieldset>
-        <legend>{t('tweaker.presets')}</legend>
+        <legend>Presets</legend>
         <label>
-          <span class="sr-only">{t('tweaker.presets')}</span>
+          <span class="sr-only">Presets</span>
           <select name="preset" data-preset-select>
             <option value="">Custom</option>
             {PRESETS.map((preset) => (
@@ -65,28 +57,28 @@ const previewHeadings = [
       </fieldset>
 
       <fieldset>
-        <legend>{t('tweaker.saved')}</legend>
+        <legend>Saved configs</legend>
         <div class="tweaker-row">
           <select name="saved" data-saved-select>
             <option value="">—</option>
           </select>
-          <button type="button" data-load-saved>{t('tweaker.load')}</button>
-          <button type="button" data-delete-saved>{t('tweaker.delete')}</button>
+          <button type="button" data-load-saved>Load</button>
+          <button type="button" data-delete-saved>Delete</button>
         </div>
         <div class="tweaker-row">
           <input
             type="text"
             name="saveName"
             data-save-name
-            placeholder={t('tweaker.namePlaceholder')}
+            placeholder="My theme name"
             autocomplete="off"
           />
-          <button type="button" data-save-config>{t('tweaker.save')}</button>
+          <button type="button" data-save-config>Save</button>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>{t('tweaker.shiki')}</legend>
+        <legend>Shiki theme</legend>
         <select name="shikiTheme" data-field="shikiTheme">
           {shikiThemes.map((theme) => (
             <option value={theme.id} selected={theme.id === DEFAULT_CONFIG.shikiTheme}>
@@ -97,7 +89,7 @@ const previewHeadings = [
       </fieldset>
 
       <fieldset>
-        <legend>{t('tweaker.font')}</legend>
+        <legend>Font</legend>
         <select name="fontSans" data-field="fontSans">
           {FONT_OPTIONS.map((font) => (
             <option value={font.family}>{font.label}</option>
@@ -106,60 +98,60 @@ const previewHeadings = [
       </fieldset>
 
       <fieldset>
-        <legend>{t('tweaker.colors')}</legend>
+        <legend>Colors</legend>
         <div class="color-grid">
-          <label><span>{t('tweaker.pageBg')}</span><input type="color" data-field="pageBg" /></label>
-          <label><span>{t('tweaker.surface')}</span><input type="color" data-field="surface" /></label>
-          <label><span>{t('tweaker.surfaceElevated')}</span><input type="color" data-field="surfaceElevated" /></label>
-          <label><span>{t('tweaker.border')}</span><input type="color" data-field="border" /></label>
-          <label><span>{t('tweaker.text')}</span><input type="color" data-field="text" /></label>
-          <label><span>{t('tweaker.textMuted')}</span><input type="color" data-field="textMuted" /></label>
-          <label><span>{t('tweaker.heading')}</span><input type="color" data-field="heading" /></label>
-          <label><span>{t('tweaker.accent')}</span><input type="color" data-field="accent" /></label>
-          <label><span>{t('tweaker.accentHover')}</span><input type="color" data-field="accentHover" /></label>
-          <label><span>{t('tweaker.codeBg')}</span><input type="color" data-field="codeBg" /></label>
-          <label><span>{t('tweaker.codeInlineBg')}</span><input type="color" data-field="codeInlineBg" /></label>
-          <label><span>{t('tweaker.codeInlineFg')}</span><input type="color" data-field="codeInlineFg" /></label>
+          <label><span>Page background</span><input type="color" data-field="pageBg" /></label>
+          <label><span>Surface</span><input type="color" data-field="surface" /></label>
+          <label><span>Elevated surface</span><input type="color" data-field="surfaceElevated" /></label>
+          <label><span>Border</span><input type="color" data-field="border" /></label>
+          <label><span>Body text</span><input type="color" data-field="text" /></label>
+          <label><span>Muted text</span><input type="color" data-field="textMuted" /></label>
+          <label><span>Headings</span><input type="color" data-field="heading" /></label>
+          <label><span>Accent</span><input type="color" data-field="accent" /></label>
+          <label><span>Accent hover</span><input type="color" data-field="accentHover" /></label>
+          <label><span>Code background</span><input type="color" data-field="codeBg" /></label>
+          <label><span>Inline code background</span><input type="color" data-field="codeInlineBg" /></label>
+          <label><span>Inline code color</span><input type="color" data-field="codeInlineFg" /></label>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>{t('tweaker.typography')}</legend>
+        <legend>Typography & layout</legend>
         <label class="range-label">
-          <span>{t('tweaker.fontSize')} <em data-readout="fontSizeBase"></em></span>
+          <span>Base font size <em data-readout="fontSizeBase"></em></span>
           <input type="range" min="14" max="22" step="1" data-field="fontSizeBase" data-type="number" />
         </label>
         <label class="range-label">
-          <span>{t('tweaker.lineHeight')} <em data-readout="lineHeight"></em></span>
+          <span>Line height <em data-readout="lineHeight"></em></span>
           <input type="range" min="1.3" max="2" step="0.05" data-field="lineHeight" data-type="number" />
         </label>
         <label class="range-label">
-          <span>{t('tweaker.contentWidth')} <em data-readout="contentMaxWidth"></em></span>
+          <span>Content width <em data-readout="contentMaxWidth"></em></span>
           <input type="range" min="720" max="1400" step="20" data-field="contentMaxWidth" data-type="number" />
         </label>
         <label class="range-label">
-          <span>{t('tweaker.contentGap')} <em data-readout="contentGap"></em></span>
+          <span>Content gap <em data-readout="contentGap"></em></span>
           <input type="range" min="1" max="3" step="0.05" data-field="contentGap" data-type="number" />
         </label>
         <label class="range-label">
-          <span>{t('tweaker.radius')} <em data-readout="radius"></em></span>
+          <span>Radius <em data-readout="radius"></em></span>
           <input type="range" min="0" max="16" step="1" data-field="radius" data-type="number" />
         </label>
         <label class="range-label">
-          <span>{t('tweaker.codeFontSize')} <em data-readout="codeFontSize"></em></span>
+          <span>Code font size <em data-readout="codeFontSize"></em></span>
           <input type="range" min="12" max="20" step="1" data-field="codeFontSize" data-type="number" />
         </label>
       </fieldset>
       </div>
 
       <div class="tweaker-actions">
-        <button type="button" class="primary" data-apply>{t('tweaker.apply')}</button>
-        <button type="button" data-reset>{t('tweaker.reset')}</button>
+        <button type="button" class="primary" data-apply>Apply to site</button>
+        <button type="button" data-reset>Reset to default</button>
       </div>
     </form>
 
     <div class="tweaker-preview" data-tweaker-preview>
-      <h2 class="preview-label">{t('tweaker.preview')}</h2>
+      <h2 class="preview-label">Article preview</h2>
       <article class="preview-article">
         <PostHeader
           title="Sample lab writeup"
@@ -170,11 +162,10 @@ const previewHeadings = [
           difficulty="Practitioner"
           tools={['curl', 'Burp Suite']}
           technologies={['HTTP']}
-          lang={lang}
         />
-        <TableOfContents headings={previewHeadings} lang={lang} />
+        <TableOfContents headings={previewHeadings} />
         <div class="post-content">
-          <h2 id="preview-writeup">{t('post.writeup')}</h2>
+          <h2 id="preview-writeup">Writeup</h2>
           <p>
             Body copy uses the muted text token. Links look like
             <a href="#preview-request">this</a>, and inline code like <code>session</code>.
@@ -213,8 +204,8 @@ const previewHeadings = [
           <details class="collapsible-partial" open>
             <summary>
               <span class="partial-summary-text">
-                <span class="partial-title">{t('post.backgroundConcepts')}</span>
-                <span class="expand-hint">{t('partial.clickToExpand')}</span>
+                <span class="partial-title">Necessary Background Concepts To Solve The Lab</span>
+                <span class="expand-hint">click to expand</span>
               </span>
             </summary>
             <div class="partial-content">

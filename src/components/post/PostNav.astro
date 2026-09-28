@@ -1,30 +1,28 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { getLocalizedPath, useTranslations, type Lang } from '../../i18n/utils';
 
 interface Props {
   older?: CollectionEntry<'blog'>;
   newer?: CollectionEntry<'blog'>;
-  lang: Lang;
 }
 
-const { older, newer, lang } = Astro.props;
-const t = useTranslations(lang);
+const { older, newer } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const slugFor = (post: CollectionEntry<'blog'>) =>
-  post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+  post.id.replace(/\.mdx?$/, '');
 ---
 
 {(older || newer) && (
-  <nav class="post-nav" aria-label={t('post.navigation')}>
+  <nav class="post-nav" aria-label="Lab navigation">
     {older ? (
-      <a class="post-nav-link older" href={getLocalizedPath(lang, slugFor(older))}>
-        <span>{t('post.prev')}</span>
+      <a class="post-nav-link older" href={`${base}/${slugFor(older)}`}>
+        <span>Older lab</span>
         <strong>{older.data.title}</strong>
       </a>
     ) : <span />}
     {newer && (
-      <a class="post-nav-link newer" href={getLocalizedPath(lang, slugFor(newer))}>
-        <span>{t('post.next')}</span>
+      <a class="post-nav-link newer" href={`${base}/${slugFor(newer)}`}>
+        <span>Newer lab</span>
         <strong>{newer.data.title}</strong>
       </a>
     )}

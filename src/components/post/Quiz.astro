@@ -1,22 +1,19 @@
 ---
 import { getEntry } from 'astro:content';
-import { useTranslations, type Lang } from '../../i18n/utils';
 
 interface Props {
   /** Collection id relative to `src/data/quizzes/`, without .json */
   file: string;
   /** Stable slug used as the localStorage key */
   slug: string;
-  lang?: Lang;
 }
 
-const { file, slug, lang = 'en' } = Astro.props;
-const t = useTranslations(lang);
+const { file, slug } = Astro.props;
 
 let quizJson = '';
 let quizCount = 0;
 
-const entry = await getEntry('quizzes', file as never);
+const entry = await getEntry('quizzes', file as any);
 if (entry && entry.data.questions.length > 0) {
   quizCount = entry.data.questions.length;
   quizJson = JSON.stringify(entry.data.questions);
@@ -28,16 +25,16 @@ if (entry && entry.data.questions.length > 0) {
     class="quiz"
     data-quiz-slug={slug}
     data-questions={quizJson}
-    data-t-question={t('quiz.question')}
-    data-t-of={t('quiz.of')}
-    data-t-correct={t('quiz.correct')}
-    data-t-wrong={t('quiz.wrong')}
-    data-t-next={t('quiz.next')}
-    data-t-results={t('quiz.results')}
-    data-t-retake={t('quiz.retake')}
-    data-t-you-scored={t('quiz.youScored')}
-    data-t-correct-label={t('quiz.correctLabel')}
-    data-t-hint={t('quiz.hint')}
+    data-t-question="Question"
+    data-t-of="of"
+    data-t-correct="Correct!"
+    data-t-wrong="Not quite"
+    data-t-next="Next question"
+    data-t-results="See results"
+    data-t-retake="Retake quiz"
+    data-t-you-scored="You scored"
+    data-t-correct-label="correct"
+    data-t-hint="Get a hint"
   >
     <header class="quiz-header">
       <h2 class="quiz-title">
@@ -46,9 +43,9 @@ if (entry && entry.data.questions.length > 0) {
           <path d="M7.5 7.5a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2.2-2.4 3.7" stroke-linecap="round"/>
           <circle cx="10" cy="14.5" r=".75" fill="currentColor" stroke="none"/>
         </svg>
-        {t('quiz.title')}
+        Knowledge Check
       </h2>
-      <span class="quiz-meta">{quizCount}&nbsp;{t('quiz.questions')}</span>
+      <span class="quiz-meta">{quizCount}&nbsp;questions</span>
     </header>
 
     <div class="quiz-inner" aria-live="polite">

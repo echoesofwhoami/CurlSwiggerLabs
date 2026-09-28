@@ -1,21 +1,18 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getCategory, getCategoryId } from '../../data/categories';
-import { useTranslations, type Lang } from '../../i18n/utils';
 import { formatDate } from '../../utils';
 
 interface Props {
   post: CollectionEntry<'blog'>;
-  lang: Lang;
 }
 
-const { post, lang } = Astro.props;
-const t = useTranslations(lang);
+const { post } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const slug = post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
-const href = `${base}${lang === 'es' ? '/es' : ''}/${slug}/`;
+const slug = post.id.replace(/\.mdx?$/, '');
+const href = `${base}/${slug}/`;
 const categoryId = getCategoryId(post.data.category);
-const category = categoryId ? getCategory(categoryId, lang) : undefined;
+const category = categoryId ? getCategory(categoryId) : undefined;
 ---
 
 <article class="post-card">
@@ -34,7 +31,7 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
 
   <div class="post-card__body">
     <div class="post-card__meta">
-      <time datetime={post.data.date}>{formatDate(post.data.date, lang)}</time>
+      <time datetime={post.data.date}>{formatDate(post.data.date)}</time>
       <span aria-hidden="true">·</span>
       <span class:list={['post-card__difficulty', `post-card__difficulty--${post.data.difficulty.toLowerCase()}`]}>
         {post.data.difficulty}
@@ -44,7 +41,7 @@ const category = categoryId ? getCategory(categoryId, lang) : undefined;
     <h3><a href={href}>{post.data.title}</a></h3>
     <p>{post.data.description}</p>
     <a class="post-card__read-more" href={href}>
-      {t('blog.readmore')}
+      Read writeup
     </a>
   </div>
 </article>

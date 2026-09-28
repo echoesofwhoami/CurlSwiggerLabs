@@ -1,14 +1,6 @@
 ---
 import ExternalLink from '../mdx/ExternalLink.astro';
 import { getEntry, localizedText } from '@data/glossary';
-import { useTranslations, type Lang } from '../../i18n/utils';
-
-interface Props {
-  lang: Lang;
-}
-
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 
 const used = Astro.locals.usedTips ?? new Set<string>();
 const seen = new Set<string>();
@@ -21,16 +13,16 @@ const items = [...used]
   })
   .map((entry) => ({
     id: entry.id,
-    ...localizedText(entry, lang),
+    ...localizedText(entry),
     refs: entry.refs ?? [],
   }))
-  .sort((a, b) => a.term.localeCompare(b.term, lang));
+  .sort((a, b) => a.term.localeCompare(b.term));
 ---
 
 {items.length > 0 && (
   <section class="tooltip-references" aria-labelledby="tooltip-references-title">
-    <h2 id="tooltip-references-title">{t('references.title')}</h2>
-    <p>{t('references.intro')}</p>
+    <h2 id="tooltip-references-title">Concepts referenced</h2>
+    <p>These are the concepts highlighted in this writeup.</p>
     <ul class="tooltip-references-list">
       {items.map((item) => (
         <li>

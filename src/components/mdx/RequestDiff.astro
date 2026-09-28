@@ -1,7 +1,6 @@
 ---
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { useTranslations, type Lang } from '../../i18n/utils';
 import {
   alignRequestDiff,
   parseJwt,
@@ -23,8 +22,6 @@ interface Props {
 
 const scriptsRoot = join(process.cwd(), 'src/data/scripts');
 const { left: leftFile, right: rightFile, leftLabel, rightLabel } = Astro.props;
-const postLang = (Astro.locals.postLang ?? 'en') as Lang;
-const t = useTranslations(postLang);
 
 const leftRaw = prettyIfJson(
   readFileSync(join(scriptsRoot, leftFile), 'utf-8').replace(/\n$/, ''),
@@ -43,8 +40,8 @@ const httpMode = !jwtMode && !jsonMode && (leftFile.endsWith('.http') || rightFi
 const headerChanged = Boolean(leftJwt && rightJwt && leftJwt.header !== rightJwt.header);
 const payloadChanged = Boolean(leftJwt && rightJwt && leftJwt.payload !== rightJwt.payload);
 const signatureChanged = Boolean(leftJwt && rightJwt && leftJwt.signature !== rightJwt.signature);
-const leftTitle = leftLabel ?? t('diff.left');
-const rightTitle = rightLabel ?? t('diff.right');
+const leftTitle = leftLabel ?? 'Original';
+const rightTitle = rightLabel ?? 'Exploit';
 const diffId = `rd-${leftFile.replace(/[^a-z0-9]/gi, '-')}-${rightFile.replace(/[^a-z0-9]/gi, '-')}`;
 
 const sides = [
@@ -73,7 +70,7 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
       text: jwt.header,
       decoded: jwt.headerJson,
       short: undefined as string | undefined,
-      term: t('diff.jwtHeader'),
+      term: 'Header',
       mark: jwtMark(headerChanged, side),
       dot: true,
     },
@@ -81,15 +78,15 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
       text: jwt.payload,
       decoded: jwt.payloadJson,
       short: undefined as string | undefined,
-      term: t('diff.jwtPayload'),
+      term: 'Payload',
       mark: jwtMark(payloadChanged, side),
       dot: true,
     },
     {
       text: jwt.signature,
       decoded: null as string | null,
-      short: t('diff.jwtSignatureHint'),
-      term: t('diff.jwtSignature'),
+      short: 'This is a signature, not JSON. Decoding it as Base64 will not produce a readable object.',
+      term: 'Signature',
       mark: jwtMark(signatureChanged, side),
       dot: false,
     },
@@ -97,7 +94,7 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
 }
 ---
 
-<div class:list={['request-diff', { 'is-json': jsonMode, 'is-http': httpMode }]} data-diff={diffId} role="region" aria-label={t('diff.region')}>
+<div class:list={['request-diff', { 'is-json': jsonMode, 'is-http': httpMode }]} data-diff={diffId} role="region" aria-label="Request diff">
   <textarea class="request-diff-source" data-side="left" readonly hidden>{leftRaw}</textarea>
   <textarea class="request-diff-source" data-side="right" readonly hidden>{rightRaw}</textarea>
 
@@ -112,9 +109,9 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
             type="button"
             class="copy-code request-diff-copy"
             data-side={side.id}
-            data-copied-label={t('code.copied')}
+            data-copied-label="Copied!"
           >
-            <span class="request-diff-copy-label">{t('code.copy')}</span>
+            <span class="request-diff-copy-label">Copy</span>
           </button>
         </div>
       ))}
@@ -156,7 +153,7 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
   </div>
 
   <div class="request-diff-mobile" data-active="right">
-    <div class="request-diff-tabs" role="tablist" aria-label={t('diff.region')}>
+    <div class="request-diff-tabs" role="tablist" aria-label="Request diff">
       {sides.map((side) => (
         <button
           class:list={['request-diff-tab', { 'is-active': side.active }]}
@@ -175,9 +172,9 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
         type="button"
         class="copy-code request-diff-copy"
         data-side="right"
-        data-copied-label={t('code.copied')}
+        data-copied-label="Copied!"
       >
-        <span class="request-diff-copy-label">{t('code.copy')}</span>
+        <span class="request-diff-copy-label">Copy</span>
       </button>
       {sides.map((side) => (
         <div

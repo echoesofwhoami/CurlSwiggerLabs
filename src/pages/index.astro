@@ -1,11 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import HomePage from '../components/pages/HomePage.astro';
-import { useTranslations } from '../i18n/utils';
-
-const t = useTranslations('en');
 ---
 
-<Layout title={t('blog.title')} description={t('home.hero.subtitle')} lang="en" wide>
-  <HomePage lang="en" />
+<Layout title="CurlSwiggerLabs" description="Beginner-friendly explanations that still inspect the bytes, headers, and curl flags that make an exploit work." wide>
+  <HomePage />
 </Layout>

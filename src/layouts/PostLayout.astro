@@ -1,7 +1,6 @@
 ---
 import { render, type CollectionEntry } from 'astro:content';
 import { getCategory, getCategoryId } from '../data/categories';
-import type { Lang } from '../i18n/utils';
 import { getAdjacentPosts, getRelatedPosts } from '../utils';
 import Layout from './Layout.astro';
 import PortswiggerDescription from '../components/post/PortswiggerDescription.astro';
@@ -15,29 +14,26 @@ import TooltipReferences from '../components/post/TooltipReferences.astro';
 
 interface Props {
   post: CollectionEntry<'blog'>;
-  lang: Lang;
 }
 
-const { post, lang } = Astro.props;
-const slug = post.id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+const { post } = Astro.props;
+const slug = post.id.replace(/\.mdx?$/, '');
 const categoryId = getCategoryId(post.data.category);
-const category = categoryId ? getCategory(categoryId, lang) : undefined;
+const category = categoryId ? getCategory(categoryId) : undefined;
 
 Astro.locals.portswiggerDescription = post.data.portswiggerDescription;
-Astro.locals.postLang = lang;
 Astro.locals.usedTips ??= new Set<string>();
 
 const { Content, headings } = await render(post);
 const [{ older, newer }, relatedPosts] = await Promise.all([
-  getAdjacentPosts(slug, lang),
-  getRelatedPosts(slug, lang),
+  getAdjacentPosts(slug),
+  getRelatedPosts(slug),
 ]);
 ---
 
 <Layout
   title={post.data.title}
   description={post.data.description}
-  lang={lang}
   type="article"
   image={category?.ogImage}
   publishedTime={new Date(post.data.date).toISOString()}
@@ -55,16 +51,15 @@ const [{ older, newer }, relatedPosts] = await Promise.all([
         tools={post.data.tools}
         technologies={post.data.technologies}
         series={post.data.series}
-        lang={lang}
       />
-      <TableOfContents headings={headings} lang={lang} />
+      <TableOfContents headings={headings} />
       <div class="post-content">
         <Content components={{ PortswiggerDescription, Term }} />
       </div>
-      <Quiz file={`labs/${slug}`} slug={slug} lang={lang} />
-      <TooltipReferences lang={lang} />
-      <PostNav older={older} newer={newer} lang={lang} />
-      <RelatedLabs posts={relatedPosts} lang={lang} />
+      <Quiz file={`labs/${slug}`} slug={slug} />
+      <TooltipReferences />
+      <PostNav older={older} newer={newer} />
+      <RelatedLabs posts={relatedPosts} />
     </main>
   </article>
 </Layout>

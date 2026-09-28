@@ -1,6 +1,4 @@
 ---
-import { activeLanguages, defaultLang, spanishEnabled } from '../i18n/ui';
-import { getLocalizedHref, useTranslations, type Lang } from '../i18n/utils';
 import '../styles/global.css';
 import CopyCodeButton from '../components/layout/CopyCodeButton.astro';
 import TooltipPopover from '../components/layout/TooltipPopover.astro';
@@ -12,7 +10,6 @@ import { DEFAULT_CONFIG, FONT_OPTIONS, configToCssVars } from '../scripts/theme-
 interface Props {
   title?: string;
   description?: string;
-  lang: Lang;
   /** Open Graph type — use `article` on writeup pages */
   type?: 'website' | 'article';
   /** Absolute or site-relative path to OG image (defaults to /og-default.png) */
@@ -23,14 +20,12 @@ interface Props {
   wide?: boolean;
 }
 
-const { lang, type = 'website', publishedTime, wide = false } = Astro.props;
-const t = useTranslations(lang);
+const { type = 'website', publishedTime, wide = false } = Astro.props;
 
-const title = Astro.props.title ?? t('site.title');
-const description = Astro.props.description ?? t('site.description');
+const title = Astro.props.title ?? 'CurlSwiggerLabs';
+const description = Astro.props.description ?? 'PortSwigger Web Security Academy labs solved with curl.';
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const ogLocale = lang === 'es' ? 'es_ES' : 'en_US';
 const pathname = Astro.url.pathname;
 
 const imagePath = Astro.props.image ?? '/og-default.png';
@@ -47,8 +42,6 @@ const ogImageType =
 const isDefaultOgImage = imagePath === '/og-default.png';
 const ogImageWidth = '1200';
 const ogImageHeight = isDefaultOgImage ? '627' : '675';
-const alternateLocale = lang === 'es' ? 'en_US' : 'es_ES';
-
 const shikiBootMap = Object.fromEntries(
   Object.values(SHIKI_THEMES).map((theme) => [theme.id, theme.vars]),
 );
@@ -140,36 +133,21 @@ const themeBootScript = `(function () {
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content={description} />
 
     <link rel="canonical" href={canonicalURL} />
-    {Object.keys(activeLanguages).map((alternateLang) => (
-      <link
-        rel="alternate"
-        hreflang={alternateLang}
-        href={new URL(getLocalizedHref(alternateLang as Lang, pathname), Astro.site)}
-      />
-    ))}
-    <link
-      rel="alternate"
-      hreflang="x-default"
-      href={new URL(getLocalizedHref(defaultLang, pathname), Astro.site)}
-    />
     <link rel="icon" type="image/png" href={`${import.meta.env.BASE_URL}favicon.ico`} />
 
     <meta property="og:type" content={type} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:locale" content={ogLocale} />
-    {spanishEnabled && (
-      <meta property="og:locale:alternate" content={alternateLocale} />
-    )}
-    <meta property="og:site_name" content={t('site.title')} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="CurlSwiggerLabs" />
     <meta property="og:image" content={ogImageURL} />
     <meta property="og:image:secure_url" content={ogImageURL} />
     <meta property="og:image:type" content={ogImageType} />
@@ -187,7 +165,7 @@ const themeBootScript = `(function () {
 
     <meta name="robots" content="index, follow" />
 
-    <link rel="alternate" type="application/rss+xml" title={t('site.title')} href={new URL('/rss.xml', Astro.site)} />
+    <link rel="alternate" type="application/rss+xml" title="CurlSwiggerLabs" href={new URL('/rss.xml', Astro.site)} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -197,10 +175,10 @@ const themeBootScript = `(function () {
     <title>{title}</title>
   </head>
   <body>
-    <Navbar lang={lang} currentPath={pathname} wide={wide} />
+    <Navbar currentPath={pathname} wide={wide} />
     <slot />
-    <Footer lang={lang} />
-    <CopyCodeButton lang={lang} />
-    <TooltipPopover lang={lang} />
+    <Footer />
+    <CopyCodeButton />
+    <TooltipPopover />
   </body>
 </html>

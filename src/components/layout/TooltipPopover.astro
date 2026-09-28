@@ -1,10 +1,5 @@
 ---
 import { GLOSSARY, localizedText } from '@data/glossary';
-import { useTranslations, type Lang } from '../../i18n/utils';
-
-interface Props {
-  lang: Lang;
-}
 
 interface ClientTip {
   kind: 'syntax' | 'concept';
@@ -14,12 +9,9 @@ interface ClientTip {
   refs?: { title: string; url: string }[];
 }
 
-const { lang } = Astro.props;
-const t = useTranslations(lang);
-
 const payload: Record<string, ClientTip> = {};
 for (const entry of GLOSSARY) {
-  const { term, short } = localizedText(entry, lang);
+  const { term, short } = localizedText(entry);
   payload[entry.id] = {
     kind: entry.kind,
     term,
@@ -37,7 +29,7 @@ const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
   id="csl-tip-popover"
   hidden
   role="tooltip"
-  data-tip-learn-more={t('tooltip.learnMore')}
+  data-tip-learn-more="Learn more"
 >
   <p data-tip-term></p>
   <p data-tip-short></p>

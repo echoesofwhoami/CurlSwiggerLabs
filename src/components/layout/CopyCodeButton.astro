@@ -1,19 +1,7 @@
----
-import type { Lang } from '../../i18n/utils';
-import { useTranslations } from '../../i18n/utils';
-
-interface Props {
-  lang: Lang;
-}
-
-const { lang } = Astro.props;
-const t = useTranslations(lang);
----
-
 <div
   data-copy-code
-  data-copy-label={t('code.copy')}
-  data-copied-label={t('code.copied')}
+  data-copy-label="Copy"
+  data-copied-label="Copied!"
   hidden
 ></div>
 

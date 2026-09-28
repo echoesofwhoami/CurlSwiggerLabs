@@ -1,31 +1,27 @@
 ---
-import type { Lang } from '../../i18n/utils';
-import { useTranslations } from '../../i18n/utils';
 import { siteConfig } from '../../site.config';
 
 interface Props {
-  lang: Lang;
   compact?: boolean;
 }
 
-const { lang, compact = false } = Astro.props;
-const t = useTranslations(lang);
+const { compact = false } = Astro.props;
 const inviteUrl = siteConfig.discordInviteUrl.trim();
-const body = t('discord.body').replace('{handle}', siteConfig.discordHandle);
+const body = `Bring questions, confusing HTTP, or requests for the next writeup. Find me on Discord as ${siteConfig.discordHandle}.`;
 ---
 
 <aside class:list={['discord-cta', { compact }]}>
   <div>
-    <h2>{t('discord.title')}</h2>
+    <h2>Talk through a lab</h2>
     <p>{body}</p>
   </div>
   {
     inviteUrl ? (
       <a class="discord-link" href={inviteUrl} target="_blank" rel="noreferrer">
-        {t('discord.join')}
+        Join the Discord
       </a>
     ) : (
-      <span class="discord-unavailable">{t('discord.unavailable')}</span>
+      <span class="discord-unavailable">Invite link coming soon</span>
     )
   }
 </aside>

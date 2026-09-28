@@ -1,22 +1,20 @@
 ---
-import { spanishEnabled } from '../../i18n/ui';
-import type { Lang } from '../../i18n/utils';
-import { getLocalizedHref, getLocalizedPath, getPathWithoutLang, useTranslations } from '../../i18n/utils';
-import LanguagePicker from './LanguagePicker.astro';
-
 interface Props {
-  lang: Lang;
   currentPath: string;
   wide?: boolean;
 }
 
-const { lang, currentPath, wide = false } = Astro.props;
-const t = useTranslations(lang);
-const homePath = getLocalizedHref(lang, '/');
-const aboutPath = getLocalizedPath(lang, 'about');
-const conceptsPath = getLocalizedPath(lang, 'background-concepts');
-const tweakerPath = getLocalizedPath(lang, 'i-dont-like-this-website');
-const currentSlug = getPathWithoutLang(currentPath);
+const { currentPath, wide = false } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const homePath = `${base}/`;
+const aboutPath = `${base}/about`;
+const conceptsPath = `${base}/background-concepts`;
+const tweakerPath = `${base}/i-dont-like-this-website`;
+let path = currentPath;
+if (base && path.startsWith(base)) {
+  path = path.slice(base.length) || '/';
+}
+const currentSlug = path.split('/').filter(Boolean).join('/');
 const menuId = 'site-nav-menu';
 ---
 
@@ -37,9 +35,9 @@ const menuId = 'site-nav-menu';
       aria-expanded="false"
       aria-controls={menuId}
       data-nav-toggle
-      aria-label={t('nav.openMenu')}
-      data-label-open={t('nav.openMenu')}
-      data-label-close={t('nav.closeMenu')}
+      aria-label="Open menu"
+      data-label-open="Open menu"
+      data-label-close="Close menu"
     >
       <span class="nav-toggle__bars" aria-hidden="true">
         <span></span>
@@ -52,17 +50,17 @@ const menuId = 'site-nav-menu';
       <ul>
         <li>
           <a href={homePath} aria-current={currentSlug === '' ? 'page' : undefined}>
-            {t('nav.home')}
+            Home
           </a>
         </li>
         <li>
           <a href={conceptsPath} aria-current={currentSlug === 'background-concepts' ? 'page' : undefined}>
-            {t('nav.concepts')}
+            Background Concepts
           </a>
         </li>
         <li>
           <a href={aboutPath} aria-current={currentSlug === 'about' ? 'page' : undefined}>
-            {t('nav.about')}
+            About
           </a>
         </li>
         <li>
@@ -70,11 +68,10 @@ const menuId = 'site-nav-menu';
             href={tweakerPath}
             aria-current={currentSlug === 'i-dont-like-this-website' ? 'page' : undefined}
           >
-            {t('nav.tweaker')}
+            I don't like this website
           </a>
         </li>
       </ul>
-      {spanishEnabled && <LanguagePicker lang={lang} currentPath={currentPath} />}
     </div>
   </nav>
 </header>
@@ -277,29 +274,6 @@ const menuId = 'site-nav-menu';
     .nav-right > ul a:focus-visible,
     .nav-right > ul a[aria-current='page'] {
       background: transparent;
-    }
-
-    .nav-right :global(.lang-picker) {
-      padding-top: 1rem;
-      padding-left: 0;
-      border-top: 1px solid var(--surface-elevated);
-    }
-
-    .nav-right :global(.lang-trigger) {
-      width: 100%;
-      min-height: 48px;
-      justify-content: flex-start;
-    }
-
-    .nav-right :global(.lang-trigger > span) {
-      display: inline;
-    }
-
-    .nav-right :global(.lang-menu) {
-      position: static;
-      width: 100%;
-      margin-top: 0.5rem;
-      box-shadow: none;
     }
   }
 

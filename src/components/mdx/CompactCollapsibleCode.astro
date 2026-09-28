@@ -1,25 +1,21 @@
 ---
 import CodeSnippet from './CodeSnippet.astro';
-import { useTranslations } from '../../i18n/utils';
-import type { Lang } from '../../i18n/utils';
 import type { CodeLanguage } from 'astro';
 
 interface Props {
   /** Path relative to `src/data/scripts/` */
   file: string;
   title: string;
-  lang?: Lang;
   codeLang?: CodeLanguage;
 }
 
-const { file, title, lang = 'en', codeLang } = Astro.props;
-const t = useTranslations(lang);
+const { file, title, codeLang } = Astro.props;
 ---
 
 <details class="compact-collapsible">
   <summary>
     <span class="compact-collapsible-title">{title}</span>
-    <span class="expand-hint">{t('partial.clickToExpand')}</span>
+    <span class="expand-hint">click to expand</span>
   </summary>
   <div class="compact-collapsible-content">
     <CodeSnippet file={file} lang={codeLang} />

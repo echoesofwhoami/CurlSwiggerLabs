@@ -5,9 +5,7 @@ import {
   getEntry,
   isFirstOnly,
   type GlossaryEntry,
-  type GlossaryLang,
 } from '../data/glossary';
-import { useTranslations } from '../i18n/utils';
 import { findJwtTips } from '../utils/request-diff';
 
 const PLACEHOLDER = /<[A-Za-z][A-Za-z0-9_-]*>/g;
@@ -334,18 +332,13 @@ function applyWraps(line: Element, leaves: Leaf[], matches: LineWrap[]): void {
 /**
  * Wrap glossary tokens in highlighted code with `<button class="tip">`.
  * JWT header/payload segments get the same popover with decoded JSON.
- * `lang` is the post locale; copy lives in the glossary JSON, not on the button.
  */
-export function tooltipTransformer(
-  lang: GlossaryLang,
-  opts?: TransformerOpts,
-): ShikiTransformer {
-  const t = useTranslations(lang);
+export function tooltipTransformer(opts?: TransformerOpts): ShikiTransformer {
   const jwtTerms = {
-    header: t('diff.jwtHeader'),
-    payload: t('diff.jwtPayload'),
-    signature: t('diff.jwtSignature'),
-    signatureHint: t('diff.jwtSignatureHint'),
+    header: 'Header',
+    payload: 'Payload',
+    signature: 'Signature',
+    signatureHint: 'This is a signature, not JSON. Decoding it as Base64 will not produce a readable object.',
   };
 
   return {

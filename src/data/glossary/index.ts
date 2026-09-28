@@ -5,7 +5,7 @@ import { HTTP_SYNTAX } from './syntax/http';
 import { JAVASCRIPT_SYNTAX } from './syntax/javascript';
 import { NODE_SYNTAX } from './syntax/node';
 import { PYTHON_SYNTAX } from './syntax/python';
-import type { CodeLang, GlossaryEntry, GlossaryLang } from './types';
+import type { CodeLang, GlossaryEntry } from './types';
 
 export * from './types';
 
@@ -66,13 +66,8 @@ export function entriesMatching(codeLang: string): GlossaryEntry[] {
   return GLOSSARY.filter((entry) => entry.match?.langs.includes(mapped));
 }
 
-export function localizedText(
-  entry: GlossaryEntry,
-  lang: GlossaryLang,
-): { term: string; short: string } {
-  const term = lang === 'es' && entry.term.es ? entry.term.es : entry.term.en;
-  const short = lang === 'es' && entry.short.es ? entry.short.es : entry.short.en;
-  return { term, short };
+export function localizedText(entry: GlossaryEntry): { term: string; short: string } {
+  return { term: entry.term.en, short: entry.short.en };
 }
 
 export function isFirstOnly(entry: GlossaryEntry): boolean {

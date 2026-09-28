@@ -1,16 +1,12 @@
 ---
-import { useTranslations, type Lang } from '../../i18n/utils';
-
-const lang = (Astro.locals.postLang ?? 'en') as Lang;
 const description = Astro.locals.portswiggerDescription;
-const t = useTranslations(lang);
 ---
 
 {description && (
   <details class="compact-collapsible">
     <summary>
-      <span class="compact-collapsible-title">{t('post.portswiggerDescription')}</span>
-      <span class="expand-hint">{t('partial.clickToExpand')}</span>
+      <span class="compact-collapsible-title">PortSwigger's original description</span>
+      <span class="expand-hint">click to expand</span>
     </summary>
     <div class="compact-collapsible-content">
       <p>{description}</p>

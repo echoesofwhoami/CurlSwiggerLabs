@@ -1,11 +1,8 @@
 ---
 import ThemeTweaker from '../components/pages/ThemeTweaker.astro';
-import { useTranslations } from '../i18n/utils';
 import Layout from '../layouts/Layout.astro';
-
-const t = useTranslations('en');
 ---
 
-<Layout title={t('tweaker.title')} description={t('tweaker.description')} lang="en" wide>
-  <ThemeTweaker lang="en" />
+<Layout title="I don't like this website" description="Tweak article colors, typography, spacing, and Shiki themes. Configs persist in this browser via localStorage." wide>
+  <ThemeTweaker />
 </Layout>

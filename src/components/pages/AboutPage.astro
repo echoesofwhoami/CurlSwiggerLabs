@@ -1,38 +1,29 @@
 ---
-import type { Lang } from '../../i18n/utils';
-import { useTranslations } from '../../i18n/utils';
 import DiscordCta from './DiscordCta.astro';
-
-interface Props {
-  lang: Lang;
-}
-
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 ---
 
 <main class="about-page">
   <header>
-    <h1>{t('about.title')}</h1>
-    <p class="lede">{t('about.intro')}</p>
+    <h1>About CurlSwiggerLabs</h1>
+    <p class="lede">CurlSwiggerLabs is a notebook for learning web security from the protocol upward. Each writeup solves a PortSwigger Web Security Academy lab while slowing down at the parts that are usually hidden behind a graphical client.</p>
   </header>
 
   <section>
-    <h2>{t('about.whyCurlTitle')}</h2>
-    <p>{t('about.whyCurlBody')}</p>
+    <h2>Why curl?</h2>
+    <p>curl makes every important choice visible: the URL, method, headers, body, cookies, redirects, and TLS behavior. That constraint is useful. If a request only works after a particular flag or byte changes, the writeup has to explain why instead of hiding the detail in a saved Burp tab.</p>
   </section>
 
   <section>
-    <h2>{t('about.methodTitle')}</h2>
-    <p>{t('about.methodBody')}</p>
+    <h2>How the writeups work</h2>
+    <p>The goal is not to avoid Burp. It remains the right proxy for inspecting traffic and the labs are solved through it when interception matters. The goal is to separate what the server receives from what any one client displays, then rebuild the exploit with small, repeatable commands or scripts.</p>
   </section>
 
   <section>
-    <h2>{t('about.depthTitle')}</h2>
-    <p>{t('about.depthBody')}</p>
+    <h2>Beginner-friendly, without skipping the protocol</h2>
+    <p>Each article introduces the background needed for the lab, walks through the HTTP exchange, and finishes with mitigations for people building applications. Explanations begin with the approachable version, then keep going when headers, encodings, signatures, or parser differences deserve a closer look.</p>
   </section>
 
-  <DiscordCta lang={lang} />
+  <DiscordCta />
 </main>
 
 <style>

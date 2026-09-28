@@ -10,7 +10,6 @@ const blog = defineCollection({
     category: z.string(),
     date: z.string(),
     portswiggerDescription: z.string(),
-    lang: z.enum(['en', 'es']).default('en'),
     difficulty: z.enum(['Apprentice', 'Practitioner', 'Expert']),
     tools: z.array(z.string()).min(1),
     technologies: z.array(z.string()).default([]),
@@ -23,14 +22,6 @@ const partials = defineCollection({
   schema: z.object({
     title: z.string(),
     category: z.string(),
-  }),
-});
-
-const partialsEs = defineCollection({
-  type: 'content',
-  schema: z.object({
-    title: z.string().optional(),
-    category: z.string().optional(),
   }),
 });
 
@@ -56,4 +47,4 @@ const quizzes = defineCollection({
   }),
 });
 
-export const collections = { blog, partials, 'partials-es': partialsEs, 'lab-notes': labNotes, quizzes };
+export const collections = { blog, partials, 'lab-notes': labNotes, quizzes };

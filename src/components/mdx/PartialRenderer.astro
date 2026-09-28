@@ -9,7 +9,6 @@ interface Props {
 
 const { partial } = Astro.props;
 
-Astro.locals.postLang ??= 'en';
 Astro.locals.usedTips ??= new Set<string>();
 
 const entry = await getEntry('partials', partial);

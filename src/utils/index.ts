@@ -1,10 +1,8 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 
-type Language = 'en' | 'es';
-
 function getPostSlug(id: string): string {
-  return id.replace(/^es\//, '').replace(/\.mdx?$/, '');
+  return id.replace(/\.mdx?$/, '');
 }
 
 function byNewestFirst(
@@ -15,25 +13,24 @@ function byNewestFirst(
   return dateDifference || a.id.localeCompare(b.id);
 }
 
-export async function getPosts(lang: Language = 'en') {
-  const posts = await getCollection('blog', ({ data }) => (data.lang ?? 'en') === lang);
+export async function getPosts() {
+  const posts = await getCollection('blog');
   return posts.map((post) => ({
     params: { slug: getPostSlug(post.id) },
     props: { post },
   }));
 }
 
-export function formatDate(date: string, lang: Language = 'en'): string {
-  const locale = lang === 'es' ? 'es-ES' : 'en-US';
-  return new Date(date).toLocaleDateString(locale, { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+export function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 }
 
-export async function getGroupedPosts(lang: Language = 'en') {
-  const allPosts = await getCollection('blog', ({ data }) => (data.lang ?? 'en') === lang);
+export async function getGroupedPosts() {
+  const allPosts = await getCollection('blog');
 
   const sortedPosts = allPosts.sort(byNewestFirst);
 
@@ -57,8 +54,8 @@ export async function getGroupedPosts(lang: Language = 'en') {
   return groupedPosts;
 }
 
-export async function getAdjacentPosts(slug: string, lang: Language = 'en') {
-  const posts = await getCollection('blog', ({ data }) => (data.lang ?? 'en') === lang);
+export async function getAdjacentPosts(slug: string) {
+  const posts = await getCollection('blog');
   const currentPost = posts.find((post) => getPostSlug(post.id) === slug);
 
   if (!currentPost) {
@@ -79,12 +76,12 @@ export async function getAdjacentPosts(slug: string, lang: Language = 'en') {
   };
 }
 
-export async function getRelatedPosts(slug: string, lang: Language = 'en', limit = 3) {
+export async function getRelatedPosts(slug: string, limit = 3) {
   if (limit <= 0) {
     return [];
   }
 
-  const posts = await getCollection('blog', ({ data }) => (data.lang ?? 'en') === lang);
+  const posts = await getCollection('blog');
   const currentPost = posts.find((post) => getPostSlug(post.id) === slug);
 
   if (!currentPost) {

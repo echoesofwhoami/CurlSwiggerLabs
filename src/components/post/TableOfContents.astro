@@ -1,6 +1,4 @@
 ---
-import { useTranslations, type Lang } from '../../i18n/utils';
-
 interface Heading {
   depth: number;
   slug: string;
@@ -9,17 +7,15 @@ interface Heading {
 
 interface Props {
   headings: Heading[];
-  lang: Lang;
 }
 
-const { headings, lang } = Astro.props;
+const { headings } = Astro.props;
 const visibleHeadings = headings.filter(({ depth }) => depth === 2 || depth === 3);
-const t = useTranslations(lang);
 ---
 
 {visibleHeadings.length > 0 && (
   <nav class="table-of-contents" aria-labelledby="toc-title">
-    <h2 id="toc-title">{t('post.toc')}</h2>
+    <h2 id="toc-title">On this page</h2>
     <ol>
       {visibleHeadings.map((heading) => (
         <li class:list={{ nested: heading.depth === 3 }}>

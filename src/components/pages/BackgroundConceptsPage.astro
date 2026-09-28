@@ -1,12 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
-import { useTranslations } from '../../i18n/utils';
 import CollapsiblePartial from '../mdx/CollapsiblePartial.astro';
 import PartialContainer from '../mdx/PartialContainer.astro';
 
-const t = useTranslations('en');
-
-Astro.locals.postLang ??= 'en';
 Astro.locals.usedTips ??= new Set<string>();
 
 const partials = (await getCollection('partials')).sort((a, b) =>
@@ -24,8 +20,8 @@ const groups = [...new Set(partials.map((entry) => entry.data.category))]
 
 <main class="concepts-page">
   <header>
-    <h1>{t('concepts.title')}</h1>
-    <p class="lede">{t('concepts.intro')}</p>
+    <h1>Background Concepts</h1>
+    <p class="lede">Expand any topic below for the same background material reused across the lab writeups. These are the building blocks that sit behind JWT, OAuth, SSRF, smuggling, PHP deserialization, and prototype pollution labs.</p>
   </header>
 
   {groups.map((group) => (
@@ -36,7 +32,6 @@ const groups = [...new Set(partials.map((entry) => entry.data.category))]
           <CollapsiblePartial
             partial={entry.id.replace(/\.mdx?$/, '')}
             title={entry.data.title}
-            lang="en"
           />
         ))}
       </PartialContainer>

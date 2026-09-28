@@ -1,6 +1,5 @@
 ---
 import { getEntry, localizedText } from '@data/glossary';
-import type { Lang } from '../../i18n/utils';
 
 interface Props {
   id: string;
@@ -8,7 +7,6 @@ interface Props {
 }
 
 const { id } = Astro.props;
-const lang = (Astro.locals.postLang ?? 'en') as Lang;
 const entry = getEntry(id);
 const hasSlot = Astro.slots.has('default');
 
@@ -21,7 +19,7 @@ if (!entry) {
   usedTips.add(id);
 }
 
-const label = entry ? localizedText(entry, lang).term : id;
+const label = entry ? localizedText(entry).term : id;
 const kindClass = entry?.kind === 'syntax' ? 'tip--syntax' : 'tip--concept';
 ---
 

@@ -1,24 +1,19 @@
 ---
 import { getEntry, render } from 'astro:content';
-import { useTranslations } from '../../i18n/utils';
-import type { Lang } from '../../i18n/utils';
 import Term from './Term.astro';
 import RequestDiff from './RequestDiff.astro';
 
 interface Props {
   partial: string;
   title: string;
-  lang?: Lang;
   collection?: string;
 }
 
-const { partial, title, lang = 'en', collection } = Astro.props;
-const t = useTranslations(lang);
+const { partial, title, collection } = Astro.props;
 
-Astro.locals.postLang ??= lang;
 Astro.locals.usedTips ??= new Set<string>();
 
-const collectionName = collection ?? (lang === 'es' ? 'partials-es' : 'partials');
+const collectionName = collection ?? 'partials';
 const entry = await getEntry(collectionName as any, partial);
 
 if (!entry) throw new Error(`Partial not found: ${partial} in ${collectionName}`);
@@ -29,7 +24,7 @@ const { Content } = await render(entry);
 <details class="compact-collapsible">
   <summary>
     <span class="compact-collapsible-title">{title}</span>
-    <span class="expand-hint">{t('partial.clickToExpand')}</span>
+    <span class="expand-hint">click to expand</span>
   </summary>
   <div class="compact-collapsible-content">
     <Content components={{ Term, RequestDiff }} />

@@ -1,15 +1,13 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import type { Lang } from '../../i18n/utils';
 import PostCard from './PostCard.astro';
 
 interface Props {
   category: string;
   posts: CollectionEntry<'blog'>[];
-  lang: Lang;
 }
 
-const { category, posts, lang } = Astro.props;
+const { category, posts } = Astro.props;
 const sectionId = `category-${category
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
@@ -21,7 +19,7 @@ const sectionId = `category-${category
 <section class="post-list" aria-labelledby={sectionId}>
   <h2 id={sectionId}>{category}</h2>
   <div class="post-list__grid">
-    {posts.map((post) => <PostCard post={post} lang={lang} />)}
+    {posts.map((post) => <PostCard post={post} />)}
   </div>
 </section>
 

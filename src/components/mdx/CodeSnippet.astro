@@ -3,7 +3,6 @@ import { Code } from 'astro:components';
 import type { CodeLanguage } from 'astro';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { useTranslations, type Lang } from '../../i18n/utils';
 import { placeholderTransformer } from '../../shiki/placeholder-transformer';
 import { tooltipTransformer } from '../../shiki/tooltip-transformer';
 import { cssVariablesTheme } from '../../styles/shiki-css-theme';
@@ -39,8 +38,6 @@ const PLAINTEXT_ALIASES = new Set(['plaintext', 'txt', 'plain', 'text']);
 const scriptsRoot = join(process.cwd(), 'src/data/scripts');
 
 const { file, body: bodyProp, lang: langProp, noRawHttp = false, tips } = Astro.props;
-const postLang = (Astro.locals.postLang ?? 'en') as Lang;
-const t = useTranslations(postLang);
 const usedTips = Astro.locals.usedTips ?? new Set<string>();
 Astro.locals.usedTips = usedTips;
 
@@ -55,15 +52,15 @@ const matchLang = PLAINTEXT_ALIASES.has(String(inferred))
 const tipOpts = { extraTips: tips, collector: usedTips };
 const transformers = [
   placeholderTransformer,
-  tooltipTransformer(postLang, { ...tipOpts, codeLang: matchLang }),
+  tooltipTransformer({ ...tipOpts, codeLang: matchLang }),
 ];
 const httpTransformers = [
   placeholderTransformer,
-  tooltipTransformer(postLang, { ...tipOpts, codeLang: 'http' }),
+  tooltipTransformer({ ...tipOpts, codeLang: 'http' }),
 ];
 const jsonTransformers = [
   placeholderTransformer,
-  tooltipTransformer(postLang, { ...tipOpts, codeLang: 'json' }),
+  tooltipTransformer({ ...tipOpts, codeLang: 'json' }),
 ];
 
 let bodyCode: string | undefined;
@@ -113,14 +110,14 @@ const snippetId = `cht-${file.replace(/[^a-z0-9]/gi, '-')}`;
           aria-selected="true"
           data-panel="curl"
           type="button"
-        >{t('code.viewCurl')}</button>
+        >curl</button>
         <button
           class="http-tab"
           role="tab"
           aria-selected="false"
           data-panel="raw"
           type="button"
-        >{t('code.viewRawHttp')}</button>
+        >Raw HTTP</button>
       </div>
 
       <div class="http-panel" data-panel="curl">
@@ -139,8 +136,8 @@ const snippetId = `cht-${file.replace(/[^a-z0-9]/gi, '-')}`;
   {bodyCode && (
     <details class="compact-collapsible request-body">
       <summary>
-        <span class="compact-collapsible-title">{t('code.requestBody')}</span>
-        <span class="expand-hint">{t('partial.clickToExpand')}</span>
+        <span class="compact-collapsible-title">Formatted request body</span>
+        <span class="expand-hint">click to expand</span>
       </summary>
       <div class="compact-collapsible-content">
         <Code code={bodyCode} lang="json" theme={cssVariablesTheme} transformers={jsonTransformers} />

@@ -1,5 +1,4 @@
 export type TipKind = 'syntax' | 'concept';
-export type GlossaryLang = 'en' | 'es';
 export type CodeLang = 'bash' | 'javascript' | 'python' | 'http' | 'html' | 'php' | 'json';
 
 export interface GlossaryRef {
@@ -9,7 +8,6 @@ export interface GlossaryRef {
 
 export interface Localized {
   en: string;
-  es?: string;
 }
 
 export interface GlossaryMatch {

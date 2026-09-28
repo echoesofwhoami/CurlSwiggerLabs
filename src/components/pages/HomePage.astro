@@ -1,31 +1,24 @@
 ---
 import { siteConfig } from '../../site.config';
-import { useTranslations, getLocalizedPath, type Lang } from '../../i18n/utils';
 import { getGroupedPosts } from '../../utils';
 import DiscordCta from './DiscordCta.astro';
 import PostList from './PostList.astro';
 
-interface Props {
-  lang: Lang;
-}
-
-const { lang } = Astro.props;
-const t = useTranslations(lang);
-const groupedPosts = await getGroupedPosts(lang);
-const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
+const groupedPosts = await getGroupedPosts();
+const aboutHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/about/`;
 ---
 
 <main class="home-page">
   <section class="home-hero" aria-labelledby="home-title">
     <div class="home-shell home-hero__content">
       <h1 id="home-title">Curl<span>Swigger</span>Labs</h1>
-      <h2>{t('home.hero.title')}</h2>
-      <p>{t('home.hero.subtitle')}</p>
+      <h2>Learn web security by understanding the request.</h2>
+      <p>Beginner-friendly explanations that still inspect the bytes, headers, and curl flags that make an exploit work.</p>
       <div class="home-hero__actions">
-        <a class="home-button home-button--primary" href="#labs">{t('home.cta.labs')}</a>
-        <a class="home-button" href={aboutHref}>{t('home.cta.about')}</a>
+        <a class="home-button home-button--primary" href="#labs">Browse the labs</a>
+        <a class="home-button" href={aboutHref}>Why curl?</a>
         <a class="home-link" href={siteConfig.discordInviteUrl || '#discord'}>
-          {t('home.cta.discord')}
+          Ask on Discord
         </a>
       </div>
     </div>
@@ -33,22 +26,22 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
 
   <section class="intent" aria-labelledby="intent-title">
     <div class="home-shell">
-      <h2 id="intent-title">{t('home.intent.title')}</h2>
+      <h2 id="intent-title">What you get</h2>
       <div class="intent__items">
         <article>
           <span aria-hidden="true">01</span>
-          <h3>{t('home.intent.depth.title')}</h3>
-          <p>{t('home.intent.depth.body')}</p>
+          <h3>A clear path, with real depth</h3>
+          <p>Start with the idea, then follow it down to the protocol detail that actually matters.</p>
         </article>
         <article>
           <span aria-hidden="true">02</span>
-          <h3>{t('home.intent.tools.title')}</h3>
-          <p>{t('home.intent.tools.body')}</p>
+          <h3>Requests you can see</h3>
+          <p>curl, small Python scripts, and raw HTTP instead of a stream of unexplained Repeater screenshots.</p>
         </article>
         <article>
           <span aria-hidden="true">03</span>
-          <h3>{t('home.intent.build.title')}</h3>
-          <p>{t('home.intent.build.body')}</p>
+          <h3>Exploits and fixes</h3>
+          <p>Solve PortSwigger labs, then look at the parser, validation, or design mistake a builder should fix.</p>
         </article>
       </div>
     </div>
@@ -57,18 +50,18 @@ const aboutHref = `${getLocalizedPath(lang, 'about')}/`;
   <section class="labs" id="labs" aria-labelledby="labs-title">
     <div class="home-shell">
       <header class="labs__header">
-        <h2 id="labs-title">{t('home.labs.title')}</h2>
-        <p>{t('home.labs.subtitle')}</p>
+        <h2 id="labs-title">Lab writeups</h2>
+        <p>Pick a category. Every writeup rebuilds the attack one request at a time and explains why it works.</p>
       </header>
       {groupedPosts.map(({ category, categoryPosts }) => (
-        <PostList category={category} posts={categoryPosts} lang={lang} />
+        <PostList category={category} posts={categoryPosts} />
       ))}
     </div>
   </section>
 
-  <section class="home-discord" id="discord" aria-label={t('discord.title')}>
+  <section class="home-discord" id="discord" aria-label="Talk through a lab">
     <div class="home-shell">
-      <DiscordCta lang={lang} />
+      <DiscordCta />
     </div>
   </section>
 </main>
