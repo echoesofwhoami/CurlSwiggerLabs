@@ -1,4 +1,5 @@
 export type TipKind = 'syntax' | 'concept'
+
 export type CodeLang = 'bash' | 'javascript' | 'python' | 'http' | 'html' | 'php' | 'json'
 
 export interface GlossaryRef {
@@ -28,6 +29,19 @@ export interface GlossaryEntry {
   short: Localized; // 1-2 sentences, teaching voice
   partial?: string; // CollapsiblePartial id when one exists
   refs?: GlossaryRef[]; // concept only; syntax may omit or keep unofficial extra links out of post refs
+}
+
+export interface TermView {
+  entry: GlossaryEntry | undefined;
+  label: string;
+  kindClass: string;
+}
+
+export interface ConceptReference {
+  id: string;
+  term: string;
+  short: string;
+  refs: GlossaryRef[];
 }
 
 export interface ClientTip {

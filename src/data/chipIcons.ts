@@ -1,13 +1,14 @@
-import type { ChipVisual } from '@types'
-import CurlIcon from '../assets/logos/curl.svg'
-import PythonIcon from '../assets/logos/python.svg'
-import NodeIcon from '../assets/logos/nodedotjs.svg'
-import ExpressIcon from '../assets/logos/express.svg'
-import PhpIcon from '../assets/logos/php.svg'
-import NginxIcon from '../assets/logos/nginx.svg'
-import ChromiumIcon from '../assets/logos/chromium.svg'
-import JavaScriptIcon from '../assets/logos/javascript.svg'
-import psLogo from '../assets/ps_logo.png'
+import type { ImageMetadata } from 'astro'
+import type { ChipSvg, ChipView, ChipVisual } from '@types'
+import CurlIcon from '@assets/logos/curl.svg'
+import PythonIcon from '@assets/logos/python.svg'
+import NodeIcon from '@assets/logos/nodedotjs.svg'
+import ExpressIcon from '@assets/logos/express.svg'
+import PhpIcon from '@assets/logos/php.svg'
+import NginxIcon from '@assets/logos/nginx.svg'
+import ChromiumIcon from '@assets/logos/chromium.svg'
+import JavaScriptIcon from '@assets/logos/javascript.svg'
+import psLogo from '@assets/ps_logo.png'
 
 export type { ChipVisual }
 
@@ -47,5 +48,32 @@ const aliases: Record<string, keyof typeof visuals> = {
 
 export function getChipVisual(label: string): ChipVisual | undefined {
   const id = aliases[label.trim().toLowerCase()]
-  return id ? visuals[id] : undefined
+
+  if (!id) return
+
+  return visuals[id]
+}
+
+const fallbackAccent = '#94a3b8'
+
+export function chipView(label: string): ChipView {
+  const visual = getChipVisual(label)
+
+  return {
+    accent: visual?.accent ?? fallbackAccent,
+    svg: svgIcon(visual),
+    photo: photoSrc(visual),
+  }
+}
+
+function svgIcon(visual: ChipVisual | undefined): ChipSvg | undefined {
+  if (visual?.kind !== 'svg') return
+
+  return visual.Icon
+}
+
+function photoSrc(visual: ChipVisual | undefined): ImageMetadata | undefined {
+  if (visual?.kind !== 'image') return
+
+  return visual.src
 }

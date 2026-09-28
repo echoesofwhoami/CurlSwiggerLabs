@@ -11,6 +11,28 @@ export interface LayoutProps {
   wide?: boolean;
 }
 
+export interface ChooseProps {
+  if: boolean;
+}
+
+export interface NavbarModel {
+  wide: boolean;
+  homePath: string;
+  aboutPath: string;
+  conceptsPath: string;
+  tweakerPath: string;
+  currentSlug: string;
+  menuId: string;
+}
+
+export interface FooterLink {
+  label: string;
+  href: string;
+  external: boolean;
+  target: string | undefined;
+  rel: string | undefined;
+}
+
 export interface NavbarProps {
   currentPath: string;
   wide?: boolean;

@@ -8,9 +8,11 @@ function node(
     langs: ['javascript', ...(opts?.extraLangs ?? [])],
     tokens,
   }
+
   if (opts?.firstOnly !== undefined) {
     match.firstOnly = opts.firstOnly
   }
+
   return match
 }
 

@@ -1,9 +1,11 @@
 ---
-const description = Astro.locals.portswiggerDescription;
+import Choose from '@components/Choose.astro'
+
+const description = Astro.locals.portswiggerDescription
 ---
 
-{description && (
-  <details class="compact-collapsible">
+<Choose if={!!description}>
+  <details slot="then" class="compact-collapsible">
     <summary>
       <span class="compact-collapsible-title">PortSwigger's original description</span>
       <span class="expand-hint">click to expand</span>
@@ -12,4 +14,4 @@ const description = Astro.locals.portswiggerDescription;
       <p>{description}</p>
     </div>
   </details>
-)}
+</Choose>

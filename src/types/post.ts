@@ -1,5 +1,30 @@
 import type { CollectionEntry } from 'astro:content'
 
+export type BlogPost = CollectionEntry<'blog'>
+
+export type ConceptPartial = CollectionEntry<'partials'>
+
+export interface GroupedPosts {
+  category: string;
+  categoryPosts: BlogPost[];
+}
+
+export interface ConceptGroup {
+  category: string;
+  id: string;
+  partials: ConceptPartial[];
+}
+
+export interface LabLink {
+  href: string;
+  title: string;
+}
+
+export interface DescriptionParagraph {
+  text: string;
+  hook: boolean;
+}
+
 export interface PostLayoutProps {
   post: CollectionEntry<'blog'>;
 }

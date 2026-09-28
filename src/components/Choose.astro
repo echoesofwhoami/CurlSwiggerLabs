@@ -1,0 +1,8 @@
+---
+import type { ChooseProps as Props } from '@types'
+
+const { if: condition } = Astro.props
+---
+
+{condition && <slot name="then" />}
+{!condition && <slot name="else" />}

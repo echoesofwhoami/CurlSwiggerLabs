@@ -4,7 +4,9 @@ import type { FontOption, ThemeConfig, ThemePreset } from '@types'
 export type { FontOption, ThemeConfig, ThemePreset }
 
 export const STORAGE_ACTIVE = 'csl-theme-active'
+
 export const STORAGE_SAVED = 'csl-theme-saved'
+
 export const STORAGE_VARS = 'csl-theme-vars'
 
 /** Quiz success/error foreground colors derived from surface luminance. */
@@ -14,14 +16,33 @@ export function quizVarsFromConfig(config: ThemeConfig): {
   '--error-fg': string;
 } {
   const hex = config.surfaceElevated.replace('#', '')
+
   const r = parseInt(hex.slice(0, 2), 16)
+
   const g = parseInt(hex.slice(2, 4), 16)
+
   const b = parseInt(hex.slice(4, 6), 16)
+
   const light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5
+
+  let successFg: string
+
+  let errorFg: string
+
+  if (light) {
+    successFg = '#15803d'
+
+    errorFg = config.accent
+  } else {
+    successFg = '#86efac'
+
+    errorFg = config.accentSoft
+  }
+
   return {
-    '--success-fg': light ? '#15803d' : '#86efac',
+    '--success-fg': successFg,
     '--success-border': '#22c55e',
-    '--error-fg': light ? config.accent : config.accentSoft,
+    '--error-fg': errorFg,
   }
 }
 
@@ -476,13 +497,16 @@ export const PRESETS: ThemePreset[] = [
     },
   },
 ]
+
 const FONT_LINK_ID = 'csl-theme-font'
 
 function fontOptionForFamily(family: string): FontOption | undefined {
   return FONT_OPTIONS.find((f) => f.family === family)
 }
+
 export function configToCssVars(config: ThemeConfig): ShikiVarMap {
   const shiki = getShikiTheme(config.shikiTheme).vars
+
   return {
     '--page-bg': config.pageBg,
     '--surface': config.surface,
@@ -512,22 +536,28 @@ export function configToCssVars(config: ThemeConfig): ShikiVarMap {
     '--shiki-background': config.codeBg,
   }
 }
+
 export function applyCssVars(vars: ShikiVarMap, root: HTMLElement = document.documentElement): void {
   for (const [key, value] of Object.entries(vars)) {
     root.style.setProperty(key, value)
   }
 }
+
 export function clearCssVars(root: HTMLElement = document.documentElement): void {
   for (const key of Object.keys(configToCssVars(DEFAULT_CONFIG))) {
     root.style.removeProperty(key)
   }
 }
+
 function normalizeHexColor(value: string): string {
   const v = value.trim()
+
   if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase()
+
   if (/^#[0-9a-fA-F]{3}$/.test(v)) {
     return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`.toLowerCase()
   }
+
   return v
 }
 
@@ -551,97 +581,140 @@ const COLOR_KEYS: (keyof ThemeConfig)[] = [
 
 function normalizeConfig(config: Partial<ThemeConfig>): ThemeConfig {
   const merged = { ...DEFAULT_CONFIG, ...config }
+
   for (const key of COLOR_KEYS) {
     merged[key] = normalizeHexColor(String(merged[key])) as never
   }
+
   merged.shikiTheme = getShikiTheme(merged.shikiTheme).id
+
   return merged
 }
+
 export function configsMatch(a: ThemeConfig, b: ThemeConfig): boolean {
   const left = normalizeConfig(a)
+
   const right = normalizeConfig(b)
+
   return (Object.keys(DEFAULT_CONFIG) as (keyof ThemeConfig)[]).every((key) => left[key] === right[key])
 }
+
 export function matchPresetId(config: ThemeConfig): string | '' {
   const preset = PRESETS.find((p) => configsMatch(p.config, config))
+
   if (preset) return preset.id
+
   if (configsMatch(config, DEFAULT_CONFIG)) return DEFAULT_PRESET_ID
+
   return ''
 }
+
 export function ensureFontLoaded(family: string): void {
   const option = fontOptionForFamily(family)
+
   if (!option?.google) return
 
   let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null
+
   const href = `https://fonts.googleapis.com/css2?family=${option.google}&display=swap`
+
   if (link) {
     if (link.href !== href) link.href = href
+
     return
   }
+
   link = document.createElement('link')
+
   link.id = FONT_LINK_ID
+
   link.rel = 'stylesheet'
+
   link.href = href
+
   document.head.appendChild(link)
 }
+
 export function apply(config: ThemeConfig, options: { persist?: boolean } = {}): ThemeConfig {
   const merged = normalizeConfig(config)
+
   const vars = configToCssVars(merged)
+
   applyCssVars(vars)
+
   ensureFontLoaded(merged.fontSans)
+
   if (options.persist !== false) {
     try {
       localStorage.setItem(STORAGE_ACTIVE, JSON.stringify(merged))
+
       localStorage.setItem(STORAGE_VARS, JSON.stringify(vars))
     } catch {
       /* private mode / quota */
     }
   }
+
   return merged
 }
+
 export function getActive(): ThemeConfig {
   try {
     const raw = localStorage.getItem(STORAGE_ACTIVE)
+
     if (!raw) return normalizeConfig({})
+
     return normalizeConfig(JSON.parse(raw) as Partial<ThemeConfig>)
   } catch {
     return normalizeConfig({})
   }
 }
-export function listPresets(): ThemePreset[] {
-  return PRESETS
-}
+
 export function getPreset(id: string): ThemePreset | undefined {
   return PRESETS.find((p) => p.id === id)
 }
+
 export function listSaved(): Record<string, ThemeConfig> {
   try {
     const raw = localStorage.getItem(STORAGE_SAVED)
+
     if (!raw) return {}
+
     return JSON.parse(raw) as Record<string, ThemeConfig>
   } catch {
     return {}
   }
 }
+
 export function save(name: string, config: ThemeConfig): void {
   const trimmed = name.trim()
+
   if (!trimmed) throw new Error('Name is required')
+
   const saved = listSaved()
+
   saved[trimmed] = normalizeConfig(config)
+
   localStorage.setItem(STORAGE_SAVED, JSON.stringify(saved))
 }
+
 export function deleteSaved(name: string): void {
   const saved = listSaved()
+
   delete saved[name]
+
   localStorage.setItem(STORAGE_SAVED, JSON.stringify(saved))
 }
+
 export function resetToDefault(): ThemeConfig {
   try {
     localStorage.removeItem(STORAGE_ACTIVE)
+
     localStorage.removeItem(STORAGE_VARS)
   } catch {
     /* ignore */
   }
+
   clearCssVars()
+
   return apply(normalizeConfig({}), { persist: false })
 }

@@ -1,160 +1,101 @@
 ---
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import {
-  alignRequestDiff,
-  parseJwt,
-  prettyIfJson,
-  splitPlaceholders,
-  type DiffMark,
-  type DiffToken,
-  type JwtParts,
-} from '../../utils/request-diff'
+import { loadRequestDiff } from '@utils/request-diff'
+import { slugifyId } from '@utils'
+import { tooltipActions } from '../../shiki/tooltip-transformer'
 import type { RequestDiffProps as Props } from '@types'
+import Choose from '@components/Choose.astro'
 import '@styles/mdx/RequestDiff.css'
 
-const scriptsRoot = join(process.cwd(), 'src/data/scripts')
-const { left: leftFile, right: rightFile, leftLabel, rightLabel } = Astro.props
+const { left, right, leftLabel, rightLabel } = Astro.props
 
-const leftRaw = prettyIfJson(
-  readFileSync(join(scriptsRoot, leftFile), 'utf-8').replace(/\n$/, ''),
-  leftFile,
-)
-const rightRaw = prettyIfJson(
-  readFileSync(join(scriptsRoot, rightFile), 'utf-8').replace(/\n$/, ''),
-  rightFile,
-)
-const rows = alignRequestDiff(leftRaw, rightRaw)
-const leftJwt = parseJwt(leftRaw)
-const rightJwt = parseJwt(rightRaw)
-const jwtMode = Boolean(leftJwt && rightJwt)
-const jsonMode = !jwtMode && (leftFile.endsWith('.json') || rightFile.endsWith('.json'))
-const httpMode = !jwtMode && !jsonMode && (leftFile.endsWith('.http') || rightFile.endsWith('.http'))
-const headerChanged = Boolean(leftJwt && rightJwt && leftJwt.header !== rightJwt.header)
-const payloadChanged = Boolean(leftJwt && rightJwt && leftJwt.payload !== rightJwt.payload)
-const signatureChanged = Boolean(leftJwt && rightJwt && leftJwt.signature !== rightJwt.signature)
-const leftTitle = leftLabel ?? 'Original'
-const rightTitle = rightLabel ?? 'Exploit'
-const diffId = `rd-${leftFile.replace(/[^a-z0-9]/gi, '-')}-${rightFile.replace(/[^a-z0-9]/gi, '-')}`
-
-const sides = [
-  { id: 'left' as const, jwt: leftJwt, title: leftTitle, tokens: 'left' as const, active: false },
-  { id: 'right' as const, jwt: rightJwt, title: rightTitle, tokens: 'right' as const, active: true },
-]
-
-function tokenParts(tokens: DiffToken[]) {
-  return tokens.flatMap((token) =>
-    splitPlaceholders(token.value).map((part) => ({
-      text: part.text,
-      type: token.type,
-      placeholder: part.placeholder,
-    })),
-  )
-}
-function jwtMark(changed: boolean, side: 'left' | 'right'): DiffMark {
-  if (!changed) return 'eq'
-  return side === 'left' ? 'del' : 'add'
-}
-function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
-  return [
-    {
-      text: jwt.header,
-      decoded: jwt.headerJson,
-      short: undefined as string | undefined,
-      term: 'Header',
-      mark: jwtMark(headerChanged, side),
-      dot: true,
-    },
-    {
-      text: jwt.payload,
-      decoded: jwt.payloadJson,
-      short: undefined as string | undefined,
-      term: 'Payload',
-      mark: jwtMark(payloadChanged, side),
-      dot: true,
-    },
-    {
-      text: jwt.signature,
-      decoded: null as string | null,
-      short: 'This is a signature, not JSON. Decoding it as Base64 will not produce a readable object.',
-      term: 'Signature',
-      mark: jwtMark(signatureChanged, side),
-      dot: false,
-    },
-  ]
-}
-
+const diff = loadRequestDiff({
+  left,
+  right,
+  leftLabel,
+  rightLabel,
+  tipAction: tooltipActions,
+  slugify: slugifyId,
+})
 ---
 
-<div class:list={['request-diff', { 'is-json': jsonMode, 'is-http': httpMode }]} data-diff={diffId} role="region" aria-label="Request diff">
-  <textarea class="request-diff-source" data-side="left" readonly hidden>{leftRaw}</textarea>
-  <textarea class="request-diff-source" data-side="right" readonly hidden>{rightRaw}</textarea>
+<div
+  class:list={['request-diff', { 'is-json': diff.jsonMode, 'is-http': diff.httpMode }]}
+  data-controller="request-diff"
+  data-diff={diff.diffId}
+  role="region"
+  aria-label="Request diff"
+>
+  <textarea class="request-diff-source" data-request-diff-target="source" data-side="left" readonly hidden>{diff.leftRaw}</textarea>
+  <textarea class="request-diff-source" data-request-diff-target="source" data-side="right" readonly hidden>{diff.rightRaw}</textarea>
 
   <div class="request-diff-split">
     <div class="request-diff-toolbar">
-      {sides.map((side) => (
+      {diff.sides.map((side) => (
         <div class="request-diff-heading">
-          <span class:list={['request-diff-label', side.id === 'left' ? 'is-del' : 'is-add']}>
+          <span class:list={['request-diff-label', side.labelClass]}>
             {side.title}
           </span>
           <button
             type="button"
             class="copy-code request-diff-copy"
-            data-side={side.id}
-            data-copied-label="Copied!"
+            data-action="click->request-diff#copy"
+            data-request-diff-side-param={side.id}
           >
-            <span class="request-diff-copy-label">Copy</span>
+            <span class="request-diff-copy-label" data-request-diff-target="copyLabel">Copy</span>
           </button>
         </div>
       ))}
     </div>
     <div class="request-diff-split-body">
-      {sides.map((side) => (
+      {diff.sides.map((side) => (
         <div class:list={['request-diff-cell', side.id]}>
-          {jwtMode && side.jwt ? (
-            <div class="request-diff-single-line request-diff-jwt">
-              {jwtLine(side.jwt, side.id).map((seg) => {
-                const hoverable = Boolean(seg.decoded || seg.short)
-                return (
-                  <span
-                    class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
-                    data-tip-term={hoverable ? seg.term : undefined}
-                    data-tip-decode={seg.decoded ?? undefined}
-                    data-tip-short={seg.short}
-                    role={hoverable ? 'button' : undefined}
-                    tabindex={hoverable ? 0 : undefined}
-                    aria-expanded={hoverable ? 'false' : undefined}
-                  ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
-                )
-              })}
+          <Choose if={side.segments.length > 0}>
+            <div slot="then" class="request-diff-single-line request-diff-jwt">
+              {side.segments.map((seg) => (
+                <span
+                  class:list={['jwt-piece', { tip: seg.hoverable, 'tip--syntax': seg.hoverable }]}
+                  data-tip-term={seg.term}
+                  data-tip-decode={seg.decode}
+                  data-tip-short={seg.short}
+                  role={seg.role}
+                  tabindex={seg.tabindex}
+                  aria-expanded={seg.expanded}
+                  data-action={seg.action}
+                >
+                  <span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>
+                  <Choose if={seg.dot}>
+                    <span slot="then" class="jwt-dot">.</span>
+                  </Choose>
+                </span>
+              ))}
             </div>
-          ) : (
-            rows.map((row) =>
-              row[side.tokens].length === 0 ? null : (
-                <div class:list={['request-diff-single-line', row.kind]}>
-                  {tokenParts(row[side.tokens]).map((part) => (
-                    <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
-                  ))}
-                </div>
-              ),
-            )
-          )}
+          </Choose>
+          {side.lines.map((line) => (
+            <div class:list={['request-diff-single-line', line.kind]}>
+              {line.parts.map((part) => (
+                <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
+              ))}
+            </div>
+          ))}
         </div>
       ))}
     </div>
   </div>
 
-  <div class="request-diff-mobile" data-active="right">
+  <div class="request-diff-mobile" data-active={diff.activePanel} data-request-diff-target="mobile">
     <div class="request-diff-tabs" role="tablist" aria-label="Request diff">
-      {sides.map((side) => (
+      {diff.sides.map((side) => (
         <button
           class:list={['request-diff-tab', { 'is-active': side.active }]}
           type="button"
           role="tab"
-          aria-selected={side.active ? 'true' : 'false'}
+          aria-selected={side.selected}
           data-panel={side.id}
+          data-request-diff-target="tab"
+          data-action="click->request-diff#select"
+          data-request-diff-panel-param={side.id}
         >
-          <span class:list={['request-diff-swatch', side.id === 'left' ? 'del' : 'add']} aria-hidden="true"></span>
+          <span class:list={['request-diff-swatch', side.swatchClass]} aria-hidden="true"></span>
           <span>{side.title}</span>
         </button>
       ))}
@@ -163,110 +104,51 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
       <button
         type="button"
         class="copy-code request-diff-copy"
-        data-side="right"
-        data-copied-label="Copied!"
+        data-request-diff-target="mobileCopy"
+        data-action="click->request-diff#copy"
+        data-request-diff-side-param={diff.activePanel}
       >
-        <span class="request-diff-copy-label">Copy</span>
+        <span class="request-diff-copy-label" data-request-diff-target="copyLabel">Copy</span>
       </button>
-      {sides.map((side) => (
+      {diff.sides.map((side) => (
         <div
           class="request-diff-panel"
           data-panel={side.id}
-          hidden={side.active ? undefined : true}
+          data-request-diff-target="panel"
+          hidden={side.hidden}
         >
           <div class="request-diff-body">
-            {jwtMode && side.jwt ? (
-              <div class="request-diff-single-line request-diff-jwt">
-                {jwtLine(side.jwt, side.id).map((seg) => {
-                  const hoverable = Boolean(seg.decoded || seg.short)
-                  return (
-                    <span
-                      class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
-                      data-tip-term={hoverable ? seg.term : undefined}
-                      data-tip-decode={seg.decoded ?? undefined}
-                      data-tip-short={seg.short}
-                      role={hoverable ? 'button' : undefined}
-                      tabindex={hoverable ? 0 : undefined}
-                      aria-expanded={hoverable ? 'false' : undefined}
-                    ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
-                  )
-                })}
+            <Choose if={side.segments.length > 0}>
+              <div slot="then" class="request-diff-single-line request-diff-jwt">
+                {side.segments.map((seg) => (
+                  <span
+                    class:list={['jwt-piece', { tip: seg.hoverable, 'tip--syntax': seg.hoverable }]}
+                    data-tip-term={seg.term}
+                    data-tip-decode={seg.decode}
+                    data-tip-short={seg.short}
+                    role={seg.role}
+                    tabindex={seg.tabindex}
+                    aria-expanded={seg.expanded}
+                    data-action={seg.action}
+                  >
+                    <span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>
+                    <Choose if={seg.dot}>
+                      <span slot="then" class="jwt-dot">.</span>
+                    </Choose>
+                  </span>
+                ))}
               </div>
-            ) : (
-              rows.map((row) =>
-                row[side.tokens].length === 0 ? null : (
-                  <div class:list={['request-diff-single-line', row.kind]}>
-                    {tokenParts(row[side.tokens]).map((part) => (
-                      <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
-                    ))}
-                  </div>
-                ),
-              )
-            )}
+            </Choose>
+            {side.lines.map((line) => (
+              <div class:list={['request-diff-single-line', line.kind]}>
+                {line.parts.map((part) => (
+                  <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       ))}
     </div>
   </div>
 </div>
-
-<script>
-function initRequestDiff() {
-  const roots = document.querySelectorAll<HTMLElement>(
-    '.request-diff:not([data-rd-init])',
-  )
-
-  for (const root of roots) {
-    root.dataset.rdInit = '1'
-    const mobile = root.querySelector<HTMLElement>('.request-diff-mobile')
-    const tabs = mobile?.querySelectorAll<HTMLButtonElement>('.request-diff-tab') ?? []
-    const panels = mobile?.querySelectorAll<HTMLElement>('.request-diff-panel') ?? []
-    const mobileCopy = mobile?.querySelector<HTMLButtonElement>('.request-diff-copy')
-
-    function showPanel(name: string) {
-      if (mobile) mobile.dataset.active = name
-      tabs.forEach((tab) => {
-        const on = tab.dataset.panel === name
-        tab.classList.toggle('is-active', on)
-        tab.setAttribute('aria-selected', String(on))
-      })
-      panels.forEach((panel) => {
-        if (panel.dataset.panel === name) {
-          panel.removeAttribute('hidden')
-        } else {
-          panel.setAttribute('hidden', '')
-        }
-      })
-      if (mobileCopy) mobileCopy.dataset.side = name
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-    }
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const name = tab.dataset.panel
-        if (name) showPanel(name)
-      })
-    })
-    for (const button of root.querySelectorAll<HTMLButtonElement>('.request-diff-copy')) {
-      const labelEl = button.querySelector<HTMLElement>('.request-diff-copy-label')
-      const idleLabel = labelEl?.textContent?.trim() ?? 'Copy'
-
-      button.addEventListener('click', async () => {
-        const side = button.dataset.side
-        const source = root.querySelector<HTMLTextAreaElement>(
-          `textarea.request-diff-source[data-side="${side}"]`,
-        )
-        await navigator.clipboard.writeText(source?.value ?? '')
-        if (labelEl) {
-          labelEl.textContent = button.dataset.copiedLabel ?? 'Copied!'
-          window.setTimeout(() => {
-            labelEl.textContent = idleLabel
-          }, 700)
-        }
-      })
-    }
-  }
-}
-initRequestDiff()
-document.addEventListener('astro:after-swap', initRequestDiff)
-</script>
-

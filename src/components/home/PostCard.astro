@@ -1,30 +1,29 @@
 ---
-import { categoryForLabel } from '../../data/categories'
-import { formatDate, getPostSlug, siteBase } from '../../utils'
+import { formatDate, postCardView } from '@utils'
 import type { PostCardProps as Props } from '@types'
+import Choose from '@components/Choose.astro'
 import '@styles/home/PostCard.css'
 
 const { post } = Astro.props
-const base = siteBase()
-const slug = getPostSlug(post.id)
-const href = `${base}/${slug}`
-const category = categoryForLabel(post.data.category);
 
+const { href, coverImage } = postCardView(post)
 ---
 
 <article class="post-card">
-  {category && (
-    <a class="post-card__image-link" href={href} tabindex="-1" aria-hidden="true">
-      <img
-        class="post-card__image"
-        src={category.coverImage}
-        alt=""
-        width="720"
-        height="405"
-        loading="lazy"
-      />
+  <Choose if={!!coverImage}>
+    <a slot="then" class="post-card__image-link" href={href} tabindex="-1" aria-hidden="true">
+      {coverImage && (
+        <img
+          class="post-card__image"
+          src={coverImage}
+          alt=""
+          width="720"
+          height="405"
+          loading="lazy"
+        />
+      )}
     </a>
-  )}
+  </Choose>
 
   <div class="post-card__body">
     <div class="post-card__meta">
@@ -42,4 +41,3 @@ const category = categoryForLabel(post.data.category);
     </a>
   </div>
 </article>
-

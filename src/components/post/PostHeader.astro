@@ -1,30 +1,23 @@
 ---
 import { Image } from 'astro:assets'
-import { formatDate } from '../../utils'
-import psLogo from '../../assets/ps_logo.png'
-import ExternalLink from '../mdx/ExternalLink.astro'
-import MetaChip from './MetaChip.astro'
+import { formatDate, postHeaderView } from '@utils'
+import psLogo from '@assets/ps_logo.png'
+import ExternalLink from '@components/mdx/ExternalLink.astro'
+import Choose from '@components/Choose.astro'
+import MetaChip from '@components/post/MetaChip.astro'
 import type { PostHeaderProps as Props } from '@types'
 import '@styles/post/PostHeader.css'
 
 const {
   title,
-  description,
   category,
   labUrl,
   date,
   difficulty,
   tools,
-  technologies = [],
-  series,
 } = Astro.props
-const seriesName = series?.replaceAll('-', ' ')
-const descriptionLines = description
-  .split(/\n+/)
-  .map((line) => line.trim())
-  .filter(Boolean)
-const difficultyClass = `difficulty-chip--${difficulty.toLowerCase()}`;
 
+const { technologies, seriesName, paragraphs, difficultyClass } = postHeaderView(Astro.props)
 ---
 
 <header class="post-header">
@@ -51,23 +44,22 @@ const difficultyClass = `difficulty-chip--${difficulty.toLowerCase()}`;
         {tools.map((tool) => <MetaChip label={tool} />)}
       </span>
     </span>
-    {technologies.length > 0 && (
-      <span>
+    <Choose if={technologies.length > 0}>
+      <span slot="then">
         <strong>Technologies</strong>
         <span class="chip-list">
           {technologies.map((tech) => <MetaChip label={tech} />)}
         </span>
       </span>
-    )}
-    {seriesName && <span><strong>Series</strong> {seriesName}</span>}
+    </Choose>
+    <Choose if={!!seriesName}>
+      <span slot="then"><strong>Series</strong> {seriesName}</span>
+    </Choose>
   </div>
   <div class="post-description">
-    {descriptionLines.map((line, index) => (
-      <p class:list={[index === descriptionLines.length - 1 && descriptionLines.length > 1 && 'post-description-hook']}>
-        {line}
-      </p>
+    {paragraphs.map((line) => (
+      <p class:list={{ 'post-description-hook': line.hook }}>{line.text}</p>
     ))}
   </div>
   <small>{formatDate(date)}</small>
 </header>
-

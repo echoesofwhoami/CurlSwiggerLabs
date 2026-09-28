@@ -1,25 +1,25 @@
 ---
 import { Image } from 'astro:assets'
-import { getChipVisual } from '../../data/chipIcons'
+import Choose from '@components/Choose.astro'
+import { chipView } from '@data/chipIcons'
 import type { MetaChipProps as Props } from '@types'
 import '@styles/post/MetaChip.css'
 
 const { label } = Astro.props
-const visual = getChipVisual(label)
-const accent = visual?.accent ?? '#94a3b8';
 
+const { accent, svg: SvgIcon, photo } = chipView(label)
 ---
 
 <span class="meta-chip" style={`--chip-accent: ${accent}`}>
-  {visual && (
-    <span class:list={['meta-chip__mark', visual.kind === 'image' && 'meta-chip__mark--photo']}>
-      {visual.kind === 'svg' ? (
-        <visual.Icon width="17" height="17" />
-      ) : (
-        <Image src={visual.src} alt="" width={17} height={17} />
-      )}
+  <Choose if={!!SvgIcon}>
+    <span slot="then" class="meta-chip__mark">
+      {SvgIcon && <SvgIcon width="17" height="17" />}
     </span>
-  )}
+  </Choose>
+  <Choose if={!!photo}>
+    <span slot="then" class:list={['meta-chip__mark', 'meta-chip__mark--photo']}>
+      {photo && <Image src={photo} alt="" width={17} height={17} />}
+    </span>
+  </Choose>
   <span class="meta-chip__label">{label}</span>
 </span>
-

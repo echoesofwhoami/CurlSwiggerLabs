@@ -1,27 +1,32 @@
 ---
-import { getEntry, localizedText } from '@data/glossary'
+import { termView } from '@data/glossary'
+import { tooltipActions } from '../../shiki/tooltip-transformer'
 import type { TermProps as Props } from '@types'
+import Choose from '@components/Choose.astro'
 
 const { id } = Astro.props
-const entry = getEntry(id)
+
 const hasSlot = Astro.slots.has('default')
 
-const usedTips = Astro.locals.usedTips ?? new Set<string>()
-Astro.locals.usedTips = usedTips
-if (!entry) {
-  console.warn(`[Term] unknown glossary id: ${id}`)
-} else {
-  usedTips.add(id)
-}
-
-const label = entry ? localizedText(entry).term : id
-const kindClass = entry?.kind === 'syntax' ? 'tip--syntax' : 'tip--concept';
+const { entry, label, kindClass } = termView(id, Astro.locals)
 ---
 
-{entry ? (
-  <button type="button" class:list={['tip', kindClass]} data-tip-id={id} aria-expanded="false">{hasSlot ? <slot /> : label}</button>
-) : hasSlot ? (
-  <slot />
-) : (
-  id
-)}
+<Choose if={!!entry}>
+  <button
+    slot="then"
+    type="button"
+    class:list={['tip', kindClass]}
+    data-tip-id={id}
+    aria-expanded="false"
+    data-action={tooltipActions}
+  >
+    <Choose if={hasSlot}>
+      <slot slot="then" />
+      <span slot="else">{label}</span>
+    </Choose>
+  </button>
+  <Choose slot="else" if={hasSlot}>
+    <slot slot="then" />
+    <span slot="else">{id}</span>
+  </Choose>
+</Choose>

@@ -36,14 +36,13 @@ export const categories = {
   },
 } as const
 
-export type CategoryId = keyof typeof categories
-
-export function getCategoryId(label: string): CategoryId | undefined {
-  return (Object.entries(categories) as [CategoryId, (typeof categories)[CategoryId]][])
+export function getCategoryId(label: string): keyof typeof categories | undefined {
+  return (Object.entries(categories) as [keyof typeof categories, (typeof categories)[keyof typeof categories]][])
     .find(([, category]) => category.label === label)
     ?.[0]
 }
-export function getCategory(id: CategoryId) {
+
+export function getCategory(id: keyof typeof categories) {
   const category = categories[id]
 
   return {
@@ -53,7 +52,19 @@ export function getCategory(id: CategoryId) {
     ogImage: category.ogImage,
   }
 }
+
 export function categoryForLabel(label: string) {
   const categoryId = getCategoryId(label)
-  return categoryId ? getCategory(categoryId) : undefined
+
+  if (!categoryId) return
+
+  return getCategory(categoryId)
+}
+
+export function categorySectionId(label: string): string {
+  const categoryId = categoryForLabel(label)?.id
+
+  if (!categoryId) throw new Error(`Unknown category: ${label}`)
+
+  return `category-${categoryId}`
 }

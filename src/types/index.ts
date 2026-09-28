@@ -1,4 +1,7 @@
-export type { LayoutProps, NavbarProps } from './layout'
+export type { AppLocals } from './app'
+
+export type { ChooseProps, FooterLink, LayoutProps, NavbarModel, NavbarProps } from './layout'
+
 export type {
   Heading,
   MetaChipProps,
@@ -8,7 +11,14 @@ export type {
   QuizProps,
   RelatedLabsProps,
   TableOfContentsProps,
+  BlogPost,
+  ConceptGroup,
+  ConceptPartial,
+  DescriptionParagraph,
+  GroupedPosts,
+  LabLink,
 } from './post'
+
 export type {
   CodeSnippetProps,
   CollapsiblePartialProps,
@@ -19,7 +29,9 @@ export type {
   RequestDiffProps,
   TermProps,
 } from './mdx'
+
 export type { DiscordCtaProps, PostCardProps, PostListProps } from './home'
+
 export type {
   ClientTip,
   CodeLang,
@@ -28,7 +40,10 @@ export type {
   GlossaryRef,
   Localized,
   TipKind,
+  ConceptReference,
+  TermView,
 } from './glossary'
+
 export type {
   FontOption,
   ShikiThemeId,
@@ -37,6 +52,7 @@ export type {
   ThemeConfig,
   ThemePreset,
 } from './theme'
+
 export type {
   DiffMark,
   DiffRow,
@@ -44,8 +60,20 @@ export type {
   JwtParts,
   JwtTipRange,
   TextPart,
+  DiffLineView,
+  DiffModes,
+  DiffPartView,
+  JwtChangeFlags,
+  JwtSegmentView,
+  LoadedDiff,
+  RequestDiffLoadInput,
+  RequestDiffSideView,
+  RequestDiffView,
+  SideBuild,
 } from './diff'
+
 export type { HttpConversion } from './http'
+
 export type {
   Candidate,
   GlossaryWrap,
@@ -55,5 +83,16 @@ export type {
   TextRange,
   TransformerOpts,
 } from './shiki'
-export type { ChipVisual } from './chips'
-export type { CategoryId } from '../data/categories'
+
+export type { ChipSvg, ChipView, ChipVisual } from './chips'
+
+export type { CategoryId } from './categories'
+
+export type {
+  CodeSnippetLoadInput,
+  CodeSnippetView,
+  LoadedSnippet,
+  ResolvedCodeSnippetInput,
+} from './code-snippet'
+
+export type { QuizQuestion, QuizView, SavedScore } from './quiz'

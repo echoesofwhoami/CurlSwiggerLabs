@@ -42,7 +42,7 @@ export interface CompactCollapsibleCodeProps {
 export interface CompactCollapsiblePartialProps {
   partial: string;
   title: string;
-  collection?: string;
+  collection?: 'partials' | 'lab-notes';
 }
 
 export interface PartialRendererProps {

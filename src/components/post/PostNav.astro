@@ -1,27 +1,28 @@
 ---
-import { getPostSlug, siteBase } from '../../utils'
+import { postNavLinks } from '@utils'
+import Choose from '@components/Choose.astro'
 import type { PostNavProps as Props } from '@types'
 import '@styles/post/PostNav.css'
 
 const { older, newer } = Astro.props
-const base = siteBase();
 
+const { olderLink, newerLink } = postNavLinks(older, newer)
 ---
 
-{(older || newer) && (
-  <nav class="post-nav" aria-label="Lab navigation">
-    {older ? (
-      <a class="post-nav-link older" href={`${base}/${getPostSlug(older.id)}`}>
+<Choose if={!!(olderLink || newerLink)}>
+  <nav slot="then" class="post-nav" aria-label="Lab navigation">
+    <Choose if={!!olderLink}>
+      <a slot="then" class="post-nav-link older" href={olderLink?.href}>
         <span>Older lab</span>
-        <strong>{older.data.title}</strong>
+        <strong>{olderLink?.title}</strong>
       </a>
-    ) : <span />}
-    {newer && (
-      <a class="post-nav-link newer" href={`${base}/${getPostSlug(newer.id)}`}>
+      <span slot="else" />
+    </Choose>
+    <Choose if={!!newerLink}>
+      <a slot="then" class="post-nav-link newer" href={newerLink?.href}>
         <span>Newer lab</span>
-        <strong>{newer.data.title}</strong>
+        <strong>{newerLink?.title}</strong>
       </a>
-    )}
+    </Choose>
   </nav>
-)}
-
+</Choose>

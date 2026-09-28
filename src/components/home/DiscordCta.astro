@@ -1,12 +1,10 @@
 ---
-import { siteConfig } from '../../site.config'
+import { discordCta } from '@utils'
 import type { DiscordCtaProps as Props } from '@types'
+import Choose from '@components/Choose.astro'
 import '@styles/home/DiscordCta.css'
 
-const { compact = false } = Astro.props
-const inviteUrl = siteConfig.discordInviteUrl.trim()
-const body = `Bring questions, confusing HTTP, or requests for the next writeup. Find me on Discord as ${siteConfig.discordHandle}.`;
-
+const { compact, inviteUrl, body } = discordCta(Astro.props.compact)
 ---
 
 <aside class:list={['discord-cta', { compact }]}>
@@ -14,14 +12,10 @@ const body = `Bring questions, confusing HTTP, or requests for the next writeup.
     <h2>Talk through a lab</h2>
     <p>{body}</p>
   </div>
-  {
-    inviteUrl ? (
-      <a class="discord-link" href={inviteUrl} target="_blank" rel="noreferrer">
-        Join the Discord
-      </a>
-    ) : (
-      <span class="discord-unavailable">Invite link coming soon</span>
-    )
-  }
+  <Choose if={inviteUrl.length > 0}>
+    <a slot="then" class="discord-link" href={inviteUrl} target="_blank" rel="noreferrer">
+      Join the Discord
+    </a>
+    <span slot="else" class="discord-unavailable">Invite link coming soon</span>
+  </Choose>
 </aside>
-

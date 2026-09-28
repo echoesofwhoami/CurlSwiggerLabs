@@ -1,25 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro'
-import { getCollection } from 'astro:content'
-import { getPostSlug } from '../utils'
-import CollapsiblePartial from '../components/mdx/CollapsiblePartial.astro'
-import PartialContainer from '../components/mdx/PartialContainer.astro'
+import { getConceptGroups, getPostSlug } from '@utils'
+import CollapsiblePartial from '@components/mdx/CollapsiblePartial.astro'
+import PartialContainer from '@components/mdx/PartialContainer.astro'
 import '@styles/pages/background-concepts.css'
 
 Astro.locals.usedTips ??= new Set<string>()
 
-const partials = (await getCollection('partials')).sort((a, b) =>
-  a.data.title.localeCompare(b.data.title),
-)
-
-const groups = [...new Set(partials.map((entry) => entry.data.category))]
-  .sort((a, b) => a.localeCompare(b))
-  .map((category) => ({
-    category,
-    id: category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    partials: partials.filter((entry) => entry.data.category === category),
-  }));
-
+const groups = await getConceptGroups()
 ---
 
 <Layout title="Background Concepts" description="Reusable background concepts used across CurlSwiggerLabs writeups." wide>

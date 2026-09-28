@@ -1,18 +1,17 @@
 ---
-import { getEntry, render } from 'astro:content'
-import Term from './Term.astro'
-import RequestDiff from './RequestDiff.astro'
+import { render } from 'astro:content'
+import Term from '@components/mdx/Term.astro'
+import RequestDiff from '@components/mdx/RequestDiff.astro'
 import type { PartialRendererProps as Props } from '@types'
+import { requirePartial } from '@utils/partials'
 
 const { partial } = Astro.props
 
 Astro.locals.usedTips ??= new Set<string>()
 
-const entry = await getEntry('partials', partial)
+const entry = await requirePartial(partial)
 
-if (!entry) throw new Error(`Partial not found: ${partial}`)
-
-const { Content } = await render(entry);
+const { Content } = await render(entry)
 ---
 
 <Content components={{ Term, RequestDiff }} />

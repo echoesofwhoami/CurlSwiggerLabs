@@ -4,11 +4,14 @@
   "exclude": ["dist", "src/data/scripts"],
   "compilerOptions": {
     "paths": {
+      "@assets/*": ["./src/assets/*"],
       "@components/*": ["./src/components/*"],
       "@data/*": ["./src/data/*"],
       "@styles/*": ["./src/styles/*"],
       "@types": ["./src/types/index.ts"],
-      "@types/*": ["./src/types/*"]
+      "@types/*": ["./src/types/*"],
+      "@utils": ["./src/utils/index.ts"],
+      "@utils/*": ["./src/utils/*"]
     }
   }
 }

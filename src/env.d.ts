@@ -1,8 +1,11 @@
 /// <reference types="astro/client" />
 
-declare namespace App {
-  interface Locals {
-    portswiggerDescription?: string;
-    usedTips?: Set<string>;
+import type { AppLocals } from './types/app'
+
+declare global {
+  namespace App {
+    // Astro merges App.Locals only through an interface.
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    interface Locals extends AppLocals {}
   }
 }

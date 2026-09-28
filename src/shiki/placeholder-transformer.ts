@@ -2,18 +2,27 @@ import type { Element, ElementContent } from 'hast'
 import type { ShikiTransformer } from 'shiki'
 
 const PLACEHOLDER = /<[A-Za-z][A-Za-z0-9_-]*>/g
+
 const PLACEHOLDER_STYLE = 'color:var(--code-placeholder);font-weight:700'
 
 function restyleAsPlaceholder(style: string): string {
   // Drop inherited token color so the hard Echoes red always wins.
   const withoutColor = style.replace(/color\s*:[^;]+;?/gi, '').trim()
-  return withoutColor ? `${PLACEHOLDER_STYLE};${withoutColor}` : PLACEHOLDER_STYLE
+
+  if (!withoutColor) return PLACEHOLDER_STYLE
+
+  return `${PLACEHOLDER_STYLE};${withoutColor}`
 }
+
 function styledText(value: string, style: string): Element {
+  const properties: Record<string, string> = {}
+
+  if (style) properties.style = style
+
   return {
     type: 'element',
     tagName: 'span',
-    properties: style ? { style } : {},
+    properties,
     children: [{ type: 'text', value }],
   }
 }
@@ -25,34 +34,49 @@ export const placeholderTransformer: ShikiTransformer = {
   name: 'curlswigger-placeholders',
   span(hast: Element) {
     const kids = hast.children
+
     if (!kids || kids.length !== 1) return
 
     const only = kids[0]
+
     if (only.type !== 'text') return
 
     const value = only.value
-    PLACEHOLDER.lastIndex = 0
-    if (!PLACEHOLDER.test(value)) return
+
     PLACEHOLDER.lastIndex = 0
 
-    const parentStyle =
-      typeof hast.properties?.style === 'string' ? hast.properties.style : ''
+    if (!PLACEHOLDER.test(value)) return
+
+    PLACEHOLDER.lastIndex = 0
+
+    let parentStyle = ''
+
+    const styleProp = hast.properties?.style
+
+    if (typeof styleProp === 'string') parentStyle = styleProp
 
     const parts: ElementContent[] = []
+
     let last = 0
 
     for (const match of value.matchAll(PLACEHOLDER)) {
       const start = match.index ?? 0
+
       if (start > last) {
         parts.push(styledText(value.slice(last, start), parentStyle))
       }
+
       parts.push(styledText(match[0], restyleAsPlaceholder(parentStyle)))
+
       last = start + match[0].length
     }
+
     if (last < value.length) {
       parts.push(styledText(value.slice(last), parentStyle))
     }
+
     hast.children = parts
+
     if (hast.properties?.style) {
       delete hast.properties.style
     }

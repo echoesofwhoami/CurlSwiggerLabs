@@ -1,53 +1,20 @@
 ---
-import { siteConfig } from '../../site.config'
-import ExternalLinkSvg from '../../assets/external_link.svg'
-import ExternalLink from '../mdx/ExternalLink.astro'
-import psLogo from '../../assets/ps_logo.png'
+import ExternalLinkSvg from '@assets/external_link.svg'
+import ExternalLink from '@components/mdx/ExternalLink.astro'
+import psLogo from '@assets/ps_logo.png'
 import { Image } from 'astro:assets'
-import { siteBase } from '../../utils'
+import { footerLinks } from '@utils'
+import Choose from '@components/Choose.astro'
 import '@styles/layout/Footer.css'
 
-const base = siteBase()
-const year = new Date().getFullYear()
-
-const siteLinks = [
-  { label: 'Home', href: base || '/' },
-  { label: 'About', href: `${base}/about` },
-  { label: 'Background Concepts', href: `${base}/background-concepts` },
-  { label: 'I don\'t like this website', href: `${base}/i-dont-like-this-website` },
-]
-const resourceLinks = [
-  {
-    label: 'RSS',
-    href: `${base}${siteConfig.rssPath}`,
-    external: false,
-  },
-  {
-    label: 'Blog source',
-    href: siteConfig.blogSourceUrl.trim(),
-    external: true,
-  },
-].filter((link) => link.href.length > 0)
-const socialLinks = [
-  {
-    label: 'GitHub',
-    href: siteConfig.githubProfileUrl.trim(),
-    external: true,
-  },
-  {
-    label: 'LinkedIn',
-    href: siteConfig.linkedinUrl.trim(),
-    external: true,
-  },
-].filter((link) => link.href.length > 0);
-
+const { homeHref, explore, resources, social, discordInvite, discordHandle, year } = footerLinks()
 ---
 
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <a class="footer-brand__link" href={base || '/'}>
+        <a class="footer-brand__link" href={homeHref}>
           <img src="/echoes.png" alt="" width="32" height="32" />
           <span>Curl<span>Swigger</span>Labs</span>
         </a>
@@ -56,18 +23,18 @@ const socialLinks = [
 
         </p>
         <p class="footer-credit">
-          Thanks to{' '}
+          Thanks to
           <ExternalLink text="PortSwigger" url="https://portswigger.net/web-security" class="portswigger-color">
             <Image class="ps-logo" src={psLogo} alt="portswigger logo" width={18} height={18} />
           </ExternalLink>
-          {' '}for providing the Web Security Academy labs that make these writeups possible.
+          for providing the Web Security Academy labs that make these writeups possible.
         </p>
       </div>
 
       <nav class="footer-group" aria-labelledby="footer-explore">
         <h2 id="footer-explore">Explore</h2>
         <ul>
-          {siteLinks.map(({ label, href }) => <li><a href={href}>{label}</a></li>)}
+          {explore.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
         </ul>
       </nav>
 
@@ -75,15 +42,18 @@ const socialLinks = [
         <h2 id="footer-resources">Resources</h2>
         <ul>
           {
-            resourceLinks.map(({ label, href, external }) => (
+            resources.map((link) => (
               <li>
                 <a
-                  href={href}
-                  target={external ? '_blank' : undefined}
-                  rel={external ? 'noreferrer' : undefined}
-                  class={external ? 'external-link' : ''}
+                  href={link.href}
+                  target={link.target}
+                  rel={link.rel}
+                  class:list={{ 'external-link': link.external }}
                 >
-                  {label} {external && <ExternalLinkSvg />}
+                  {link.label}
+                  <Choose if={link.external}>
+                    <ExternalLinkSvg slot="then" />
+                  </Choose>
                 </a>
               </li>
             ))
@@ -95,26 +65,28 @@ const socialLinks = [
         <h2 id="footer-connect">Connect</h2>
         <ul>
           <li>
-            {siteConfig.discordInviteUrl.trim() ? (
-              <a href={siteConfig.discordInviteUrl} target="_blank" rel="noreferrer">
+            <Choose if={discordInvite.length > 0}>
+              <a slot="then" href={discordInvite} target="_blank" rel="noreferrer">
                 Discord <ExternalLinkSvg />
               </a>
-            ) : (
-              <span class="footer-discord">
-                Discord · {siteConfig.discordHandle}
+              <span slot="else" class="footer-discord">
+                Discord · {discordHandle}
               </span>
-            )}
+            </Choose>
           </li>
           {
-            socialLinks.map(({ label, href, external }) => (
+            social.map((link) => (
               <li>
                 <a
-                  href={href}
-                  target={external ? '_blank' : undefined}
-                  rel={external ? 'noreferrer' : undefined}
-                  class={external ? 'external-link' : ''}
+                  href={link.href}
+                  target={link.target}
+                  rel={link.rel}
+                  class:list={{ 'external-link': link.external }}
                 >
-                  {label} {external && <ExternalLinkSvg />}
+                  {link.label}
+                  <Choose if={link.external}>
+                    <ExternalLinkSvg slot="then" />
+                  </Choose>
                 </a>
               </li>
             ))
@@ -129,4 +101,3 @@ const socialLinks = [
     </div>
   </div>
 </footer>
-

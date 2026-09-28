@@ -1,123 +1,25 @@
 ---
 import '../styles/global.css'
-import CopyCodeButton from '../components/layout/CopyCodeButton.astro'
-import TooltipPopover from '../components/layout/TooltipPopover.astro'
-import Footer from '../components/layout/Footer.astro'
-import Navbar from '../components/layout/Navbar.astro'
-import { SHIKI_THEMES } from '../styles/shiki-themes'
-import { DEFAULT_CONFIG, FONT_OPTIONS, configToCssVars } from '../scripts/theme-config'
+import Choose from '@components/Choose.astro'
+import TooltipPopover from '@components/layout/TooltipPopover.astro'
+import Footer from '@components/layout/Footer.astro'
+import Navbar from '@components/layout/Navbar.astro'
 import type { LayoutProps as Props } from '@types'
+import { layoutHead } from '@utils/layout'
 
-const { type = 'website', publishedTime, wide = false } = Astro.props
-
-const title = Astro.props.title ?? 'CurlSwiggerLabs'
-const description = Astro.props.description ?? 'PortSwigger Web Security Academy labs solved with curl.'
-
-const canonicalURL = new URL(Astro.url.pathname, Astro.site)
-const pathname = Astro.url.pathname
-
-const imagePath = Astro.props.image ?? '/og-default.png'
-const ogImageURL = new URL(imagePath, Astro.site)
-const imageExt = imagePath.split('?')[0].split('.').pop()?.toLowerCase()
-const ogImageType =
-  imageExt === 'jpg' || imageExt === 'jpeg'
-    ? 'image/jpeg'
-    : imageExt === 'webp'
-      ? 'image/webp'
-      : imageExt === 'svg'
-        ? 'image/svg+xml'
-        : 'image/png'
-const isDefaultOgImage = imagePath === '/og-default.png'
-const ogImageWidth = '1200'
-const ogImageHeight = isDefaultOgImage ? '627' : '675'
-const shikiBootMap = Object.fromEntries(
-  Object.values(SHIKI_THEMES).map((theme) => [theme.id, theme.vars]),
-)
-const fontBootMap = Object.fromEntries(
-  FONT_OPTIONS.filter((font) => font.google).map((font) => [font.family, font.google]),
-)
-const defaultThemeVars = configToCssVars(DEFAULT_CONFIG)
-const themeBootScript = `(function () {
-  try {
-    var SHIKI = ${JSON.stringify(shikiBootMap)};
-    var FONT_MAP = ${JSON.stringify(fontBootMap)};
-    var DEFAULT_VARS = ${JSON.stringify(defaultThemeVars)};
-    var DEFAULT_ACTIVE = ${JSON.stringify(DEFAULT_CONFIG)};
-    var varsRaw = localStorage.getItem('csl-theme-vars');
-    var activeRaw = localStorage.getItem('csl-theme-active');
-    var vars = null;
-    var active = null;
-    try { if (varsRaw) vars = JSON.parse(varsRaw); } catch (e) {}
-    try { if (activeRaw) active = JSON.parse(activeRaw); } catch (e) {}
-    if (!vars && active) {
-      vars = {
-        '--page-bg': active.pageBg,
-        '--surface': active.surface,
-        '--surface-elevated': active.surfaceElevated,
-        '--border': active.border,
-        '--border-muted': active.borderMuted,
-        '--text': active.text,
-        '--text-muted': active.textMuted,
-        '--heading': active.heading,
-        '--accent': active.accent,
-        '--accent-hover': active.accentHover,
-        '--accent-soft': active.accentSoft,
-        '--font-sans': active.fontSans,
-        '--font-size-base': active.fontSizeBase + 'px',
-        '--line-height': String(active.lineHeight),
-        '--content-max-width': active.contentMaxWidth + 'px',
-        '--content-gap': active.contentGap + 'rem',
-        '--radius': active.radius + 'px',
-        '--code-bg': active.codeBg,
-        '--code-inline-bg': active.codeInlineBg,
-        '--code-inline-fg': active.codeInlineFg,
-        '--code-font-size': active.codeFontSize + 'px',
-        '--code-placeholder': active.codePlaceholder
-      };
-    }
-    if (!vars) {
-      vars = DEFAULT_VARS;
-      active = DEFAULT_ACTIVE;
-      try {
-        localStorage.setItem('csl-theme-vars', JSON.stringify(DEFAULT_VARS));
-        localStorage.setItem('csl-theme-active', JSON.stringify(DEFAULT_ACTIVE));
-      } catch (e) {}
-    }
-    var shikiId = (active && active.shikiTheme) || 'echoes';
-    var shikiVars = SHIKI[shikiId] || SHIKI.echoes;
-    if (shikiVars) {
-      for (var sk in shikiVars) {
-        if (Object.prototype.hasOwnProperty.call(shikiVars, sk)) vars[sk] = shikiVars[sk];
-      }
-    }
-    if (vars['--code-bg']) vars['--shiki-background'] = vars['--code-bg'];
-    if (active) {
-      var hex = (active.surfaceElevated || '#1e293b').replace('#', '');
-      var r = parseInt(hex.substr(0, 2), 16);
-      var g = parseInt(hex.substr(2, 2), 16);
-      var b = parseInt(hex.substr(4, 2), 16);
-      var light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
-      vars['--success-fg'] = light ? '#15803d' : '#86efac';
-      vars['--success-border'] = '#22c55e';
-      vars['--error-fg'] = light ? active.accent : active.accentSoft;
-    }
-    var root = document.documentElement;
-    for (var key in vars) {
-      if (Object.prototype.hasOwnProperty.call(vars, key) && vars[key] != null) {
-        root.style.setProperty(key, vars[key]);
-      }
-    }
-    var family = vars['--font-sans'] || '';
-    var google = FONT_MAP[family];
-    if (google && !document.getElementById('csl-theme-font')) {
-      var link = document.createElement('link');
-      link.id = 'csl-theme-font';
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=' + google + '&display=swap';
-      document.head.appendChild(link);
-    }
-  } catch (e) {}
-})();`;
+const {
+  type,
+  wide,
+  title,
+  description,
+  canonicalURL,
+  pathname,
+  ogImageURL,
+  ogImageType,
+  ogImageWidth,
+  ogImageHeight,
+  articleTime,
+} = layoutHead(Astro.props, Astro.url, Astro.site)
 ---
 
 <!doctype html>
@@ -142,9 +44,9 @@ const themeBootScript = `(function () {
     <meta property="og:image:width" content={ogImageWidth} />
     <meta property="og:image:height" content={ogImageHeight} />
     <meta property="og:image:alt" content={title} />
-    {type === 'article' && publishedTime && (
-      <meta property="article:published_time" content={publishedTime} />
-    )}
+    <Choose if={!!articleTime}>
+      <meta slot="then" property="article:published_time" content={articleTime} />
+    </Choose>
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
@@ -158,15 +60,21 @@ const themeBootScript = `(function () {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
-    <script is:inline set:html={themeBootScript} />
+    <script>
+import { bootTheme } from '../scripts/theme-boot'
+
+bootTheme()
+    </script>
+    <script>
+import '../controllers'
+    </script>
 
     <title>{title}</title>
   </head>
-  <body>
+  <body data-controller="tooltip">
     <Navbar currentPath={pathname} wide={wide} />
     <slot />
     <Footer />
-    <CopyCodeButton />
     <TooltipPopover />
   </body>
 </html>

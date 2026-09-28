@@ -2,54 +2,40 @@
 import Layout from '../layouts/Layout.astro'
 import { Code } from 'astro:components'
 import { placeholderTransformer } from '../shiki/placeholder-transformer'
+import { copyButtonTransformer } from '../shiki/copy-button-transformer'
 import { cssVariablesTheme } from '../styles/shiki-css-theme'
-import { listShikiThemes } from '../styles/shiki-themes'
 import { DEFAULT_CONFIG, DEFAULT_PRESET_ID, FONT_OPTIONS, PRESETS } from '../scripts/theme-config'
-import PostHeader from '../components/post/PostHeader.astro'
-import TableOfContents from '../components/post/TableOfContents.astro'
+import { themeTweakerPreview } from '@data/theme-preview'
+import PostHeader from '@components/post/PostHeader.astro'
+import TableOfContents from '@components/post/TableOfContents.astro'
 import '@styles/pages/i-dont-like-this-website.css'
 
-const shikiThemes = listShikiThemes()
-const sampleBash = `curl -s "https://<lab-url>.web-security-academy.net/login" \\
-  -H "Cookie: session=<session>" \\
-  -d "username=wiener&password=peter"`
-const samplePython = `import base64
-import hashlib
-import hmac
-
-SECRET = b"<signing-key>"
-
-def forge_token(header: str, payload: str) -> str:
-    """Sign a forged JWT with a weak key."""
-    signing_input = f"{header}.{payload}".encode()
-    # HMAC-SHA256 over the signing input
-    sig = hmac.new(SECRET, signing_input, hashlib.sha256).digest()
-    return f"{header}.{payload}.{base64.urlsafe_b64encode(sig).rstrip(b'=').decode()}"
-
-print(forge_token("<header>", "<payload>"))`
-const previewHeadings = [
-  { depth: 2, slug: 'preview-writeup', text: 'Writeup' },
-  { depth: 3, slug: 'preview-request', text: 'The request' },
-  { depth: 3, slug: 'preview-script', text: 'The script' },
-];
+const { shikiThemes, sampleBash, samplePython, previewHeadings } = themeTweakerPreview()
 
 ---
 
 <Layout title="I don't like this website" description="Tweak article colors, typography, spacing, and Shiki themes. Configs persist in this browser via localStorage." wide>
-  <section class="theme-tweaker" data-theme-tweaker>
+  <section class="theme-tweaker" data-controller="theme-tweaker">
     <header class="tweaker-intro">
       <h1>I don't like this website</h1>
       <p>Change how writeups look on this device. Pick a preset, tune the knobs, and apply. The active look is stored in localStorage so it survives reloads and applies across the site. Save a named config to keep multiple setups in this browser only. Nothing is uploaded.</p>
     </header>
 
     <div class="tweaker-layout">
-      <form class="tweaker-controls" data-tweaker-form>
+      <form
+        class="tweaker-controls"
+        data-action="input->theme-tweaker#input change->theme-tweaker#change"
+      >
         <div class="tweaker-controls__scroll">
           <fieldset>
             <legend>Presets</legend>
             <label>
               <span class="sr-only">Presets</span>
-              <select name="preset" data-preset-select>
+              <select
+                name="preset"
+                data-theme-tweaker-target="presetSelect"
+                data-action="change->theme-tweaker#preset"
+              >
                 <option value="">Custom</option>
                 {PRESETS.map((preset) => (
                   <option value={preset.id} selected={preset.id === DEFAULT_PRESET_ID}>
@@ -63,27 +49,30 @@ const previewHeadings = [
           <fieldset>
             <legend>Saved configs</legend>
             <div class="tweaker-row">
-              <select name="saved" data-saved-select>
+              <select name="saved" data-theme-tweaker-target="savedSelect">
                 <option value="">—</option>
               </select>
-              <button type="button" data-load-saved>Load</button>
-              <button type="button" data-delete-saved>Delete</button>
+              <button type="button" data-action="theme-tweaker#load">Load</button>
+              <button type="button" data-action="theme-tweaker#deleteSaved">Delete</button>
             </div>
+            <template data-theme-tweaker-target="savedOption">
+              <option></option>
+            </template>
             <div class="tweaker-row">
               <input
                 type="text"
                 name="saveName"
-                data-save-name
+                data-theme-tweaker-target="saveName"
                 placeholder="My theme name"
                 autocomplete="off"
               />
-              <button type="button" data-save-config>Save</button>
+              <button type="button" data-action="theme-tweaker#save">Save</button>
             </div>
           </fieldset>
 
           <fieldset>
             <legend>Shiki theme</legend>
-            <select name="shikiTheme" data-field="shikiTheme">
+            <select name="shikiTheme" data-theme-tweaker-target="field" data-field="shikiTheme">
               {shikiThemes.map((theme) => (
                 <option value={theme.id} selected={theme.id === DEFAULT_CONFIG.shikiTheme}>
                   {theme.label}
@@ -94,7 +83,7 @@ const previewHeadings = [
 
           <fieldset>
             <legend>Font</legend>
-            <select name="fontSans" data-field="fontSans">
+            <select name="fontSans" data-theme-tweaker-target="field" data-field="fontSans">
               {FONT_OPTIONS.map((font) => (
                 <option value={font.family}>{font.label}</option>
               ))}
@@ -104,57 +93,57 @@ const previewHeadings = [
           <fieldset>
             <legend>Colors</legend>
             <div class="color-grid">
-              <label><span>Page background</span><input type="color" data-field="pageBg" /></label>
-              <label><span>Surface</span><input type="color" data-field="surface" /></label>
-              <label><span>Elevated surface</span><input type="color" data-field="surfaceElevated" /></label>
-              <label><span>Border</span><input type="color" data-field="border" /></label>
-              <label><span>Body text</span><input type="color" data-field="text" /></label>
-              <label><span>Muted text</span><input type="color" data-field="textMuted" /></label>
-              <label><span>Headings</span><input type="color" data-field="heading" /></label>
-              <label><span>Accent</span><input type="color" data-field="accent" /></label>
-              <label><span>Accent hover</span><input type="color" data-field="accentHover" /></label>
-              <label><span>Code background</span><input type="color" data-field="codeBg" /></label>
-              <label><span>Inline code background</span><input type="color" data-field="codeInlineBg" /></label>
-              <label><span>Inline code color</span><input type="color" data-field="codeInlineFg" /></label>
+              <label><span>Page background</span><input type="color" data-theme-tweaker-target="field" data-field="pageBg" /></label>
+              <label><span>Surface</span><input type="color" data-theme-tweaker-target="field" data-field="surface" /></label>
+              <label><span>Elevated surface</span><input type="color" data-theme-tweaker-target="field" data-field="surfaceElevated" /></label>
+              <label><span>Border</span><input type="color" data-theme-tweaker-target="field" data-field="border" /></label>
+              <label><span>Body text</span><input type="color" data-theme-tweaker-target="field" data-field="text" /></label>
+              <label><span>Muted text</span><input type="color" data-theme-tweaker-target="field" data-field="textMuted" /></label>
+              <label><span>Headings</span><input type="color" data-theme-tweaker-target="field" data-field="heading" /></label>
+              <label><span>Accent</span><input type="color" data-theme-tweaker-target="field" data-field="accent" /></label>
+              <label><span>Accent hover</span><input type="color" data-theme-tweaker-target="field" data-field="accentHover" /></label>
+              <label><span>Code background</span><input type="color" data-theme-tweaker-target="field" data-field="codeBg" /></label>
+              <label><span>Inline code background</span><input type="color" data-theme-tweaker-target="field" data-field="codeInlineBg" /></label>
+              <label><span>Inline code color</span><input type="color" data-theme-tweaker-target="field" data-field="codeInlineFg" /></label>
             </div>
           </fieldset>
 
           <fieldset>
             <legend>Typography & layout</legend>
             <label class="range-label">
-              <span>Base font size <em data-readout="fontSizeBase"></em></span>
-              <input type="range" min="14" max="22" step="1" data-field="fontSizeBase" data-type="number" />
+              <span>Base font size <em data-theme-tweaker-target="readout" data-readout="fontSizeBase"></em></span>
+              <input type="range" min="14" max="22" step="1" data-theme-tweaker-target="field" data-field="fontSizeBase" data-type="number" />
             </label>
             <label class="range-label">
-              <span>Line height <em data-readout="lineHeight"></em></span>
-              <input type="range" min="1.3" max="2" step="0.05" data-field="lineHeight" data-type="number" />
+              <span>Line height <em data-theme-tweaker-target="readout" data-readout="lineHeight"></em></span>
+              <input type="range" min="1.3" max="2" step="0.05" data-theme-tweaker-target="field" data-field="lineHeight" data-type="number" />
             </label>
             <label class="range-label">
-              <span>Content width <em data-readout="contentMaxWidth"></em></span>
-              <input type="range" min="720" max="1400" step="20" data-field="contentMaxWidth" data-type="number" />
+              <span>Content width <em data-theme-tweaker-target="readout" data-readout="contentMaxWidth"></em></span>
+              <input type="range" min="720" max="1400" step="20" data-theme-tweaker-target="field" data-field="contentMaxWidth" data-type="number" />
             </label>
             <label class="range-label">
-              <span>Content gap <em data-readout="contentGap"></em></span>
-              <input type="range" min="1" max="3" step="0.05" data-field="contentGap" data-type="number" />
+              <span>Content gap <em data-theme-tweaker-target="readout" data-readout="contentGap"></em></span>
+              <input type="range" min="1" max="3" step="0.05" data-theme-tweaker-target="field" data-field="contentGap" data-type="number" />
             </label>
             <label class="range-label">
-              <span>Radius <em data-readout="radius"></em></span>
-              <input type="range" min="0" max="16" step="1" data-field="radius" data-type="number" />
+              <span>Radius <em data-theme-tweaker-target="readout" data-readout="radius"></em></span>
+              <input type="range" min="0" max="16" step="1" data-theme-tweaker-target="field" data-field="radius" data-type="number" />
             </label>
             <label class="range-label">
-              <span>Code font size <em data-readout="codeFontSize"></em></span>
-              <input type="range" min="12" max="20" step="1" data-field="codeFontSize" data-type="number" />
+              <span>Code font size <em data-theme-tweaker-target="readout" data-readout="codeFontSize"></em></span>
+              <input type="range" min="12" max="20" step="1" data-theme-tweaker-target="field" data-field="codeFontSize" data-type="number" />
             </label>
           </fieldset>
         </div>
 
         <div class="tweaker-actions">
-          <button type="button" class="primary" data-apply>Apply to site</button>
-          <button type="button" data-reset>Reset to default</button>
+          <button type="button" class="primary" data-action="theme-tweaker#apply">Apply to site</button>
+          <button type="button" data-action="theme-tweaker#reset">Reset to default</button>
         </div>
       </form>
 
-      <div class="tweaker-preview" data-tweaker-preview>
+      <div class="tweaker-preview">
         <h2 class="preview-label">Article preview</h2>
         <article class="preview-article">
           <PostHeader
@@ -191,7 +180,7 @@ const previewHeadings = [
                 code={sampleBash}
                 lang="bash"
                 theme={cssVariablesTheme}
-                transformers={[placeholderTransformer]}
+                transformers={[placeholderTransformer, copyButtonTransformer]}
               />
             </div>
 
@@ -201,7 +190,7 @@ const previewHeadings = [
                 code={samplePython}
                 lang="python"
                 theme={cssVariablesTheme}
-                transformers={[placeholderTransformer]}
+                transformers={[placeholderTransformer, copyButtonTransformer]}
               />
             </div>
 
@@ -221,180 +210,4 @@ const previewHeadings = [
       </div>
     </div>
   </section>
-
-  <script>
-import {
-  apply,
-  DEFAULT_CONFIG,
-  deleteSaved,
-  getActive,
-  getPreset,
-  listSaved,
-  matchPresetId,
-  resetToDefault,
-  save,
-  type ThemeConfig,
-} from '../scripts/theme-config'
-
-const root = document.querySelector<HTMLElement>('[data-theme-tweaker]')
-if (root) {
-  const form = root.querySelector<HTMLFormElement>('[data-tweaker-form]')!
-  const presetSelect = root.querySelector<HTMLSelectElement>('[data-preset-select]')!
-  const savedSelect = root.querySelector<HTMLSelectElement>('[data-saved-select]')!
-  const saveNameInput = root.querySelector<HTMLInputElement>('[data-save-name]')!
-
-  let draft: ThemeConfig = getActive()
-  let syncingForm = false
-
-  const fieldEls = () =>
-    Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]'))
-
-  const normalizeHex = (value: string): string => {
-    const v = value.trim()
-    if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase()
-    if (/^#[0-9a-fA-F]{3}$/.test(v)) {
-      return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`.toLowerCase()
-    }
-    const ctx = document.createElement('canvas').getContext('2d')
-    if (!ctx) return '#000000'
-    ctx.fillStyle = '#000000'
-    ctx.fillStyle = v
-    const computed = ctx.fillStyle
-    if (/^#[0-9a-fA-F]{6}$/.test(computed)) return computed
-    return '#000000'
-  }
-  const refreshSavedOptions = (selected = '') => {
-    const saved = listSaved()
-    const names = Object.keys(saved).sort((a, b) => a.localeCompare(b))
-    savedSelect.innerHTML =
-      '<option value="">—</option>' +
-        names.map((name) => `<option value="${name.replace(/"/g, '&quot;')}">${name}</option>`).join('')
-    if (selected && names.includes(selected)) savedSelect.value = selected
-  }
-  const syncPresetSelect = (config: ThemeConfig) => {
-    presetSelect.value = matchPresetId(config)
-  }
-  const syncReadouts = () => {
-    root.querySelectorAll<HTMLElement>('[data-readout]').forEach((el) => {
-      const key = el.dataset.readout as keyof ThemeConfig
-      const value = draft[key]
-      if (key === 'contentGap') el.textContent = `${value}rem`
-      else if (key === 'contentMaxWidth' || key === 'radius' || key === 'fontSizeBase' || key === 'codeFontSize') {el.textContent = `${value}px`} else el.textContent = String(value)
-    })
-  }
-  const populateForm = (config: ThemeConfig) => {
-    syncingForm = true
-    draft = { ...DEFAULT_CONFIG, ...config }
-    for (const el of fieldEls()) {
-      const key = el.dataset.field as keyof ThemeConfig
-      const value = draft[key]
-      if (el.type === 'color') {
-        el.value = normalizeHex(String(value))
-      } else if (key === 'shikiTheme' && el instanceof HTMLSelectElement) {
-        const id = String(value)
-        el.value = [...el.options].some((option) => option.value === id)
-          ? id
-          : DEFAULT_CONFIG.shikiTheme
-      } else {
-        el.value = String(value)
-      }
-    }
-    syncPresetSelect(draft)
-    syncReadouts()
-    syncingForm = false
-  }
-  const readForm = (): ThemeConfig => {
-    const next = { ...draft }
-    for (const el of fieldEls()) {
-      const key = el.dataset.field as keyof ThemeConfig
-      if (el.dataset.type === 'number') {
-        (next as Record<string, unknown>)[key] = Number(el.value)
-      } else {
-        (next as Record<string, unknown>)[key] = el.value
-      }
-    }
-    if (next.accent !== draft.accent) {
-      next.accentSoft = next.accent
-      next.codePlaceholder = next.accent
-      next.codeInlineFg = next.accent
-    }
-    if (next.border !== draft.border) {
-      next.borderMuted = next.border
-    }
-    return next
-  }
-  const liveApply = () => {
-    if (syncingForm) return
-    draft = readForm()
-    syncPresetSelect(draft)
-    syncReadouts()
-    apply(draft)
-  }
-  populateForm(draft)
-  refreshSavedOptions()
-  apply(draft)
-
-  form.addEventListener('input', (event) => {
-    const target = event.target as HTMLElement
-    if (target.closest('[data-field]')) liveApply()
-  })
-
-  form.addEventListener('change', (event) => {
-    const target = event.target as HTMLElement
-    if (target.closest('[data-field]')) liveApply()
-  })
-
-  presetSelect.addEventListener('change', () => {
-    const id = presetSelect.value
-    if (!id) return
-    const preset = getPreset(id)
-    if (!preset) return
-    const next = { ...preset.config }
-    populateForm(next)
-    apply(next)
-  })
-
-  root.querySelector('[data-apply]')?.addEventListener('click', () => {
-    draft = readForm()
-    apply(draft)
-    syncPresetSelect(draft)
-  })
-
-  root.querySelector('[data-reset]')?.addEventListener('click', () => {
-    const next = resetToDefault()
-    populateForm(next)
-    apply(next)
-  })
-
-  root.querySelector('[data-save-config]')?.addEventListener('click', () => {
-    const name = saveNameInput.value.trim()
-    if (!name) {
-      saveNameInput.focus()
-      return
-    }
-    draft = readForm()
-    save(name, draft)
-    apply(draft)
-    refreshSavedOptions(name)
-    saveNameInput.value = ''
-    syncPresetSelect(draft)
-  })
-
-  root.querySelector('[data-load-saved]')?.addEventListener('click', () => {
-    const name = savedSelect.value
-    if (!name) return
-    const saved = listSaved()[name]
-    if (!saved) return
-    populateForm(saved)
-    apply(draft)
-  })
-
-  root.querySelector('[data-delete-saved]')?.addEventListener('click', () => {
-    const name = savedSelect.value
-    if (!name) return
-    deleteSaved(name)
-    refreshSavedOptions()
-  })
-}
-  </script>
 </Layout>

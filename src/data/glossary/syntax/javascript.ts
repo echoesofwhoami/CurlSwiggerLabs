@@ -3,13 +3,16 @@ import type { CodeLang, GlossaryEntry, GlossaryMatch } from '../types'
 function js(...tokens: string[]): GlossaryMatch {
   return { langs: ['javascript'], tokens }
 }
+
 function jsExtra(
   tokens: string[],
   extraLangs: CodeLang[],
   firstOnly?: boolean,
 ): GlossaryMatch {
   const match: GlossaryMatch = { langs: ['javascript', ...extraLangs], tokens }
+
   if (firstOnly !== undefined) match.firstOnly = firstOnly
+
   return match
 }
 

@@ -89,7 +89,9 @@ export const SHIKI_THEMES: Record<string, ShikiThemePack> = {
 export function listShikiThemes(): ShikiThemePack[] {
   return Object.values(SHIKI_THEMES)
 }
+
 export function getShikiTheme(id: string): ShikiThemePack {
   if (!id) return SHIKI_THEMES.echoes
+
   return SHIKI_THEMES[id] ?? SHIKI_THEMES.echoes
 }

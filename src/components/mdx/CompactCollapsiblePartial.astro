@@ -1,19 +1,17 @@
 ---
-import { getEntry, render } from 'astro:content'
-import Term from './Term.astro'
-import RequestDiff from './RequestDiff.astro'
+import { render } from 'astro:content'
+import Term from '@components/mdx/Term.astro'
+import RequestDiff from '@components/mdx/RequestDiff.astro'
 import type { CompactCollapsiblePartialProps as Props } from '@types'
+import { requirePartial } from '@utils/partials'
 
 const { partial, title, collection } = Astro.props
 
 Astro.locals.usedTips ??= new Set<string>()
 
-const collectionName = collection ?? 'partials'
-const entry = await getEntry(collectionName as any, partial)
+const entry = await requirePartial(partial, collection)
 
-if (!entry) throw new Error(`Partial not found: ${partial} in ${collectionName}`)
-
-const { Content } = await render(entry);
+const { Content } = await render(entry)
 ---
 
 <details class="compact-collapsible">

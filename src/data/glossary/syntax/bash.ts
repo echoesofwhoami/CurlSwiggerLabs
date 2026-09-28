@@ -3,6 +3,7 @@ import type { GlossaryEntry, GlossaryMatch } from '../types'
 function flags(...tokens: string[]): GlossaryMatch {
   return { langs: ['bash'], tokens, firstOnly: false }
 }
+
 function cmd(...tokens: string[]): GlossaryMatch {
   return { langs: ['bash'], tokens, firstOnly: true }
 }

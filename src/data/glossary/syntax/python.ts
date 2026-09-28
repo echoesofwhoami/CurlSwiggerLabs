@@ -1,9 +1,11 @@
 import type { GlossaryEntry, GlossaryMatch } from '../types'
 
 function py(tokens: string[], firstOnly?: boolean): GlossaryMatch {
-  return firstOnly === undefined
-    ? { langs: ['python'], tokens }
-    : { langs: ['python'], tokens, firstOnly }
+  const match: GlossaryMatch = { langs: ['python'], tokens }
+
+  if (firstOnly !== undefined) match.firstOnly = firstOnly
+
+  return match
 }
 
 export const PYTHON_SYNTAX: GlossaryEntry[] = [

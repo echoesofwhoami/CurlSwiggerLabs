@@ -1,14 +1,16 @@
 ---
+import Choose from '@components/Choose.astro'
+import { headingsOnPage } from '@utils'
 import type { TableOfContentsProps as Props } from '@types'
 import '@styles/post/TableOfContents.css'
 
 const { headings } = Astro.props
-const visibleHeadings = headings.filter(({ depth }) => depth === 2 || depth === 3);
 
+const visibleHeadings = headingsOnPage(headings)
 ---
 
-{visibleHeadings.length > 0 && (
-  <nav class="table-of-contents" aria-labelledby="toc-title">
+<Choose if={visibleHeadings.length > 0}>
+  <nav slot="then" class="table-of-contents" aria-labelledby="toc-title">
     <h2 id="toc-title">On this page</h2>
     <ol>
       {visibleHeadings.map((heading) => (
@@ -18,5 +20,4 @@ const visibleHeadings = headings.filter(({ depth }) => depth === 2 || depth === 
       ))}
     </ol>
   </nav>
-)}
-
+</Choose>

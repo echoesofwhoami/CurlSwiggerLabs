@@ -1,104 +1,38 @@
 ---
 import { Code } from 'astro:components'
-import type { CodeLanguage } from 'astro'
-import { readFileSync, readdirSync } from 'node:fs'
-import { join, dirname } from 'node:path'
-import { placeholderTransformer } from '../../shiki/placeholder-transformer'
-import { tooltipTransformer } from '../../shiki/tooltip-transformer'
 import { cssVariablesTheme } from '../../styles/shiki-css-theme'
-import curlplain from '../../themes/curlplain.tmLanguage.json'
-import { curlToHttp, isBashFile } from '../../utils/curl-to-http'
+import { codeSnippetTransformers, loadCodeSnippet } from '@utils/code-snippet'
 import type { CodeSnippetProps as Props } from '@types'
+import Choose from '@components/Choose.astro'
 import '@styles/mdx/CodeSnippet.css'
 
-const EXT_TO_LANG: Record<string, CodeLanguage> = {
-  py: 'python',
-  sh: 'bash',
-  bash: 'bash',
-  http: 'http',
-  js: 'javascript',
-  html: 'html',
-  php: 'php',
-  json: 'json',
-  txt: 'plaintext',
-}
+const { file, body, lang, noRawHttp, tips } = Astro.props
 
-const PLAINTEXT_ALIASES = new Set(['plaintext', 'txt', 'plain', 'text'])
-const scriptsRoot = join(process.cwd(), 'src/data/scripts')
+const snippet = loadCodeSnippet({ file, body, lang, noRawHttp })
 
-const { file, body: bodyProp, lang: langProp, noRawHttp = false, tips } = Astro.props
-const usedTips = Astro.locals.usedTips ?? new Set<string>()
-Astro.locals.usedTips = usedTips
-
-const code = readFileSync(join(scriptsRoot, file), 'utf-8').replace(/\n$/, '')
-const ext = file.includes('.') ? file.split('.').pop()! : ''
-const inferred: CodeLanguage = langProp ?? EXT_TO_LANG[ext] ?? 'plaintext'
-const lang = PLAINTEXT_ALIASES.has(String(inferred)) ? curlplain : inferred
-const matchLang = PLAINTEXT_ALIASES.has(String(inferred))
-  ? (isBashFile(file) ? 'bash' : '')
-  : String(inferred)
-
-const tipOpts = { extraTips: tips, collector: usedTips }
-const transformers = [
-  placeholderTransformer,
-  tooltipTransformer({ ...tipOpts, codeLang: matchLang }),
-]
-const httpTransformers = [
-  placeholderTransformer,
-  tooltipTransformer({ ...tipOpts, codeLang: 'http' }),
-]
-const jsonTransformers = [
-  placeholderTransformer,
-  tooltipTransformer({ ...tipOpts, codeLang: 'json' }),
-]
-
-let bodyCode: string | undefined
-if (bodyProp) {
-  const rawBody = readFileSync(join(scriptsRoot, bodyProp), 'utf-8').replace(/\n$/, '')
-  try {
-    bodyCode = JSON.stringify(JSON.parse(rawBody), null, 2)
-  } catch {
-    bodyCode = rawBody
-  }
-}
-
-// curl - Raw HTTP toggle
-
-// Collect shell variable definitions from every .sh sibling in the same lab
-// directory (e.g. BASE_LAB_URL="https://...") so $VAR references in curl
-// commands expand to their actual values in the Raw HTTP view.
-const shellEnv: Record<string, string> = {}
-if (isBashFile(file) && !noRawHttp) {
-  const labDir = join(scriptsRoot, dirname(file))
-  try {
-    for (const entry of readdirSync(labDir)) {
-      if (!entry.endsWith('.sh') && !entry.endsWith('.bash')) continue
-      const src = readFileSync(join(labDir, entry), 'utf-8')
-      for (const m of src.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)=["']?([^"'\n]+?)["']?\s*$/gm)) {
-        shellEnv[m[1]] = m[2]
-      }
-    }
-  } catch { /* non-fatal: directory unreadable or no siblings */ }
-}
-
-const httpConversion = (!noRawHttp && isBashFile(file)) ? curlToHttp(code, shellEnv) : null
-
-// Stable, URL-safe ID derived from the script file path so multiple
-// CodeSnippet instances on the same page don't collide.
-const snippetId = `cht-${file.replace(/[^a-z0-9]/gi, '-')}`;
-
+const { transformers, httpTransformers, jsonTransformers } = codeSnippetTransformers({
+  matchLang: snippet.matchLang,
+  tips,
+  locals: Astro.locals,
+})
 ---
 
 <div class="code-snippet">
-  {httpConversion ? (
-    /* Toggle wrapper (curl / Raw HTTP tabs) */
-    <div class="http-toggle-group" data-snippet={snippetId}>
+  <Choose if={snippet.hasHttp}>
+    <div
+      slot="then"
+      class="http-toggle-group"
+      data-controller="http-toggle"
+      data-snippet={snippet.id}
+    >
       <div class="http-toggle-tabs" role="tablist" aria-label="View format">
         <button
           class="http-tab is-active"
           role="tab"
           aria-selected="true"
           data-panel="curl"
+          data-http-toggle-target="tab"
+          data-action="click->http-toggle#select"
           type="button"
         >curl</button>
         <button
@@ -106,76 +40,32 @@ const snippetId = `cht-${file.replace(/[^a-z0-9]/gi, '-')}`;
           role="tab"
           aria-selected="false"
           data-panel="raw"
+          data-http-toggle-target="tab"
+          data-action="click->http-toggle#select"
           type="button"
         >Raw HTTP</button>
       </div>
 
-      <div class="http-panel" data-panel="curl">
-        <Code code={code} lang={lang} theme={cssVariablesTheme} transformers={transformers} />
+      <div class="http-panel" data-panel="curl" data-http-toggle-target="panel">
+        <Code code={snippet.code} lang={snippet.lang} theme={cssVariablesTheme} transformers={transformers} />
       </div>
 
-      <div class="http-panel" data-panel="raw" hidden>
-        <Code code={httpConversion.raw} lang="http" theme={cssVariablesTheme} transformers={httpTransformers} />
+      <div class="http-panel" data-panel="raw" data-http-toggle-target="panel" hidden>
+        <Code code={snippet.httpRaw} lang="http" theme={cssVariablesTheme} transformers={httpTransformers} />
       </div>
     </div>
-  ) : (
-    /* Plain code block (no toggle) */
-    <Code code={code} lang={lang} theme={cssVariablesTheme} transformers={transformers} />
-  )}
+    <Code slot="else" code={snippet.code} lang={snippet.lang} theme={cssVariablesTheme} transformers={transformers} />
+  </Choose>
 
-  {bodyCode && (
-    <details class="compact-collapsible request-body">
+  <Choose if={snippet.hasBody}>
+    <details slot="then" class="compact-collapsible request-body">
       <summary>
         <span class="compact-collapsible-title">Formatted request body</span>
         <span class="expand-hint">click to expand</span>
       </summary>
       <div class="compact-collapsible-content">
-        <Code code={bodyCode} lang="json" theme={cssVariablesTheme} transformers={jsonTransformers} />
+        <Code code={snippet.bodyCode} lang="json" theme={cssVariablesTheme} transformers={jsonTransformers} />
       </div>
     </details>
-  )}
+  </Choose>
 </div>
-
-<script>
-/**
-   * Wire up every .http-toggle-group on the page.
-   * Runs once after all CodeSnippet components have rendered.
-   * Safe to call multiple times (idempotent via data attribute).
-   */
-function initHttpToggles() {
-  const groups = document.querySelectorAll<HTMLElement>(
-    '.http-toggle-group:not([data-cht-init])',
-  )
-
-  for (const group of groups) {
-    group.dataset.chtInit = '1'
-
-    const tabs = group.querySelectorAll<HTMLButtonElement>('.http-tab')
-    const panels = group.querySelectorAll<HTMLElement>('.http-panel')
-
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.panel
-
-        tabs.forEach((t) => {
-          t.classList.toggle('is-active', t.dataset.panel === target)
-          t.setAttribute('aria-selected', String(t.dataset.panel === target))
-        })
-
-        panels.forEach((panel) => {
-          const isTarget = panel.dataset.panel === target
-          if (isTarget) {
-            panel.removeAttribute('hidden')
-          } else {
-            panel.setAttribute('hidden', '')
-          }
-        })
-      })
-    })
-  }
-}
-// Run on initial load and after any Astro view-transition navigation.
-initHttpToggles()
-document.addEventListener('astro:after-swap', initHttpToggles)
-</script>
-
