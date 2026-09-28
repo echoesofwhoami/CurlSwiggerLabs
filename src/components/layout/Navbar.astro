@@ -5,7 +5,7 @@ import '@styles/layout/Navbar.css'
 
 const { currentPath, wide = false } = Astro.props
 const base = siteBase()
-const homePath = `${base}/`
+const homePath = base || '/'
 const aboutPath = `${base}/about`
 const conceptsPath = `${base}/background-concepts`
 const tweakerPath = `${base}/i-dont-like-this-website`

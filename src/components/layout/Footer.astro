@@ -11,7 +11,7 @@ const base = siteBase()
 const year = new Date().getFullYear()
 
 const siteLinks = [
-  { label: 'Home', href: `${base}/` },
+  { label: 'Home', href: base || '/' },
   { label: 'About', href: `${base}/about` },
   { label: 'Background Concepts', href: `${base}/background-concepts` },
   { label: 'I don\'t like this website', href: `${base}/i-dont-like-this-website` },
@@ -47,7 +47,7 @@ const socialLinks = [
   <div class="footer-container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <a class="footer-brand__link" href={`${base}/`}>
+        <a class="footer-brand__link" href={base || '/'}>
           <img src="/echoes.png" alt="" width="32" height="32" />
           <span>Curl<span>Swigger</span>Labs</span>
         </a>

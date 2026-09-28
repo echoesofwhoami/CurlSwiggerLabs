@@ -7,7 +7,7 @@ import '@styles/home/PostCard.css'
 const { post } = Astro.props
 const base = siteBase()
 const slug = getPostSlug(post.id)
-const href = `${base}/${slug}/`
+const href = `${base}/${slug}`
 const category = categoryForLabel(post.data.category);
 
 ---

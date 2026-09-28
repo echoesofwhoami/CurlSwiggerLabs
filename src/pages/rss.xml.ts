@@ -13,13 +13,14 @@ export async function GET(context: APIContext) {
     title: 'CurlSwiggerLabs',
     description: 'PortSwigger Web Security Academy labs solved with curl.',
     site: context.site!,
+    trailingSlash: false,
     items: sorted.map((post) => {
       const slug = getPostSlug(post.id)
       return {
         title: post.data.title,
         description: post.data.description,
         pubDate: new Date(post.data.date),
-        link: `/${slug}/`,
+        link: `/${slug}`,
         categories: [post.data.category],
       }
     }),
