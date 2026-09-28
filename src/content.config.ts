@@ -1,5 +1,5 @@
-import { defineCollection, z } from 'astro:content';
-import { glob } from 'astro/loaders';
+import { defineCollection, z } from 'astro:content'
+import { glob } from 'astro/loaders'
 
 const blog = defineCollection({
   type: 'content',
@@ -15,7 +15,7 @@ const blog = defineCollection({
     technologies: z.array(z.string()).default([]),
     series: z.string().optional(),
   }),
-});
+})
 
 const partials = defineCollection({
   type: 'content',
@@ -23,14 +23,14 @@ const partials = defineCollection({
     title: z.string(),
     category: z.string(),
   }),
-});
+})
 
 const labNotes = defineCollection({
   type: 'content',
   schema: z.object({
     title: z.string().optional(),
   }),
-});
+})
 
 const quizzes = defineCollection({
   loader: glob({ pattern: '**/*.json', base: './src/data/quizzes' }),
@@ -45,6 +45,6 @@ const quizzes = defineCollection({
       }),
     ),
   }),
-});
+})
 
-export const collections = { blog, partials, 'lab-notes': labNotes, quizzes };
+export const collections = { blog, partials, 'lab-notes': labNotes, quizzes }

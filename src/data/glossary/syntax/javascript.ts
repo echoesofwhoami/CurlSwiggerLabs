@@ -1,17 +1,16 @@
-import type { CodeLang, GlossaryEntry, GlossaryMatch } from '../types';
+import type { CodeLang, GlossaryEntry, GlossaryMatch } from '../types'
 
 function js(...tokens: string[]): GlossaryMatch {
-  return { langs: ['javascript'], tokens };
+  return { langs: ['javascript'], tokens }
 }
-
 function jsExtra(
   tokens: string[],
   extraLangs: CodeLang[],
   firstOnly?: boolean,
 ): GlossaryMatch {
-  const match: GlossaryMatch = { langs: ['javascript', ...extraLangs], tokens };
-  if (firstOnly !== undefined) match.firstOnly = firstOnly;
-  return match;
+  const match: GlossaryMatch = { langs: ['javascript', ...extraLangs], tokens }
+  if (firstOnly !== undefined) match.firstOnly = firstOnly
+  return match
 }
 
 export const JAVASCRIPT_SYNTAX: GlossaryEntry[] = [
@@ -222,4 +221,4 @@ export const JAVASCRIPT_SYNTAX: GlossaryEntry[] = [
       en: 'The object other instances inherit from. Assigning to `Object.prototype` or `constructor.prototype` makes later lookups on many objects see the new property.',
     },
   },
-];
+]

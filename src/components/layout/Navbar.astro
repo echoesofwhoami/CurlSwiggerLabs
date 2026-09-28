@@ -1,19 +1,19 @@
 ---
-import type { NavbarProps as Props } from '@types';
-import { siteBase } from '../../utils';
-import '@styles/layout/Navbar.css';
+import type { NavbarProps as Props } from '@types'
+import { siteBase } from '../../utils'
+import '@styles/layout/Navbar.css'
 
-const { currentPath, wide = false } = Astro.props;
-const base = siteBase();
-const homePath = `${base}/`;
-const aboutPath = `${base}/about`;
-const conceptsPath = `${base}/background-concepts`;
-const tweakerPath = `${base}/i-dont-like-this-website`;
-let path = currentPath;
+const { currentPath, wide = false } = Astro.props
+const base = siteBase()
+const homePath = `${base}/`
+const aboutPath = `${base}/about`
+const conceptsPath = `${base}/background-concepts`
+const tweakerPath = `${base}/i-dont-like-this-website`
+let path = currentPath
 if (base && path.startsWith(base)) {
-  path = path.slice(base.length) || '/';
+  path = path.slice(base.length) || '/'
 }
-const currentSlug = path.split('/').filter(Boolean).join('/');
+const currentSlug = path.split('/').filter(Boolean).join('/')
 const menuId = 'site-nav-menu';
 
 ---
@@ -77,46 +77,45 @@ const menuId = 'site-nav-menu';
 </header>
 
 <script>
-  document.querySelectorAll<HTMLElement>('[data-navbar]').forEach((navbar) => {
-    const toggle = navbar.querySelector<HTMLButtonElement>('[data-nav-toggle]');
-    const menu = navbar.querySelector<HTMLElement>('[data-nav-menu]');
-    if (!toggle || !menu) return;
+document.querySelectorAll<HTMLElement>('[data-navbar]').forEach((navbar) => {
+  const toggle = navbar.querySelector<HTMLButtonElement>('[data-nav-toggle]')
+  const menu = navbar.querySelector<HTMLElement>('[data-nav-menu]')
+  if (!toggle || !menu) return
 
-    const mq = window.matchMedia('(max-width: 640px)');
+  const mq = window.matchMedia('(max-width: 640px)')
 
-    const setOpen = (open: boolean) => {
-      const next = mq.matches ? open : false;
-      navbar.classList.toggle('is-open', next);
-      document.documentElement.classList.toggle('nav-menu-open', next);
-      toggle.setAttribute('aria-expanded', String(next));
-      toggle.setAttribute(
-        'aria-label',
-        next ? (toggle.dataset.labelClose ?? 'Close menu') : (toggle.dataset.labelOpen ?? 'Open menu'),
-      );
-    };
+  const setOpen = (open: boolean) => {
+    const next = mq.matches ? open : false
+    navbar.classList.toggle('is-open', next)
+    document.documentElement.classList.toggle('nav-menu-open', next)
+    toggle.setAttribute('aria-expanded', String(next))
+    toggle.setAttribute(
+      'aria-label',
+      next ? (toggle.dataset.labelClose ?? 'Close menu') : (toggle.dataset.labelOpen ?? 'Open menu'),
+    )
+  }
+  toggle.addEventListener('click', () => {
+    setOpen(toggle.getAttribute('aria-expanded') !== 'true')
+  })
 
-    toggle.addEventListener('click', () => {
-      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
-    });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+      setOpen(false)
+      toggle.focus()
+    }
+  })
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
-        setOpen(false);
-        toggle.focus();
-      }
-    });
+  document.addEventListener('pointerdown', (event) => {
+    if (!navbar.contains(event.target as Node) && toggle.getAttribute('aria-expanded') === 'true') {
+      setOpen(false)
+    }
+  })
 
-    document.addEventListener('pointerdown', (event) => {
-      if (!navbar.contains(event.target as Node) && toggle.getAttribute('aria-expanded') === 'true') {
-        setOpen(false);
-      }
-    });
+  menu.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => setOpen(false))
+  })
 
-    menu.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => setOpen(false));
-    });
-
-    mq.addEventListener('change', () => setOpen(false));
-  });
+  mq.addEventListener('change', () => setOpen(false))
+})
 </script>
 

@@ -1,27 +1,27 @@
 ---
-import { render } from 'astro:content';
-import type { PostLayoutProps as Props } from '@types';
-import { categoryForLabel } from '../data/categories';
-import { getAdjacentPosts, getPostSlug, getRelatedPosts } from '../utils';
-import Layout from './Layout.astro';
-import PortswiggerDescription from '../components/post/PortswiggerDescription.astro';
-import PostHeader from '../components/post/PostHeader.astro';
-import PostNav from '../components/post/PostNav.astro';
-import RelatedLabs from '../components/post/RelatedLabs.astro';
-import TableOfContents from '../components/post/TableOfContents.astro';
-import Quiz from '../components/post/Quiz.astro';
-import Term from '../components/mdx/Term.astro';
-import TooltipReferences from '../components/post/TooltipReferences.astro';
-import '@styles/layouts/PostLayout.css';
+import { render } from 'astro:content'
+import type { PostLayoutProps as Props } from '@types'
+import { categoryForLabel } from '../data/categories'
+import { getAdjacentPosts, getPostSlug, getRelatedPosts } from '../utils'
+import Layout from './Layout.astro'
+import PortswiggerDescription from '../components/post/PortswiggerDescription.astro'
+import PostHeader from '../components/post/PostHeader.astro'
+import PostNav from '../components/post/PostNav.astro'
+import RelatedLabs from '../components/post/RelatedLabs.astro'
+import TableOfContents from '../components/post/TableOfContents.astro'
+import Quiz from '../components/post/Quiz.astro'
+import Term from '../components/mdx/Term.astro'
+import TooltipReferences from '../components/post/TooltipReferences.astro'
+import '@styles/layouts/PostLayout.css'
 
-const { post } = Astro.props;
-const slug = getPostSlug(post.id);
-const category = categoryForLabel(post.data.category);
+const { post } = Astro.props
+const slug = getPostSlug(post.id)
+const category = categoryForLabel(post.data.category)
 
-Astro.locals.portswiggerDescription = post.data.portswiggerDescription;
-Astro.locals.usedTips ??= new Set<string>();
+Astro.locals.portswiggerDescription = post.data.portswiggerDescription
+Astro.locals.usedTips ??= new Set<string>()
 
-const { Content, headings } = await render(post);
+const { Content, headings } = await render(post)
 const [{ older, newer }, relatedPosts] = await Promise.all([
   getAdjacentPosts(slug),
   getRelatedPosts(slug),

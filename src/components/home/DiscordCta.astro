@@ -1,10 +1,10 @@
 ---
-import { siteConfig } from '../../site.config';
-import type { DiscordCtaProps as Props } from '@types';
-import '@styles/home/DiscordCta.css';
+import { siteConfig } from '../../site.config'
+import type { DiscordCtaProps as Props } from '@types'
+import '@styles/home/DiscordCta.css'
 
-const { compact = false } = Astro.props;
-const inviteUrl = siteConfig.discordInviteUrl.trim();
+const { compact = false } = Astro.props
+const inviteUrl = siteConfig.discordInviteUrl.trim()
 const body = `Bring questions, confusing HTTP, or requests for the next writeup. Find me on Discord as ${siteConfig.discordHandle}.`;
 
 ---

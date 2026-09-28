@@ -1,4 +1,4 @@
-import { createCssVariablesTheme } from 'shiki';
+import { createCssVariablesTheme } from 'shiki'
 
 /** Shared Shiki theme that paints tokens via CSS custom properties. */
 export const cssVariablesTheme = createCssVariablesTheme({
@@ -18,4 +18,4 @@ export const cssVariablesTheme = createCssVariablesTheme({
     '--shiki-token-link': '#FF5252',
   },
   fontStyle: true,
-});
+})

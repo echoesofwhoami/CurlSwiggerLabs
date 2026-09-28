@@ -1,8 +1,8 @@
 /** Curated Shiki CSS-variable packs for runtime theme switching. */
 
-import type { ShikiThemeId, ShikiThemePack, ShikiVarMap } from '@types';
+import type { ShikiThemeId, ShikiThemePack, ShikiVarMap } from '@types'
 
-export type { ShikiThemeId, ShikiThemePack, ShikiVarMap };
+export type { ShikiThemeId, ShikiThemePack, ShikiVarMap }
 
 function pack(
   id: string,
@@ -35,7 +35,7 @@ function pack(
       '--shiki-token-punctuation': punctuation,
       '--shiki-token-link': link,
     },
-  };
+  }
 }
 
 export const SHIKI_THEMES: Record<string, ShikiThemePack> = {
@@ -84,13 +84,12 @@ export const SHIKI_THEMES: Record<string, ShikiThemePack> = {
   'min-dark': pack('min-dark', 'Min Dark', '#b392f0', '#1f1f1f', '#f97583', '#9ecbff', '#6a737d', '#f97583', '#ffab70', '#b392f0'),
   'everforest-dark': pack('everforest-dark', 'Everforest Dark', '#d3c6aa', '#2d353b', '#e69875', '#a7c080', '#859289', '#e67e80', '#dbbc7f', '#7fbbb3'),
   houston: pack('houston', 'Houston', '#eef0f9', '#17191e', '#54b0fc', '#9a70ff', '#bfc2c7', '#54b0fc', '#ff8e4a', '#ff57bb'),
-};
-
-export function listShikiThemes(): ShikiThemePack[] {
-  return Object.values(SHIKI_THEMES);
 }
 
+export function listShikiThemes(): ShikiThemePack[] {
+  return Object.values(SHIKI_THEMES)
+}
 export function getShikiTheme(id: string): ShikiThemePack {
-  if (!id) return SHIKI_THEMES.echoes;
-  return SHIKI_THEMES[id] ?? SHIKI_THEMES.echoes;
+  if (!id) return SHIKI_THEMES.echoes
+  return SHIKI_THEMES[id] ?? SHIKI_THEMES.echoes
 }

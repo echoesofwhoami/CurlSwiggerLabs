@@ -1,9 +1,9 @@
-import type { GlossaryEntry, GlossaryMatch } from '../types';
+import type { GlossaryEntry, GlossaryMatch } from '../types'
 
 function py(tokens: string[], firstOnly?: boolean): GlossaryMatch {
   return firstOnly === undefined
     ? { langs: ['python'], tokens }
-    : { langs: ['python'], tokens, firstOnly };
+    : { langs: ['python'], tokens, firstOnly }
 }
 
 export const PYTHON_SYNTAX: GlossaryEntry[] = [
@@ -613,4 +613,4 @@ export const PYTHON_SYNTAX: GlossaryEntry[] = [
       en: 'The X.509 SPKI layout for a public key: algorithm identifier plus the key bits. Combined with PEM encoding, it is the usual `BEGIN PUBLIC KEY` document.',
     },
   },
-];
+]

@@ -1,4 +1,4 @@
-export type DiffMark = 'eq' | 'add' | 'del';
+export type DiffMark = 'eq' | 'add' | 'del'
 
 export interface DiffToken {
   value: string;

@@ -7,6 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "og:covers": "bash scripts/convert-category-covers.sh"
   },
   "dependencies": {
@@ -15,5 +17,12 @@
     "@astrojs/sitemap": "^3.7.3",
     "astro": "^5.17.1",
     "diff": "^9.0.0"
+  },
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-astro": "^3.2.1",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.70.1"
   }
 }

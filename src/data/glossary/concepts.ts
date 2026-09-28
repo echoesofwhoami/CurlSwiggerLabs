@@ -1,4 +1,4 @@
-import type { GlossaryEntry } from './types';
+import type { GlossaryEntry } from './types'
 
 export const CONCEPTS: GlossaryEntry[] = [
   {
@@ -448,4 +448,4 @@ export const CONCEPTS: GlossaryEntry[] = [
       },
     ],
   },
-];
+]

@@ -1,21 +1,20 @@
 ---
-import { getEntry, localizedText } from '@data/glossary';
-import type { TermProps as Props } from '@types';
+import { getEntry, localizedText } from '@data/glossary'
+import type { TermProps as Props } from '@types'
 
-const { id } = Astro.props;
-const entry = getEntry(id);
-const hasSlot = Astro.slots.has('default');
+const { id } = Astro.props
+const entry = getEntry(id)
+const hasSlot = Astro.slots.has('default')
 
-const usedTips = Astro.locals.usedTips ?? new Set<string>();
-Astro.locals.usedTips = usedTips;
-
+const usedTips = Astro.locals.usedTips ?? new Set<string>()
+Astro.locals.usedTips = usedTips
 if (!entry) {
-  console.warn(`[Term] unknown glossary id: ${id}`);
+  console.warn(`[Term] unknown glossary id: ${id}`)
 } else {
-  usedTips.add(id);
+  usedTips.add(id)
 }
 
-const label = entry ? localizedText(entry).term : id;
+const label = entry ? localizedText(entry).term : id
 const kindClass = entry?.kind === 'syntax' ? 'tip--syntax' : 'tip--concept';
 ---
 

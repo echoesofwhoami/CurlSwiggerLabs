@@ -1,7 +1,7 @@
-import type { CodeLang, GlossaryEntry, GlossaryMatch } from '../types';
+import type { CodeLang, GlossaryEntry, GlossaryMatch } from '../types'
 
 function http(tokens: string[], extraLangs: CodeLang[] = []): GlossaryMatch {
-  return { langs: ['http', ...extraLangs], tokens };
+  return { langs: ['http', ...extraLangs], tokens }
 }
 
 export const HTTP_SYNTAX: GlossaryEntry[] = [
@@ -122,4 +122,4 @@ export const HTTP_SYNTAX: GlossaryEntry[] = [
       en: 'A dummy header used so leftover bytes (or a smuggled request line) become a header the back-end can ignore instead of a second method token.',
     },
   },
-];
+]

@@ -1,11 +1,11 @@
 ---
-import { Image } from 'astro:assets';
-import { getChipVisual } from '../../data/chipIcons';
-import type { MetaChipProps as Props } from '@types';
-import '@styles/post/MetaChip.css';
+import { Image } from 'astro:assets'
+import { getChipVisual } from '../../data/chipIcons'
+import type { MetaChipProps as Props } from '@types'
+import '@styles/post/MetaChip.css'
 
-const { label } = Astro.props;
-const visual = getChipVisual(label);
+const { label } = Astro.props
+const visual = getChipVisual(label)
 const accent = visual?.accent ?? '#94a3b8';
 
 ---

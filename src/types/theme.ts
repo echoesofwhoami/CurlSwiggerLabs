@@ -1,4 +1,4 @@
-export type ShikiVarMap = Record<string, string>;
+export type ShikiVarMap = Record<string, string>
 
 export interface ShikiThemePack {
   id: string;
@@ -6,7 +6,7 @@ export interface ShikiThemePack {
   vars: ShikiVarMap;
 }
 
-export type ShikiThemeId = string;
+export type ShikiThemeId = string
 
 export interface ThemeConfig {
   pageBg: string;

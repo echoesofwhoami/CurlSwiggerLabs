@@ -1,16 +1,16 @@
 ---
-import ExternalLink from '../mdx/ExternalLink.astro';
-import { getEntry, localizedText } from '@data/glossary';
-import '@styles/post/TooltipReferences.css';
+import ExternalLink from '../mdx/ExternalLink.astro'
+import { getEntry, localizedText } from '@data/glossary'
+import '@styles/post/TooltipReferences.css'
 
-const used = Astro.locals.usedTips ?? new Set<string>();
-const seen = new Set<string>();
+const used = Astro.locals.usedTips ?? new Set<string>()
+const seen = new Set<string>()
 const items = [...used]
   .map((id) => getEntry(id))
   .filter((entry): entry is NonNullable<typeof entry> => {
-    if (!entry || entry.kind !== 'concept' || seen.has(entry.id)) return false;
-    seen.add(entry.id);
-    return true;
+    if (!entry || entry.kind !== 'concept' || seen.has(entry.id)) return false
+    seen.add(entry.id)
+    return true
   })
   .map((entry) => ({
     id: entry.id,

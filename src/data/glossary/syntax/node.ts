@@ -1,4 +1,4 @@
-import type { CodeLang, GlossaryEntry, GlossaryMatch } from '../types';
+import type { CodeLang, GlossaryEntry, GlossaryMatch } from '../types'
 
 function node(
   tokens: string[],
@@ -7,11 +7,11 @@ function node(
   const match: GlossaryMatch = {
     langs: ['javascript', ...(opts?.extraLangs ?? [])],
     tokens,
-  };
-  if (opts?.firstOnly !== undefined) {
-    match.firstOnly = opts.firstOnly;
   }
-  return match;
+  if (opts?.firstOnly !== undefined) {
+    match.firstOnly = opts.firstOnly
+  }
+  return match
 }
 
 export const NODE_SYNTAX: GlossaryEntry[] = [
@@ -69,4 +69,4 @@ export const NODE_SYNTAX: GlossaryEntry[] = [
       en: 'The absolute path of the directory that contains the current module. Lab handlers often pass it as `cwd` so the child starts in the same folder.',
     },
   },
-];
+]

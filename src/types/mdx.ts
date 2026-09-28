@@ -1,4 +1,4 @@
-import type { CodeLanguage } from 'astro';
+import type { CodeLanguage } from 'astro'
 
 export interface CollapsiblePartialProps {
   partial: string;

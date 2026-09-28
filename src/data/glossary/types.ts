@@ -5,4 +5,4 @@ export type {
   Localized,
   GlossaryMatch,
   GlossaryEntry,
-} from '../../types/glossary';
+} from '../../types/glossary'

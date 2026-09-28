@@ -1,5 +1,5 @@
-export type TipKind = 'syntax' | 'concept';
-export type CodeLang = 'bash' | 'javascript' | 'python' | 'http' | 'html' | 'php' | 'json';
+export type TipKind = 'syntax' | 'concept'
+export type CodeLang = 'bash' | 'javascript' | 'python' | 'http' | 'html' | 'php' | 'json'
 
 export interface GlossaryRef {
   title: string;

@@ -1,21 +1,21 @@
 ---
-import { siteConfig } from '../../site.config';
-import ExternalLinkSvg from '../../assets/external_link.svg';
-import ExternalLink from '../mdx/ExternalLink.astro';
-import psLogo from '../../assets/ps_logo.png';
-import { Image } from 'astro:assets';
-import { siteBase } from '../../utils';
-import '@styles/layout/Footer.css';
+import { siteConfig } from '../../site.config'
+import ExternalLinkSvg from '../../assets/external_link.svg'
+import ExternalLink from '../mdx/ExternalLink.astro'
+import psLogo from '../../assets/ps_logo.png'
+import { Image } from 'astro:assets'
+import { siteBase } from '../../utils'
+import '@styles/layout/Footer.css'
 
-const base = siteBase();
-const year = new Date().getFullYear();
+const base = siteBase()
+const year = new Date().getFullYear()
 
 const siteLinks = [
   { label: 'Home', href: `${base}/` },
   { label: 'About', href: `${base}/about` },
   { label: 'Background Concepts', href: `${base}/background-concepts` },
-  { label: "I don't like this website", href: `${base}/i-dont-like-this-website` },
-];
+  { label: 'I don\'t like this website', href: `${base}/i-dont-like-this-website` },
+]
 const resourceLinks = [
   {
     label: 'RSS',
@@ -27,7 +27,7 @@ const resourceLinks = [
     href: siteConfig.blogSourceUrl.trim(),
     external: true,
   },
-].filter((link) => link.href.length > 0);
+].filter((link) => link.href.length > 0)
 const socialLinks = [
   {
     label: 'GitHub',

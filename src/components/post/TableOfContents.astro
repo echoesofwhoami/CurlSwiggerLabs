@@ -1,8 +1,8 @@
 ---
-import type { TableOfContentsProps as Props } from '@types';
-import '@styles/post/TableOfContents.css';
+import type { TableOfContentsProps as Props } from '@types'
+import '@styles/post/TableOfContents.css'
 
-const { headings } = Astro.props;
+const { headings } = Astro.props
 const visibleHeadings = headings.filter(({ depth }) => depth === 2 || depth === 3);
 
 ---

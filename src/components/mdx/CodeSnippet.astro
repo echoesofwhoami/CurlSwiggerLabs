@@ -1,15 +1,15 @@
 ---
-import { Code } from 'astro:components';
-import type { CodeLanguage } from 'astro';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { placeholderTransformer } from '../../shiki/placeholder-transformer';
-import { tooltipTransformer } from '../../shiki/tooltip-transformer';
-import { cssVariablesTheme } from '../../styles/shiki-css-theme';
-import curlplain from '../../themes/curlplain.tmLanguage.json';
-import { curlToHttp, isBashFile } from '../../utils/curl-to-http';
-import type { CodeSnippetProps as Props } from '@types';
-import '@styles/mdx/CodeSnippet.css';
+import { Code } from 'astro:components'
+import type { CodeLanguage } from 'astro'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { placeholderTransformer } from '../../shiki/placeholder-transformer'
+import { tooltipTransformer } from '../../shiki/tooltip-transformer'
+import { cssVariablesTheme } from '../../styles/shiki-css-theme'
+import curlplain from '../../themes/curlplain.tmLanguage.json'
+import { curlToHttp, isBashFile } from '../../utils/curl-to-http'
+import type { CodeSnippetProps as Props } from '@types'
+import '@styles/mdx/CodeSnippet.css'
 
 const EXT_TO_LANG: Record<string, CodeLanguage> = {
   py: 'python',
@@ -21,67 +21,67 @@ const EXT_TO_LANG: Record<string, CodeLanguage> = {
   php: 'php',
   json: 'json',
   txt: 'plaintext',
-};
+}
 
-const PLAINTEXT_ALIASES = new Set(['plaintext', 'txt', 'plain', 'text']);
-const scriptsRoot = join(process.cwd(), 'src/data/scripts');
+const PLAINTEXT_ALIASES = new Set(['plaintext', 'txt', 'plain', 'text'])
+const scriptsRoot = join(process.cwd(), 'src/data/scripts')
 
-const { file, body: bodyProp, lang: langProp, noRawHttp = false, tips } = Astro.props;
-const usedTips = Astro.locals.usedTips ?? new Set<string>();
-Astro.locals.usedTips = usedTips;
+const { file, body: bodyProp, lang: langProp, noRawHttp = false, tips } = Astro.props
+const usedTips = Astro.locals.usedTips ?? new Set<string>()
+Astro.locals.usedTips = usedTips
 
-const code = readFileSync(join(scriptsRoot, file), 'utf-8').replace(/\n$/, '');
-const ext = file.includes('.') ? file.split('.').pop()! : '';
-const inferred: CodeLanguage = langProp ?? EXT_TO_LANG[ext] ?? 'plaintext';
-const lang = PLAINTEXT_ALIASES.has(String(inferred)) ? curlplain : inferred;
+const code = readFileSync(join(scriptsRoot, file), 'utf-8').replace(/\n$/, '')
+const ext = file.includes('.') ? file.split('.').pop()! : ''
+const inferred: CodeLanguage = langProp ?? EXT_TO_LANG[ext] ?? 'plaintext'
+const lang = PLAINTEXT_ALIASES.has(String(inferred)) ? curlplain : inferred
 const matchLang = PLAINTEXT_ALIASES.has(String(inferred))
   ? (isBashFile(file) ? 'bash' : '')
-  : String(inferred);
+  : String(inferred)
 
-const tipOpts = { extraTips: tips, collector: usedTips };
+const tipOpts = { extraTips: tips, collector: usedTips }
 const transformers = [
   placeholderTransformer,
   tooltipTransformer({ ...tipOpts, codeLang: matchLang }),
-];
+]
 const httpTransformers = [
   placeholderTransformer,
   tooltipTransformer({ ...tipOpts, codeLang: 'http' }),
-];
+]
 const jsonTransformers = [
   placeholderTransformer,
   tooltipTransformer({ ...tipOpts, codeLang: 'json' }),
-];
+]
 
-let bodyCode: string | undefined;
+let bodyCode: string | undefined
 if (bodyProp) {
-  const rawBody = readFileSync(join(scriptsRoot, bodyProp), 'utf-8').replace(/\n$/, '');
+  const rawBody = readFileSync(join(scriptsRoot, bodyProp), 'utf-8').replace(/\n$/, '')
   try {
-    bodyCode = JSON.stringify(JSON.parse(rawBody), null, 2);
+    bodyCode = JSON.stringify(JSON.parse(rawBody), null, 2)
   } catch {
-    bodyCode = rawBody;
+    bodyCode = rawBody
   }
 }
 
-// curl - Raw HTTP toggle 
+// curl - Raw HTTP toggle
 
 // Collect shell variable definitions from every .sh sibling in the same lab
 // directory (e.g. BASE_LAB_URL="https://...") so $VAR references in curl
 // commands expand to their actual values in the Raw HTTP view.
-const shellEnv: Record<string, string> = {};
+const shellEnv: Record<string, string> = {}
 if (isBashFile(file) && !noRawHttp) {
-  const labDir = join(scriptsRoot, dirname(file));
+  const labDir = join(scriptsRoot, dirname(file))
   try {
     for (const entry of readdirSync(labDir)) {
-      if (!entry.endsWith('.sh') && !entry.endsWith('.bash')) continue;
-      const src = readFileSync(join(labDir, entry), 'utf-8');
+      if (!entry.endsWith('.sh') && !entry.endsWith('.bash')) continue
+      const src = readFileSync(join(labDir, entry), 'utf-8')
       for (const m of src.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)=["']?([^"'\n]+?)["']?\s*$/gm)) {
-        shellEnv[m[1]] = m[2];
+        shellEnv[m[1]] = m[2]
       }
     }
   } catch { /* non-fatal: directory unreadable or no siblings */ }
 }
 
-const httpConversion = (!noRawHttp && isBashFile(file)) ? curlToHttp(code, shellEnv) : null;
+const httpConversion = (!noRawHttp && isBashFile(file)) ? curlToHttp(code, shellEnv) : null
 
 // Stable, URL-safe ID derived from the script file path so multiple
 // CodeSnippet instances on the same page don't collide.
@@ -137,46 +137,45 @@ const snippetId = `cht-${file.replace(/[^a-z0-9]/gi, '-')}`;
 </div>
 
 <script>
-  /**
+/**
    * Wire up every .http-toggle-group on the page.
    * Runs once after all CodeSnippet components have rendered.
    * Safe to call multiple times (idempotent via data attribute).
    */
-  function initHttpToggles() {
-    const groups = document.querySelectorAll<HTMLElement>(
-      '.http-toggle-group:not([data-cht-init])',
-    );
+function initHttpToggles() {
+  const groups = document.querySelectorAll<HTMLElement>(
+    '.http-toggle-group:not([data-cht-init])',
+  )
 
-    for (const group of groups) {
-      group.dataset.chtInit = '1';
+  for (const group of groups) {
+    group.dataset.chtInit = '1'
 
-      const tabs = group.querySelectorAll<HTMLButtonElement>('.http-tab');
-      const panels = group.querySelectorAll<HTMLElement>('.http-panel');
+    const tabs = group.querySelectorAll<HTMLButtonElement>('.http-tab')
+    const panels = group.querySelectorAll<HTMLElement>('.http-panel')
 
-      tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-          const target = tab.dataset.panel;
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.panel
 
-          tabs.forEach((t) => {
-            t.classList.toggle('is-active', t.dataset.panel === target);
-            t.setAttribute('aria-selected', String(t.dataset.panel === target));
-          });
+        tabs.forEach((t) => {
+          t.classList.toggle('is-active', t.dataset.panel === target)
+          t.setAttribute('aria-selected', String(t.dataset.panel === target))
+        })
 
-          panels.forEach((panel) => {
-            const isTarget = panel.dataset.panel === target;
-            if (isTarget) {
-              panel.removeAttribute('hidden');
-            } else {
-              panel.setAttribute('hidden', '');
-            }
-          });
-        });
-      });
-    }
+        panels.forEach((panel) => {
+          const isTarget = panel.dataset.panel === target
+          if (isTarget) {
+            panel.removeAttribute('hidden')
+          } else {
+            panel.setAttribute('hidden', '')
+          }
+        })
+      })
+    })
   }
-
-  // Run on initial load and after any Astro view-transition navigation.
-  initHttpToggles();
-  document.addEventListener('astro:after-swap', initHttpToggles);
+}
+// Run on initial load and after any Astro view-transition navigation.
+initHttpToggles()
+document.addEventListener('astro:after-swap', initHttpToggles)
 </script>
 

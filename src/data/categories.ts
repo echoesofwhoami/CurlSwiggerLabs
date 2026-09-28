@@ -34,28 +34,26 @@ export const categories = {
     coverImage: '/images/categories/dom-based.svg?v=1',
     ogImage: '/images/categories/dom-based.png',
   },
-} as const;
+} as const
 
-export type CategoryId = keyof typeof categories;
+export type CategoryId = keyof typeof categories
 
 export function getCategoryId(label: string): CategoryId | undefined {
   return (Object.entries(categories) as [CategoryId, (typeof categories)[CategoryId]][])
     .find(([, category]) => category.label === label)
-    ?.[0];
+    ?.[0]
 }
-
 export function getCategory(id: CategoryId) {
-  const category = categories[id];
+  const category = categories[id]
 
   return {
     id,
     label: category.label,
     coverImage: category.coverImage,
     ogImage: category.ogImage,
-  };
+  }
 }
-
 export function categoryForLabel(label: string) {
-  const categoryId = getCategoryId(label);
-  return categoryId ? getCategory(categoryId) : undefined;
+  const categoryId = getCategoryId(label)
+  return categoryId ? getCategory(categoryId) : undefined
 }

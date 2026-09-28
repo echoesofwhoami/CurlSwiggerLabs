@@ -1,4 +1,4 @@
-export type { LayoutProps, NavbarProps } from './layout';
+export type { LayoutProps, NavbarProps } from './layout'
 export type {
   Heading,
   MetaChipProps,
@@ -8,7 +8,7 @@ export type {
   QuizProps,
   RelatedLabsProps,
   TableOfContentsProps,
-} from './post';
+} from './post'
 export type {
   CodeSnippetProps,
   CollapsiblePartialProps,
@@ -18,8 +18,8 @@ export type {
   PartialRendererProps,
   RequestDiffProps,
   TermProps,
-} from './mdx';
-export type { DiscordCtaProps, PostCardProps, PostListProps } from './home';
+} from './mdx'
+export type { DiscordCtaProps, PostCardProps, PostListProps } from './home'
 export type {
   ClientTip,
   CodeLang,
@@ -28,7 +28,7 @@ export type {
   GlossaryRef,
   Localized,
   TipKind,
-} from './glossary';
+} from './glossary'
 export type {
   FontOption,
   ShikiThemeId,
@@ -36,7 +36,7 @@ export type {
   ShikiVarMap,
   ThemeConfig,
   ThemePreset,
-} from './theme';
+} from './theme'
 export type {
   DiffMark,
   DiffRow,
@@ -44,8 +44,8 @@ export type {
   JwtParts,
   JwtTipRange,
   TextPart,
-} from './diff';
-export type { HttpConversion } from './http';
+} from './diff'
+export type { HttpConversion } from './http'
 export type {
   Candidate,
   GlossaryWrap,
@@ -54,6 +54,6 @@ export type {
   LineWrap,
   TextRange,
   TransformerOpts,
-} from './shiki';
-export type { ChipVisual } from './chips';
-export type { CategoryId } from '../data/categories';
+} from './shiki'
+export type { ChipVisual } from './chips'
+export type { CategoryId } from '../data/categories'

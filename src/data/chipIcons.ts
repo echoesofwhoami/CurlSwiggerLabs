@@ -1,15 +1,15 @@
-import type { ChipVisual } from '@types';
-import CurlIcon from '../assets/logos/curl.svg';
-import PythonIcon from '../assets/logos/python.svg';
-import NodeIcon from '../assets/logos/nodedotjs.svg';
-import ExpressIcon from '../assets/logos/express.svg';
-import PhpIcon from '../assets/logos/php.svg';
-import NginxIcon from '../assets/logos/nginx.svg';
-import ChromiumIcon from '../assets/logos/chromium.svg';
-import JavaScriptIcon from '../assets/logos/javascript.svg';
-import psLogo from '../assets/ps_logo.png';
+import type { ChipVisual } from '@types'
+import CurlIcon from '../assets/logos/curl.svg'
+import PythonIcon from '../assets/logos/python.svg'
+import NodeIcon from '../assets/logos/nodedotjs.svg'
+import ExpressIcon from '../assets/logos/express.svg'
+import PhpIcon from '../assets/logos/php.svg'
+import NginxIcon from '../assets/logos/nginx.svg'
+import ChromiumIcon from '../assets/logos/chromium.svg'
+import JavaScriptIcon from '../assets/logos/javascript.svg'
+import psLogo from '../assets/ps_logo.png'
 
-export type { ChipVisual };
+export type { ChipVisual }
 
 const visuals: Record<string, ChipVisual> = {
   curl: { kind: 'svg', Icon: CurlIcon, accent: '#5EC8F0' },
@@ -21,7 +21,7 @@ const visuals: Record<string, ChipVisual> = {
   nginx: { kind: 'svg', Icon: NginxIcon, accent: '#009639' },
   chromium: { kind: 'svg', Icon: ChromiumIcon, accent: '#1A74E7' },
   javascript: { kind: 'svg', Icon: JavaScriptIcon, accent: '#F7DF1E' },
-};
+}
 
 const aliases: Record<string, keyof typeof visuals> = {
   curl: 'curl',
@@ -43,9 +43,9 @@ const aliases: Record<string, keyof typeof visuals> = {
   js: 'javascript',
   dompurify: 'javascript',
   'dom purify': 'javascript',
-};
+}
 
 export function getChipVisual(label: string): ChipVisual | undefined {
-  const id = aliases[label.trim().toLowerCase()];
-  return id ? visuals[id] : undefined;
+  const id = aliases[label.trim().toLowerCase()]
+  return id ? visuals[id] : undefined
 }

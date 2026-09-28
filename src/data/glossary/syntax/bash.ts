@@ -1,11 +1,10 @@
-import type { GlossaryEntry, GlossaryMatch } from '../types';
+import type { GlossaryEntry, GlossaryMatch } from '../types'
 
 function flags(...tokens: string[]): GlossaryMatch {
-  return { langs: ['bash'], tokens, firstOnly: false };
+  return { langs: ['bash'], tokens, firstOnly: false }
 }
-
 function cmd(...tokens: string[]): GlossaryMatch {
-  return { langs: ['bash'], tokens, firstOnly: true };
+  return { langs: ['bash'], tokens, firstOnly: true }
 }
 
 export const BASH_SYNTAX: GlossaryEntry[] = [
@@ -108,4 +107,4 @@ export const BASH_SYNTAX: GlossaryEntry[] = [
       en: 'Prints the first lines of stdin. `head -10` keeps ten lines, enough to see status and `Set-Cookie` without the rest of the body.',
     },
   },
-];
+]

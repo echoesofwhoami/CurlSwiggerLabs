@@ -1,11 +1,11 @@
-import { getShikiTheme, type ShikiThemeId, type ShikiVarMap } from '../styles/shiki-themes';
-import type { FontOption, ThemeConfig, ThemePreset } from '@types';
+import { getShikiTheme, type ShikiVarMap } from '../styles/shiki-themes'
+import type { FontOption, ThemeConfig, ThemePreset } from '@types'
 
-export type { FontOption, ThemeConfig, ThemePreset };
+export type { FontOption, ThemeConfig, ThemePreset }
 
-export const STORAGE_ACTIVE = 'csl-theme-active';
-export const STORAGE_SAVED = 'csl-theme-saved';
-export const STORAGE_VARS = 'csl-theme-vars';
+export const STORAGE_ACTIVE = 'csl-theme-active'
+export const STORAGE_SAVED = 'csl-theme-saved'
+export const STORAGE_VARS = 'csl-theme-vars'
 
 /** Quiz success/error foreground colors derived from surface luminance. */
 export function quizVarsFromConfig(config: ThemeConfig): {
@@ -13,107 +13,107 @@ export function quizVarsFromConfig(config: ThemeConfig): {
   '--success-border': string;
   '--error-fg': string;
 } {
-  const hex = config.surfaceElevated.replace('#', '');
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  const light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+  const hex = config.surfaceElevated.replace('#', '')
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+  const light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5
   return {
     '--success-fg': light ? '#15803d' : '#86efac',
     '--success-border': '#22c55e',
     '--error-fg': light ? config.accent : config.accentSoft,
-  };
+  }
 }
 
 export const FONT_OPTIONS: FontOption[] = [
-  { id: 'quicksand', label: 'Quicksand', family: "'Quicksand', sans-serif", google: null },
+  { id: 'quicksand', label: 'Quicksand', family: '\'Quicksand\', sans-serif', google: null },
   {
     id: 'source-sans-3',
     label: 'Source Sans 3',
-    family: "'Source Sans 3', sans-serif",
+    family: '\'Source Sans 3\', sans-serif',
     google: 'Source+Sans+3:wght@300..700',
   },
   {
     id: 'ibm-plex-sans',
     label: 'IBM Plex Sans',
-    family: "'IBM Plex Sans', sans-serif",
+    family: '\'IBM Plex Sans\', sans-serif',
     google: 'IBM+Plex+Sans:wght@300;400;500;600;700',
   },
   {
     id: 'inter',
     label: 'Inter',
-    family: "'Inter', sans-serif",
+    family: '\'Inter\', sans-serif',
     google: 'Inter:wght@300..700',
   },
   {
     id: 'dm-sans',
     label: 'DM Sans',
-    family: "'DM Sans', sans-serif",
+    family: '\'DM Sans\', sans-serif',
     google: 'DM+Sans:opsz,wght@9..40,300..700',
   },
   {
     id: 'nunito-sans',
     label: 'Nunito Sans',
-    family: "'Nunito Sans', sans-serif",
+    family: '\'Nunito Sans\', sans-serif',
     google: 'Nunito+Sans:opsz,wght@6..12,300..700',
   },
   {
     id: 'space-grotesk',
     label: 'Space Grotesk',
-    family: "'Space Grotesk', sans-serif",
+    family: '\'Space Grotesk\', sans-serif',
     google: 'Space+Grotesk:wght@300..700',
   },
   {
     id: 'outfit',
     label: 'Outfit',
-    family: "'Outfit', sans-serif",
+    family: '\'Outfit\', sans-serif',
     google: 'Outfit:wght@300..700',
   },
   {
     id: 'jetbrains-mono',
     label: 'JetBrains Mono',
-    family: "'JetBrains Mono', monospace",
+    family: '\'JetBrains Mono\', monospace',
     google: 'JetBrains+Mono:wght@300..700',
   },
   {
     id: 'fira-code',
     label: 'Fira Code',
-    family: "'Fira Code', monospace",
+    family: '\'Fira Code\', monospace',
     google: 'Fira+Code:wght@300..700',
   },
   {
     id: 'source-code-pro',
     label: 'Source Code Pro',
-    family: "'Source Code Pro', monospace",
+    family: '\'Source Code Pro\', monospace',
     google: 'Source+Code+Pro:wght@300..700',
   },
   {
     id: 'literata',
     label: 'Literata',
-    family: "'Literata', serif",
+    family: '\'Literata\', serif',
     google: 'Literata:opsz,wght@7..72,300..700',
   },
   {
     id: 'source-serif-4',
     label: 'Source Serif 4',
-    family: "'Source Serif 4', serif",
+    family: '\'Source Serif 4\', serif',
     google: 'Source+Serif+4:opsz,wght@8..60,300..700',
   },
   {
     id: 'libre-baskerville',
     label: 'Libre Baskerville',
-    family: "'Libre Baskerville', serif",
+    family: '\'Libre Baskerville\', serif',
     google: 'Libre+Baskerville:wght@400;700',
   },
   {
     id: 'merriweather',
     label: 'Merriweather',
-    family: "'Merriweather', serif",
+    family: '\'Merriweather\', serif',
     google: 'Merriweather:opsz,wght@18..144,300..700',
   },
-];
+]
 
-export const DEFAULT_PRESET_ID = 'echoes';
+export const DEFAULT_PRESET_ID = 'echoes'
 
 export const DEFAULT_CONFIG: ThemeConfig = {
   pageBg: '#0b0d13',
@@ -127,7 +127,7 @@ export const DEFAULT_CONFIG: ThemeConfig = {
   accent: '#dc2626',
   accentHover: '#ef4444',
   accentSoft: '#f87171',
-  fontSans: "'Quicksand', sans-serif",
+  fontSans: '\'Quicksand\', sans-serif',
   fontSizeBase: 18,
   lineHeight: 1.6,
   contentMaxWidth: 1180,
@@ -139,7 +139,7 @@ export const DEFAULT_CONFIG: ThemeConfig = {
   codeFontSize: 16,
   codePlaceholder: '#D70000',
   shikiTheme: 'echoes',
-};
+}
 
 export const PRESETS: ThemePreset[] = [
   { id: DEFAULT_PRESET_ID, label: 'Echoes (default)', config: { ...DEFAULT_CONFIG } },
@@ -159,7 +159,7 @@ export const PRESETS: ThemePreset[] = [
       accent: '#b91c1c',
       accentHover: '#991b1b',
       accentSoft: '#c45c5c',
-      fontSans: "'Quicksand', sans-serif",
+      fontSans: '\'Quicksand\', sans-serif',
       fontSizeBase: 18,
       lineHeight: 1.7,
       contentMaxWidth: 1180,
@@ -194,7 +194,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#e85d5d',
       codePlaceholder: '#e85d5d',
       shikiTheme: 'nord',
-      fontSans: "'Source Sans 3', sans-serif",
+      fontSans: '\'Source Sans 3\', sans-serif',
       fontSizeBase: 18,
       lineHeight: 1.65,
     },
@@ -246,7 +246,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#b91c1c',
       codePlaceholder: '#b91c1c',
       shikiTheme: 'github-light',
-      fontSans: "'Literata', serif",
+      fontSans: '\'Literata\', serif',
       fontSizeBase: 18,
       lineHeight: 1.7,
       radius: 4,
@@ -273,7 +273,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#7aa2f7',
       codePlaceholder: '#f7768e',
       shikiTheme: 'tokyo-night',
-      fontSans: "'IBM Plex Sans', sans-serif",
+      fontSans: '\'IBM Plex Sans\', sans-serif',
       fontSizeBase: 17,
       lineHeight: 1.65,
       radius: 8,
@@ -300,7 +300,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#f38ba8',
       codePlaceholder: '#f38ba8',
       shikiTheme: 'catppuccin-mocha',
-      fontSans: "'Nunito Sans', sans-serif",
+      fontSans: '\'Nunito Sans\', sans-serif',
       fontSizeBase: 18,
       lineHeight: 1.7,
       radius: 10,
@@ -328,7 +328,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#fb4934',
       codePlaceholder: '#fb4934',
       shikiTheme: 'gruvbox-dark-medium',
-      fontSans: "'Source Serif 4', serif",
+      fontSans: '\'Source Serif 4\', serif',
       fontSizeBase: 18,
       lineHeight: 1.65,
       radius: 2,
@@ -355,7 +355,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#2aa198',
       codePlaceholder: '#dc322f',
       shikiTheme: 'solarized-dark',
-      fontSans: "'Source Code Pro', monospace",
+      fontSans: '\'Source Code Pro\', monospace',
       fontSizeBase: 16,
       lineHeight: 1.55,
       codeFontSize: 15,
@@ -384,7 +384,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#b4637a',
       codePlaceholder: '#b4637a',
       shikiTheme: 'rose-pine-dawn',
-      fontSans: "'Merriweather', serif",
+      fontSans: '\'Merriweather\', serif',
       fontSizeBase: 18,
       lineHeight: 1.75,
       radius: 12,
@@ -412,7 +412,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#ff7edb',
       codePlaceholder: '#f97e72',
       shikiTheme: 'synthwave-84',
-      fontSans: "'Space Grotesk', sans-serif",
+      fontSans: '\'Space Grotesk\', sans-serif',
       fontSizeBase: 17,
       lineHeight: 1.6,
       radius: 8,
@@ -439,7 +439,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#a7c080',
       codePlaceholder: '#e67e80',
       shikiTheme: 'everforest-dark',
-      fontSans: "'Outfit', sans-serif",
+      fontSans: '\'Outfit\', sans-serif',
       fontSizeBase: 18,
       lineHeight: 1.7,
       radius: 6,
@@ -467,7 +467,7 @@ export const PRESETS: ThemePreset[] = [
       codeInlineFg: '#cf222e',
       codePlaceholder: '#cf222e',
       shikiTheme: 'one-light',
-      fontSans: "'Inter', sans-serif",
+      fontSans: '\'Inter\', sans-serif',
       fontSizeBase: 17,
       lineHeight: 1.65,
       radius: 6,
@@ -475,15 +475,14 @@ export const PRESETS: ThemePreset[] = [
       contentGap: 1.5,
     },
   },
-];
-const FONT_LINK_ID = 'csl-theme-font';
+]
+const FONT_LINK_ID = 'csl-theme-font'
 
 function fontOptionForFamily(family: string): FontOption | undefined {
-  return FONT_OPTIONS.find((f) => f.family === family);
+  return FONT_OPTIONS.find((f) => f.family === family)
 }
-
 export function configToCssVars(config: ThemeConfig): ShikiVarMap {
-  const shiki = getShikiTheme(config.shikiTheme).vars;
+  const shiki = getShikiTheme(config.shikiTheme).vars
   return {
     '--page-bg': config.pageBg,
     '--surface': config.surface,
@@ -511,28 +510,25 @@ export function configToCssVars(config: ThemeConfig): ShikiVarMap {
     ...shiki,
     // Code blocks use --shiki-background inline; keep it tied to the code-bg control.
     '--shiki-background': config.codeBg,
-  };
+  }
 }
-
 export function applyCssVars(vars: ShikiVarMap, root: HTMLElement = document.documentElement): void {
   for (const [key, value] of Object.entries(vars)) {
-    root.style.setProperty(key, value);
+    root.style.setProperty(key, value)
   }
 }
-
 export function clearCssVars(root: HTMLElement = document.documentElement): void {
   for (const key of Object.keys(configToCssVars(DEFAULT_CONFIG))) {
-    root.style.removeProperty(key);
+    root.style.removeProperty(key)
   }
 }
-
 function normalizeHexColor(value: string): string {
-  const v = value.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase();
+  const v = value.trim()
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase()
   if (/^#[0-9a-fA-F]{3}$/.test(v)) {
-    return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`.toLowerCase();
+    return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`.toLowerCase()
   }
-  return v;
+  return v
 }
 
 const COLOR_KEYS: (keyof ThemeConfig)[] = [
@@ -551,113 +547,101 @@ const COLOR_KEYS: (keyof ThemeConfig)[] = [
   'codeInlineBg',
   'codeInlineFg',
   'codePlaceholder',
-];
+]
 
 function normalizeConfig(config: Partial<ThemeConfig>): ThemeConfig {
-  const merged = { ...DEFAULT_CONFIG, ...config };
+  const merged = { ...DEFAULT_CONFIG, ...config }
   for (const key of COLOR_KEYS) {
-    merged[key] = normalizeHexColor(String(merged[key])) as never;
+    merged[key] = normalizeHexColor(String(merged[key])) as never
   }
-  merged.shikiTheme = getShikiTheme(merged.shikiTheme).id;
-  return merged;
+  merged.shikiTheme = getShikiTheme(merged.shikiTheme).id
+  return merged
 }
-
 export function configsMatch(a: ThemeConfig, b: ThemeConfig): boolean {
-  const left = normalizeConfig(a);
-  const right = normalizeConfig(b);
-  return (Object.keys(DEFAULT_CONFIG) as (keyof ThemeConfig)[]).every((key) => left[key] === right[key]);
+  const left = normalizeConfig(a)
+  const right = normalizeConfig(b)
+  return (Object.keys(DEFAULT_CONFIG) as (keyof ThemeConfig)[]).every((key) => left[key] === right[key])
 }
-
 export function matchPresetId(config: ThemeConfig): string | '' {
-  const preset = PRESETS.find((p) => configsMatch(p.config, config));
-  if (preset) return preset.id;
-  if (configsMatch(config, DEFAULT_CONFIG)) return DEFAULT_PRESET_ID;
-  return '';
+  const preset = PRESETS.find((p) => configsMatch(p.config, config))
+  if (preset) return preset.id
+  if (configsMatch(config, DEFAULT_CONFIG)) return DEFAULT_PRESET_ID
+  return ''
 }
-
 export function ensureFontLoaded(family: string): void {
-  const option = fontOptionForFamily(family);
-  if (!option?.google) return;
+  const option = fontOptionForFamily(family)
+  if (!option?.google) return
 
-  let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null;
-  const href = `https://fonts.googleapis.com/css2?family=${option.google}&display=swap`;
+  let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null
+  const href = `https://fonts.googleapis.com/css2?family=${option.google}&display=swap`
   if (link) {
-    if (link.href !== href) link.href = href;
-    return;
+    if (link.href !== href) link.href = href
+    return
   }
-  link = document.createElement('link');
-  link.id = FONT_LINK_ID;
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
+  link = document.createElement('link')
+  link.id = FONT_LINK_ID
+  link.rel = 'stylesheet'
+  link.href = href
+  document.head.appendChild(link)
 }
-
 export function apply(config: ThemeConfig, options: { persist?: boolean } = {}): ThemeConfig {
-  const merged = normalizeConfig(config);
-  const vars = configToCssVars(merged);
-  applyCssVars(vars);
-  ensureFontLoaded(merged.fontSans);
-
+  const merged = normalizeConfig(config)
+  const vars = configToCssVars(merged)
+  applyCssVars(vars)
+  ensureFontLoaded(merged.fontSans)
   if (options.persist !== false) {
     try {
-      localStorage.setItem(STORAGE_ACTIVE, JSON.stringify(merged));
-      localStorage.setItem(STORAGE_VARS, JSON.stringify(vars));
+      localStorage.setItem(STORAGE_ACTIVE, JSON.stringify(merged))
+      localStorage.setItem(STORAGE_VARS, JSON.stringify(vars))
     } catch {
       /* private mode / quota */
     }
   }
-  return merged;
+  return merged
 }
-
 export function getActive(): ThemeConfig {
   try {
-    const raw = localStorage.getItem(STORAGE_ACTIVE);
-    if (!raw) return normalizeConfig({});
-    return normalizeConfig(JSON.parse(raw) as Partial<ThemeConfig>);
+    const raw = localStorage.getItem(STORAGE_ACTIVE)
+    if (!raw) return normalizeConfig({})
+    return normalizeConfig(JSON.parse(raw) as Partial<ThemeConfig>)
   } catch {
-    return normalizeConfig({});
+    return normalizeConfig({})
   }
 }
-
 export function listPresets(): ThemePreset[] {
-  return PRESETS;
+  return PRESETS
 }
-
 export function getPreset(id: string): ThemePreset | undefined {
-  return PRESETS.find((p) => p.id === id);
+  return PRESETS.find((p) => p.id === id)
 }
-
 export function listSaved(): Record<string, ThemeConfig> {
   try {
-    const raw = localStorage.getItem(STORAGE_SAVED);
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, ThemeConfig>;
+    const raw = localStorage.getItem(STORAGE_SAVED)
+    if (!raw) return {}
+    return JSON.parse(raw) as Record<string, ThemeConfig>
   } catch {
-    return {};
+    return {}
   }
 }
-
 export function save(name: string, config: ThemeConfig): void {
-  const trimmed = name.trim();
-  if (!trimmed) throw new Error('Name is required');
-  const saved = listSaved();
-  saved[trimmed] = normalizeConfig(config);
-  localStorage.setItem(STORAGE_SAVED, JSON.stringify(saved));
+  const trimmed = name.trim()
+  if (!trimmed) throw new Error('Name is required')
+  const saved = listSaved()
+  saved[trimmed] = normalizeConfig(config)
+  localStorage.setItem(STORAGE_SAVED, JSON.stringify(saved))
 }
-
 export function deleteSaved(name: string): void {
-  const saved = listSaved();
-  delete saved[name];
-  localStorage.setItem(STORAGE_SAVED, JSON.stringify(saved));
+  const saved = listSaved()
+  delete saved[name]
+  localStorage.setItem(STORAGE_SAVED, JSON.stringify(saved))
 }
-
 export function resetToDefault(): ThemeConfig {
   try {
-    localStorage.removeItem(STORAGE_ACTIVE);
-    localStorage.removeItem(STORAGE_VARS);
+    localStorage.removeItem(STORAGE_ACTIVE)
+    localStorage.removeItem(STORAGE_VARS)
   } catch {
     /* ignore */
   }
-  clearCssVars();
-  return apply(normalizeConfig({}), { persist: false });
+  clearCssVars()
+  return apply(normalizeConfig({}), { persist: false })
 }

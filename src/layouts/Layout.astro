@@ -1,24 +1,24 @@
 ---
-import '../styles/global.css';
-import CopyCodeButton from '../components/layout/CopyCodeButton.astro';
-import TooltipPopover from '../components/layout/TooltipPopover.astro';
-import Footer from '../components/layout/Footer.astro';
-import Navbar from '../components/layout/Navbar.astro';
-import { SHIKI_THEMES } from '../styles/shiki-themes';
-import { DEFAULT_CONFIG, FONT_OPTIONS, configToCssVars } from '../scripts/theme-config';
-import type { LayoutProps as Props } from '@types';
+import '../styles/global.css'
+import CopyCodeButton from '../components/layout/CopyCodeButton.astro'
+import TooltipPopover from '../components/layout/TooltipPopover.astro'
+import Footer from '../components/layout/Footer.astro'
+import Navbar from '../components/layout/Navbar.astro'
+import { SHIKI_THEMES } from '../styles/shiki-themes'
+import { DEFAULT_CONFIG, FONT_OPTIONS, configToCssVars } from '../scripts/theme-config'
+import type { LayoutProps as Props } from '@types'
 
-const { type = 'website', publishedTime, wide = false } = Astro.props;
+const { type = 'website', publishedTime, wide = false } = Astro.props
 
-const title = Astro.props.title ?? 'CurlSwiggerLabs';
-const description = Astro.props.description ?? 'PortSwigger Web Security Academy labs solved with curl.';
+const title = Astro.props.title ?? 'CurlSwiggerLabs'
+const description = Astro.props.description ?? 'PortSwigger Web Security Academy labs solved with curl.'
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const pathname = Astro.url.pathname;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+const pathname = Astro.url.pathname
 
-const imagePath = Astro.props.image ?? '/og-default.png';
-const ogImageURL = new URL(imagePath, Astro.site);
-const imageExt = imagePath.split('?')[0].split('.').pop()?.toLowerCase();
+const imagePath = Astro.props.image ?? '/og-default.png'
+const ogImageURL = new URL(imagePath, Astro.site)
+const imageExt = imagePath.split('?')[0].split('.').pop()?.toLowerCase()
 const ogImageType =
   imageExt === 'jpg' || imageExt === 'jpeg'
     ? 'image/jpeg'
@@ -26,17 +26,17 @@ const ogImageType =
       ? 'image/webp'
       : imageExt === 'svg'
         ? 'image/svg+xml'
-        : 'image/png';
-const isDefaultOgImage = imagePath === '/og-default.png';
-const ogImageWidth = '1200';
-const ogImageHeight = isDefaultOgImage ? '627' : '675';
+        : 'image/png'
+const isDefaultOgImage = imagePath === '/og-default.png'
+const ogImageWidth = '1200'
+const ogImageHeight = isDefaultOgImage ? '627' : '675'
 const shikiBootMap = Object.fromEntries(
   Object.values(SHIKI_THEMES).map((theme) => [theme.id, theme.vars]),
-);
+)
 const fontBootMap = Object.fromEntries(
   FONT_OPTIONS.filter((font) => font.google).map((font) => [font.family, font.google]),
-);
-const defaultThemeVars = configToCssVars(DEFAULT_CONFIG);
+)
+const defaultThemeVars = configToCssVars(DEFAULT_CONFIG)
 const themeBootScript = `(function () {
   try {
     var SHIKI = ${JSON.stringify(shikiBootMap)};

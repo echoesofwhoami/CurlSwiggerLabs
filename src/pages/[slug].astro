@@ -1,9 +1,9 @@
 ---
-import PostLayout from '../layouts/PostLayout.astro';
-import { getPosts } from '../utils';
+import PostLayout from '../layouts/PostLayout.astro'
+import { getPosts } from '../utils'
 
 export async function getStaticPaths() {
-  return await getPosts();
+  return await getPosts()
 }
 
 const { post } = Astro.props;

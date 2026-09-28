@@ -1,4 +1,4 @@
-import type { GlossaryEntry } from './glossary';
+import type { GlossaryEntry } from './glossary'
 
 export interface TransformerOpts {
   codeLang?: string;
@@ -41,4 +41,4 @@ export interface JwtWrap {
   short?: string;
 }
 
-export type LineWrap = GlossaryWrap | JwtWrap;
+export type LineWrap = GlossaryWrap | JwtWrap

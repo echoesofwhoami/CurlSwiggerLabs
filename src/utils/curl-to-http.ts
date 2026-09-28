@@ -1,6 +1,6 @@
-import type { HttpConversion } from '@types';
+import type { HttpConversion } from '@types'
 
-export type { HttpConversion };
+export type { HttpConversion }
 
 /**
  * curl-to-http.ts
@@ -18,123 +18,112 @@ export type { HttpConversion };
 
 /** Collapse backslash-newline continuations and trim. */
 function joinContinuations(cmd: string): string {
-  return cmd.replace(/\\\n[ \t]*/g, ' ').trim();
+  return cmd.replace(/\\\n[ \t]*/g, ' ').trim()
 }
-
 /**
  * Return the portion of `s` that comes before the first unquoted `|`.
  * Handles single-quoted, double-quoted, and $'...' strings.
  */
 function extractBeforePipe(s: string): string {
-  let inSingle = false;
-  let inDouble = false;
-  let inAnsiC = false; // $'...'
+  let inSingle = false
+  let inDouble = false
+  let inAnsiC = false // $'...'
 
   for (let i = 0; i < s.length; i++) {
-    const c = s[i];
+    const c = s[i]
 
     if (inAnsiC) {
-      if (c === '\\') { i++; continue; } // skip escaped char
-      if (c === "'") inAnsiC = false;
-      continue;
+      if (c === '\\') { i++; continue } // skip escaped char
+      if (c === '\'') inAnsiC = false
+      continue
     }
-
     if (inSingle) {
-      if (c === "'") inSingle = false;
-      continue;
+      if (c === '\'') inSingle = false
+      continue
     }
-
     if (inDouble) {
-      if (c === '\\') { i++; continue; }
-      if (c === '"') inDouble = false;
-      continue;
+      if (c === '\\') { i++; continue }
+      if (c === '"') inDouble = false
+      continue
     }
-
     // Unquoted context
-    if (c === '$' && s[i + 1] === "'") { inAnsiC = true; i++; continue; }
-    if (c === "'") { inSingle = true; continue; }
-    if (c === '"') { inDouble = true; continue; }
-    if (c === '|') return s.slice(0, i);
+    if (c === '$' && s[i + 1] === '\'') { inAnsiC = true; i++; continue }
+    if (c === '\'') { inSingle = true; continue }
+    if (c === '"') { inDouble = true; continue }
+    if (c === '|') return s.slice(0, i)
   }
-  return s;
+  return s
 }
-
 /**
  * Tokenise a shell command fragment into an array of strings, honouring
  * double-quotes, single-quotes, and bash $'…' ANSI-C quoting.
  */
 function tokenize(input: string): string[] {
-  const tokens: string[] = [];
-  let i = 0;
-  const n = input.length;
+  const tokens: string[] = []
+  let i = 0
+  const n = input.length
 
   while (i < n) {
     // skip whitespace
-    while (i < n && /\s/.test(input[i])) i++;
-    if (i >= n) break;
+    while (i < n && /\s/.test(input[i])) i++
+    if (i >= n) break
 
-    let token = '';
+    let token = ''
 
-    if (input[i] === '$' && input[i + 1] === "'") {
+    if (input[i] === '$' && input[i + 1] === '\'') {
       // $'...' ANSI-C quoting
-      i += 2;
-      while (i < n && input[i] !== "'") {
+      i += 2
+      while (i < n && input[i] !== '\'') {
         if (input[i] === '\\' && i + 1 < n) {
-          i++;
+          i++
           switch (input[i]) {
-            case 'r':  token += '\r'; break;
-            case 'n':  token += '\n'; break;
-            case 't':  token += '\t'; break;
-            case '0':  token += '\0'; break;
-            default:   token += input[i];
+            case 'r': token += '\r'; break
+            case 'n': token += '\n'; break
+            case 't': token += '\t'; break
+            case '0': token += '\0'; break
+            default: token += input[i]
           }
         } else {
-          token += input[i];
+          token += input[i]
         }
-        i++;
+        i++
       }
-      i++; // closing '
+      i++ // closing '
     } else if (input[i] === '"') {
-      i++;
+      i++
       while (i < n && input[i] !== '"') {
-        if (input[i] === '\\' && i + 1 < n) { i++; token += input[i]; }
-        else token += input[i];
-        i++;
+        if (input[i] === '\\' && i + 1 < n) { i++; token += input[i] } else token += input[i]
+        i++
       }
-      i++; // closing "
-    } else if (input[i] === "'") {
-      i++;
-      while (i < n && input[i] !== "'") { token += input[i++]; }
-      i++; // closing '
+      i++ // closing "
+    } else if (input[i] === '\'') {
+      i++
+      while (i < n && input[i] !== '\'') { token += input[i++] }
+      i++ // closing '
     } else {
       // unquoted — read until whitespace
-      while (i < n && !/\s/.test(input[i])) { token += input[i++]; }
+      while (i < n && !/\s/.test(input[i])) { token += input[i++] }
     }
-
-    tokens.push(token);
+    tokens.push(token)
   }
-
-  return tokens;
+  return tokens
 }
-
 /** Extract `{ host, path }` from a URL string that may contain <placeholders>
  *  or shell variable references like `$BASE_LAB_URL/path`. */
 function parseUrlParts(url: string): { host: string; path: string } | null {
   // Standard https?:// URL (possibly with <placeholder> segments)
-  const absolute = url.match(/^https?:\/\/([^/]+)(\/[^]*)?$/);
-  if (absolute) return { host: absolute[1], path: absolute[2] ?? '/' };
+  const absolute = url.match(/^https?:\/\/([^/]+)(\/[^]*)?$/)
+  if (absolute) return { host: absolute[1], path: absolute[2] ?? '/' }
 
   // Shell variable URL: $VAR/path  or  ${VAR}/path
-  const shellVar = url.match(/^(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)(\/[^]*)?$/);
-  if (shellVar) return { host: shellVar[1], path: shellVar[2] ?? '/' };
+  const shellVar = url.match(/^(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)(\/[^]*)?$/)
+  if (shellVar) return { host: shellVar[1], path: shellVar[2] ?? '/' }
 
-  return null;
+  return null
 }
-
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
-
 /**
  * Parse `curlCmd` and return an `HttpConversion`, or `null` when the command
  * is not a recognisable curl invocation that can be meaningfully displayed.
@@ -145,28 +134,28 @@ function parseUrlParts(url: string): { host: string; path: string } | null {
  *             before parsing so the raw HTTP output shows real host/paths.
  */
 export function curlToHttp(curlCmd: string, env: Record<string, string> = {}): HttpConversion | null {
-  const joined = joinContinuations(curlCmd);
+  const joined = joinContinuations(curlCmd)
 
   // Expand shell variables collected from sibling env scripts.
   const expanded = Object.keys(env).length
     ? joined.replace(
-        /\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/g,
-        (full, name) => (name in env ? env[name] : full),
-      )
-    : joined;
+      /\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/g,
+      (full, name) => (name in env ? env[name] : full),
+    )
+    : joined
 
   // Must start with the `curl` command
-  if (!/^curl\b/.test(expanded)) return null;
+  if (!/^curl\b/.test(expanded)) return null
 
-  const afterCurl = expanded.slice(4); // everything after "curl"
-  const curlPart = extractBeforePipe(afterCurl);
-  const tokens = tokenize(curlPart.trim());
+  const afterCurl = expanded.slice(4) // everything after "curl"
+  const curlPart = extractBeforePipe(afterCurl)
+  const tokens = tokenize(curlPart.trim())
 
-  let method: string | undefined;
-  let url: string | undefined;
-  const headers: [string, string][] = [];
-  let body: string | undefined;
-  let cookieHeader: string | undefined;
+  let method: string | undefined
+  let url: string | undefined
+  const headers: [string, string][] = []
+  let body: string | undefined
+  let cookieHeader: string | undefined
 
   // Flags whose value argument we skip (no useful HTTP representation)
   const SKIP_WITH_VALUE = new Set([
@@ -178,7 +167,7 @@ export function curlToHttp(curlCmd: string, env: Record<string, string> = {}): H
     '--proxy', '-x',
     '--limit-rate',
     '--retry',
-  ]);
+  ])
 
   // Flags that are self-contained (no value)
   const SKIP_SOLO = new Set([
@@ -201,45 +190,45 @@ export function curlToHttp(curlCmd: string, env: Record<string, string> = {}): H
     '--ntlm',
     '--digest',
     '--anyauth',
-  ]);
+  ])
 
-  let i = 0;
+  let i = 0
   while (i < tokens.length) {
-    const tok = tokens[i];
+    const tok = tokens[i]
 
     if (tok === '-X' || tok === '--request') {
-      method = tokens[++i];
+      method = tokens[++i]
     } else if (tok === '-H' || tok === '--header') {
-      const raw = tokens[++i];
-      const colon = raw.indexOf(':');
+      const raw = tokens[++i]
+      const colon = raw.indexOf(':')
       if (colon !== -1) {
-        headers.push([raw.slice(0, colon).trim(), raw.slice(colon + 1).trim()]);
+        headers.push([raw.slice(0, colon).trim(), raw.slice(colon + 1).trim()])
       }
     } else if (tok === '-b' || tok === '--cookie') {
-      cookieHeader = tokens[++i];
+      cookieHeader = tokens[++i]
     } else if (tok === '-d' || tok === '--data' || tok === '--data-raw') {
-      body = tokens[++i];
-      method ??= 'POST';
+      body = tokens[++i]
+      method ??= 'POST'
     } else if (tok === '--data-binary') {
-      body = tokens[++i];
-      method ??= 'POST';
+      body = tokens[++i]
+      method ??= 'POST'
     } else if (tok === '--data-urlencode') {
-      const val = tokens[++i];
+      const val = tokens[++i]
       // val may be "key=value" or just "value" — keep as-is for display
-      body = body ? `${body}&${val}` : val;
-      method ??= 'POST';
+      body = body ? `${body}&${val}` : val
+      method ??= 'POST'
     } else if (tok === '-u' || tok === '--user') {
-      const creds = tokens[++i];
-      const b64 = Buffer.from(creds, 'utf-8').toString('base64');
-      headers.push(['Authorization', `Basic ${b64}`]);
+      const creds = tokens[++i]
+      const b64 = Buffer.from(creds, 'utf-8').toString('base64')
+      headers.push(['Authorization', `Basic ${b64}`])
     } else if (tok === '-A' || tok === '--user-agent') {
-      headers.push(['User-Agent', tokens[++i]]);
+      headers.push(['User-Agent', tokens[++i]])
     } else if (tok === '-e' || tok === '--referer') {
-      headers.push(['Referer', tokens[++i]]);
+      headers.push(['Referer', tokens[++i]])
     } else if (tok === '--resolve') {
-      i++; // skip "host:port:addr"
+      i++ // skip "host:port:addr"
     } else if (SKIP_WITH_VALUE.has(tok)) {
-      i++; // skip the value
+      i++ // skip the value
     } else if (SKIP_SOLO.has(tok)) {
       // nothing
     } else if (tok.startsWith('-')) {
@@ -249,56 +238,48 @@ export function curlToHttp(curlCmd: string, env: Record<string, string> = {}): H
       // For truly unknown long flags with values we can't safely skip,
       // just ignore.
     } else if (!url) {
-      url = tok;
+      url = tok
     }
-
-    i++;
+    i++
   }
 
-  if (!url) return null;
+  if (!url) return null
 
-  const parts = parseUrlParts(url);
-  if (!parts) return null;
+  const parts = parseUrlParts(url)
+  if (!parts) return null
 
-  const finalMethod = method ?? (body !== undefined ? 'POST' : 'GET');
+  const finalMethod = method ?? (body !== undefined ? 'POST' : 'GET')
 
   // Build lines
-  const lines: string[] = [];
-  lines.push(`${finalMethod} ${parts.path} HTTP/1.1`);
-  lines.push(`Host: ${parts.host}`);
-
+  const lines: string[] = []
+  lines.push(`${finalMethod} ${parts.path} HTTP/1.1`)
+  lines.push(`Host: ${parts.host}`)
   if (cookieHeader) {
-    lines.push(`Cookie: ${cookieHeader}`);
+    lines.push(`Cookie: ${cookieHeader}`)
   }
-
   for (const [name, value] of headers) {
-    lines.push(`${name}: ${value}`);
+    lines.push(`${name}: ${value}`)
   }
-
   if (body !== undefined) {
     // Add Content-Type only if not already provided via -H
     const hasContentType = headers.some(
       ([n]) => n.toLowerCase() === 'content-type',
-    );
+    )
     if (!hasContentType) {
-      lines.push('Content-Type: application/x-www-form-urlencoded');
+      lines.push('Content-Type: application/x-www-form-urlencoded')
     }
 
     // Compute byte length (body may contain \r\n from $'...' parsing)
-    const bodyBytes = Buffer.byteLength(body, 'utf-8');
-    lines.push(`Content-Length: ${bodyBytes}`);
+    const bodyBytes = Buffer.byteLength(body, 'utf-8')
+    lines.push(`Content-Length: ${bodyBytes}`)
   }
-
-  lines.push(''); // mandatory blank line
-
+  lines.push('') // mandatory blank line
   if (body !== undefined) {
-    lines.push(body);
+    lines.push(body)
   }
-
-  return { raw: lines.join('\n') };
+  return { raw: lines.join('\n') }
 }
-
 /** True when the file name/extension indicates a shell script. */
 export function isBashFile(file: string): boolean {
-  return /\.(sh|bash)$/.test(file);
+  return /\.(sh|bash)$/.test(file)
 }

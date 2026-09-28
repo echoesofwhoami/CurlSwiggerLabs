@@ -1,6 +1,6 @@
 ---
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   alignRequestDiff,
   parseJwt,
@@ -9,38 +9,38 @@ import {
   type DiffMark,
   type DiffToken,
   type JwtParts,
-} from '../../utils/request-diff';
-import type { RequestDiffProps as Props } from '@types';
-import '@styles/mdx/RequestDiff.css';
+} from '../../utils/request-diff'
+import type { RequestDiffProps as Props } from '@types'
+import '@styles/mdx/RequestDiff.css'
 
-const scriptsRoot = join(process.cwd(), 'src/data/scripts');
-const { left: leftFile, right: rightFile, leftLabel, rightLabel } = Astro.props;
+const scriptsRoot = join(process.cwd(), 'src/data/scripts')
+const { left: leftFile, right: rightFile, leftLabel, rightLabel } = Astro.props
 
 const leftRaw = prettyIfJson(
   readFileSync(join(scriptsRoot, leftFile), 'utf-8').replace(/\n$/, ''),
   leftFile,
-);
+)
 const rightRaw = prettyIfJson(
   readFileSync(join(scriptsRoot, rightFile), 'utf-8').replace(/\n$/, ''),
   rightFile,
-);
-const rows = alignRequestDiff(leftRaw, rightRaw);
-const leftJwt = parseJwt(leftRaw);
-const rightJwt = parseJwt(rightRaw);
-const jwtMode = Boolean(leftJwt && rightJwt);
-const jsonMode = !jwtMode && (leftFile.endsWith('.json') || rightFile.endsWith('.json'));
-const httpMode = !jwtMode && !jsonMode && (leftFile.endsWith('.http') || rightFile.endsWith('.http'));
-const headerChanged = Boolean(leftJwt && rightJwt && leftJwt.header !== rightJwt.header);
-const payloadChanged = Boolean(leftJwt && rightJwt && leftJwt.payload !== rightJwt.payload);
-const signatureChanged = Boolean(leftJwt && rightJwt && leftJwt.signature !== rightJwt.signature);
-const leftTitle = leftLabel ?? 'Original';
-const rightTitle = rightLabel ?? 'Exploit';
-const diffId = `rd-${leftFile.replace(/[^a-z0-9]/gi, '-')}-${rightFile.replace(/[^a-z0-9]/gi, '-')}`;
+)
+const rows = alignRequestDiff(leftRaw, rightRaw)
+const leftJwt = parseJwt(leftRaw)
+const rightJwt = parseJwt(rightRaw)
+const jwtMode = Boolean(leftJwt && rightJwt)
+const jsonMode = !jwtMode && (leftFile.endsWith('.json') || rightFile.endsWith('.json'))
+const httpMode = !jwtMode && !jsonMode && (leftFile.endsWith('.http') || rightFile.endsWith('.http'))
+const headerChanged = Boolean(leftJwt && rightJwt && leftJwt.header !== rightJwt.header)
+const payloadChanged = Boolean(leftJwt && rightJwt && leftJwt.payload !== rightJwt.payload)
+const signatureChanged = Boolean(leftJwt && rightJwt && leftJwt.signature !== rightJwt.signature)
+const leftTitle = leftLabel ?? 'Original'
+const rightTitle = rightLabel ?? 'Exploit'
+const diffId = `rd-${leftFile.replace(/[^a-z0-9]/gi, '-')}-${rightFile.replace(/[^a-z0-9]/gi, '-')}`
 
 const sides = [
   { id: 'left' as const, jwt: leftJwt, title: leftTitle, tokens: 'left' as const, active: false },
   { id: 'right' as const, jwt: rightJwt, title: rightTitle, tokens: 'right' as const, active: true },
-];
+]
 
 function tokenParts(tokens: DiffToken[]) {
   return tokens.flatMap((token) =>
@@ -49,14 +49,12 @@ function tokenParts(tokens: DiffToken[]) {
       type: token.type,
       placeholder: part.placeholder,
     })),
-  );
+  )
 }
-
 function jwtMark(changed: boolean, side: 'left' | 'right'): DiffMark {
-  if (!changed) return 'eq';
-  return side === 'left' ? 'del' : 'add';
+  if (!changed) return 'eq'
+  return side === 'left' ? 'del' : 'add'
 }
-
 function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
   return [
     {
@@ -83,7 +81,7 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
       mark: jwtMark(signatureChanged, side),
       dot: false,
     },
-  ];
+  ]
 }
 
 ---
@@ -116,18 +114,18 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
           {jwtMode && side.jwt ? (
             <div class="request-diff-single-line request-diff-jwt">
               {jwtLine(side.jwt, side.id).map((seg) => {
-                const hoverable = Boolean(seg.decoded || seg.short);
+                const hoverable = Boolean(seg.decoded || seg.short)
                 return (
-                <span
-                  class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
-                  data-tip-term={hoverable ? seg.term : undefined}
-                  data-tip-decode={seg.decoded ?? undefined}
-                  data-tip-short={seg.short}
-                  role={hoverable ? 'button' : undefined}
-                  tabindex={hoverable ? 0 : undefined}
-                  aria-expanded={hoverable ? 'false' : undefined}
-                ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
-                );
+                  <span
+                    class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
+                    data-tip-term={hoverable ? seg.term : undefined}
+                    data-tip-decode={seg.decoded ?? undefined}
+                    data-tip-short={seg.short}
+                    role={hoverable ? 'button' : undefined}
+                    tabindex={hoverable ? 0 : undefined}
+                    aria-expanded={hoverable ? 'false' : undefined}
+                  ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
+                )
               })}
             </div>
           ) : (
@@ -138,7 +136,7 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
                     <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
                   ))}
                 </div>
-              )
+              ),
             )
           )}
         </div>
@@ -180,18 +178,18 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
             {jwtMode && side.jwt ? (
               <div class="request-diff-single-line request-diff-jwt">
                 {jwtLine(side.jwt, side.id).map((seg) => {
-                  const hoverable = Boolean(seg.decoded || seg.short);
+                  const hoverable = Boolean(seg.decoded || seg.short)
                   return (
-                  <span
-                    class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
-                    data-tip-term={hoverable ? seg.term : undefined}
-                    data-tip-decode={seg.decoded ?? undefined}
-                    data-tip-short={seg.short}
-                    role={hoverable ? 'button' : undefined}
-                    tabindex={hoverable ? 0 : undefined}
-                    aria-expanded={hoverable ? 'false' : undefined}
-                  ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
-                  );
+                    <span
+                      class:list={['jwt-piece', { tip: hoverable, 'tip--syntax': hoverable }]}
+                      data-tip-term={hoverable ? seg.term : undefined}
+                      data-tip-decode={seg.decoded ?? undefined}
+                      data-tip-short={seg.short}
+                      role={hoverable ? 'button' : undefined}
+                      tabindex={hoverable ? 0 : undefined}
+                      aria-expanded={hoverable ? 'false' : undefined}
+                    ><span class:list={['jwt-seg', seg.mark]}>{seg.text}</span>{seg.dot ? <span class="jwt-dot">.</span> : null}</span>
+                  )
                 })}
               </div>
             ) : (
@@ -202,7 +200,7 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
                       <span class:list={[part.type, { ph: part.placeholder }]}>{part.text}</span>
                     ))}
                   </div>
-                )
+                ),
               )
             )}
           </div>
@@ -213,65 +211,62 @@ function jwtLine(jwt: JwtParts, side: 'left' | 'right') {
 </div>
 
 <script>
-  function initRequestDiff() {
-    const roots = document.querySelectorAll<HTMLElement>(
-      '.request-diff:not([data-rd-init])',
-    );
+function initRequestDiff() {
+  const roots = document.querySelectorAll<HTMLElement>(
+    '.request-diff:not([data-rd-init])',
+  )
 
-    for (const root of roots) {
-      root.dataset.rdInit = '1';
-      const mobile = root.querySelector<HTMLElement>('.request-diff-mobile');
-      const tabs = mobile?.querySelectorAll<HTMLButtonElement>('.request-diff-tab') ?? [];
-      const panels = mobile?.querySelectorAll<HTMLElement>('.request-diff-panel') ?? [];
-      const mobileCopy = mobile?.querySelector<HTMLButtonElement>('.request-diff-copy');
+  for (const root of roots) {
+    root.dataset.rdInit = '1'
+    const mobile = root.querySelector<HTMLElement>('.request-diff-mobile')
+    const tabs = mobile?.querySelectorAll<HTMLButtonElement>('.request-diff-tab') ?? []
+    const panels = mobile?.querySelectorAll<HTMLElement>('.request-diff-panel') ?? []
+    const mobileCopy = mobile?.querySelector<HTMLButtonElement>('.request-diff-copy')
 
-      function showPanel(name: string) {
-        if (mobile) mobile.dataset.active = name;
-        tabs.forEach((tab) => {
-          const on = tab.dataset.panel === name;
-          tab.classList.toggle('is-active', on);
-          tab.setAttribute('aria-selected', String(on));
-        });
-        panels.forEach((panel) => {
-          if (panel.dataset.panel === name) {
-            panel.removeAttribute('hidden');
-          } else {
-            panel.setAttribute('hidden', '');
-          }
-        });
-        if (mobileCopy) mobileCopy.dataset.side = name;
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-      }
-
+    function showPanel(name: string) {
+      if (mobile) mobile.dataset.active = name
       tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-          const name = tab.dataset.panel;
-          if (name) showPanel(name);
-        });
-      });
+        const on = tab.dataset.panel === name
+        tab.classList.toggle('is-active', on)
+        tab.setAttribute('aria-selected', String(on))
+      })
+      panels.forEach((panel) => {
+        if (panel.dataset.panel === name) {
+          panel.removeAttribute('hidden')
+        } else {
+          panel.setAttribute('hidden', '')
+        }
+      })
+      if (mobileCopy) mobileCopy.dataset.side = name
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    }
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const name = tab.dataset.panel
+        if (name) showPanel(name)
+      })
+    })
+    for (const button of root.querySelectorAll<HTMLButtonElement>('.request-diff-copy')) {
+      const labelEl = button.querySelector<HTMLElement>('.request-diff-copy-label')
+      const idleLabel = labelEl?.textContent?.trim() ?? 'Copy'
 
-      for (const button of root.querySelectorAll<HTMLButtonElement>('.request-diff-copy')) {
-        const labelEl = button.querySelector<HTMLElement>('.request-diff-copy-label');
-        const idleLabel = labelEl?.textContent?.trim() ?? 'Copy';
-
-        button.addEventListener('click', async () => {
-          const side = button.dataset.side;
-          const source = root.querySelector<HTMLTextAreaElement>(
-            `textarea.request-diff-source[data-side="${side}"]`,
-          );
-          await navigator.clipboard.writeText(source?.value ?? '');
-          if (labelEl) {
-            labelEl.textContent = button.dataset.copiedLabel ?? 'Copied!';
-            window.setTimeout(() => {
-              labelEl.textContent = idleLabel;
-            }, 700);
-          }
-        });
-      }
+      button.addEventListener('click', async () => {
+        const side = button.dataset.side
+        const source = root.querySelector<HTMLTextAreaElement>(
+          `textarea.request-diff-source[data-side="${side}"]`,
+        )
+        await navigator.clipboard.writeText(source?.value ?? '')
+        if (labelEl) {
+          labelEl.textContent = button.dataset.copiedLabel ?? 'Copied!'
+          window.setTimeout(() => {
+            labelEl.textContent = idleLabel
+          }, 700)
+        }
+      })
     }
   }
-
-  initRequestDiff();
-  document.addEventListener('astro:after-swap', initRequestDiff);
+}
+initRequestDiff()
+document.addEventListener('astro:after-swap', initRequestDiff)
 </script>
 

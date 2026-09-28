@@ -1,11 +1,11 @@
 ---
-import { Image } from 'astro:assets';
-import { formatDate } from '../../utils';
-import psLogo from '../../assets/ps_logo.png';
-import ExternalLink from '../mdx/ExternalLink.astro';
-import MetaChip from './MetaChip.astro';
-import type { PostHeaderProps as Props } from '@types';
-import '@styles/post/PostHeader.css';
+import { Image } from 'astro:assets'
+import { formatDate } from '../../utils'
+import psLogo from '../../assets/ps_logo.png'
+import ExternalLink from '../mdx/ExternalLink.astro'
+import MetaChip from './MetaChip.astro'
+import type { PostHeaderProps as Props } from '@types'
+import '@styles/post/PostHeader.css'
 
 const {
   title,
@@ -17,12 +17,12 @@ const {
   tools,
   technologies = [],
   series,
-} = Astro.props;
-const seriesName = series?.replaceAll('-', ' ');
+} = Astro.props
+const seriesName = series?.replaceAll('-', ' ')
 const descriptionLines = description
   .split(/\n+/)
   .map((line) => line.trim())
-  .filter(Boolean);
+  .filter(Boolean)
 const difficultyClass = `difficulty-chip--${difficulty.toLowerCase()}`;
 
 ---
