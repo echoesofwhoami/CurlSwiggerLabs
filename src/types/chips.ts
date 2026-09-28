@@ -1,7 +1,7 @@
 import type { ImageMetadata } from 'astro'
 import type CurlIcon from '../assets/logos/curl.svg'
 
-type SvgIcon = CurlIcon
+type SvgIcon = typeof CurlIcon
 
 export type ChipVisual =
   | { kind: 'svg'; Icon: SvgIcon; accent: string }

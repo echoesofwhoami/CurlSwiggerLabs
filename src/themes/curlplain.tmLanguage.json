@@ -1,6 +1,7 @@
 {
   "name": "curlplain",
   "scopeName": "source.curlplain",
+  "repository": {},
   "patterns": [
     {
       "name": "constant.other.placeholder.curlplain",
