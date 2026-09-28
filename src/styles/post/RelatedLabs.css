@@ -1,0 +1,31 @@
+.related-labs {
+  margin: 2rem 0;
+}
+
+.related-labs ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+.related-labs a {
+  display: flex;
+  height: 100%;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.related-labs strong {
+  color: var(--heading);
+}
+
+.related-labs span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

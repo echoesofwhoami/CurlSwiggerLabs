@@ -1,0 +1,47 @@
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.7rem 0.28rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--chip-accent) 28%, var(--border));
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--chip-accent) 14%, var(--surface-elevated)) 0%,
+      color-mix(in srgb, var(--surface) 70%, var(--surface-elevated)) 100%
+    );
+  color: var(--heading);
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.meta-chip .meta-chip__mark {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.meta-chip .meta-chip__mark svg,
+.meta-chip .meta-chip__mark img {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  border: 0;
+}
+
+.meta-chip .meta-chip__mark--photo img {
+  border-radius: 0.2rem;
+  object-fit: cover;
+}
+
+.meta-chip .meta-chip__label {
+  line-height: 1.15;
+}

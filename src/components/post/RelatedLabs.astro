@@ -1,15 +1,11 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import { formatDate } from '../../utils';
-
-interface Props {
-  posts: CollectionEntry<'blog'>[];
-}
+import { formatDate, getPostSlug, siteBase } from '../../utils';
+import type { RelatedLabsProps as Props } from '@types';
+import '@styles/post/RelatedLabs.css';
 
 const { posts } = Astro.props;
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const slugFor = (post: CollectionEntry<'blog'>) =>
-  post.id.replace(/\.mdx?$/, '');
+const base = siteBase();
+
 ---
 
 {posts.length > 0 && (
@@ -18,7 +14,7 @@ const slugFor = (post: CollectionEntry<'blog'>) =>
     <ul>
       {posts.map((post) => (
         <li>
-          <a href={`${base}/${slugFor(post)}`}>
+          <a href={`${base}/${getPostSlug(post.id)}`}>
             <strong>{post.data.title}</strong>
             <span>{post.data.difficulty} · {formatDate(post.data.date)}</span>
           </a>
@@ -28,36 +24,3 @@ const slugFor = (post: CollectionEntry<'blog'>) =>
   </section>
 )}
 
-<style>
-  .related-labs {
-    margin: 2rem 0;
-  }
-
-  .related-labs ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-    margin: 0;
-  }
-
-  .related-labs a {
-    display: flex;
-    height: 100%;
-    box-sizing: border-box;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-  }
-
-  .related-labs strong {
-    color: var(--heading);
-  }
-
-  .related-labs span {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-</style>

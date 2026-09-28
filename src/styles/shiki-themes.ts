@@ -1,14 +1,8 @@
 /** Curated Shiki CSS-variable packs for runtime theme switching. */
 
-export type ShikiVarMap = Record<string, string>;
+import type { ShikiThemeId, ShikiThemePack, ShikiVarMap } from '@types';
 
-export interface ShikiThemePack {
-  id: string;
-  label: string;
-  vars: ShikiVarMap;
-}
-
-export type ShikiThemeId = string;
+export type { ShikiThemeId, ShikiThemePack, ShikiVarMap };
 
 function pack(
   id: string,

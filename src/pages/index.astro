@@ -1,8 +1,72 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import HomePage from '../components/pages/HomePage.astro';
+import { siteConfig } from '../site.config';
+import { getGroupedPosts, siteBase } from '../utils';
+import DiscordCta from '../components/home/DiscordCta.astro';
+import PostList from '../components/home/PostList.astro';
+import '@styles/pages/index.css';
+
+const groupedPosts = await getGroupedPosts();
+const aboutHref = `${siteBase()}/about/`;
+
 ---
 
 <Layout title="CurlSwiggerLabs" description="Beginner-friendly explanations that still inspect the bytes, headers, and curl flags that make an exploit work." wide>
-  <HomePage />
+<main class="home-page">
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-shell home-hero__content">
+      <h1 id="home-title">Curl<span>Swigger</span>Labs</h1>
+      <h2>Learn web security by understanding the request.</h2>
+      <p>Beginner-friendly explanations that still inspect the bytes, headers, and curl flags that make an exploit work.</p>
+      <div class="home-hero__actions">
+        <a class="home-button home-button--primary" href="#labs">Browse the labs</a>
+        <a class="home-button" href={aboutHref}>Why curl?</a>
+        <a class="home-link" href={siteConfig.discordInviteUrl || '#discord'}>
+          Ask on Discord
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="intent" aria-labelledby="intent-title">
+    <div class="home-shell">
+      <h2 id="intent-title">What you get</h2>
+      <div class="intent__items">
+        <article>
+          <span aria-hidden="true">01</span>
+          <h3>A clear path, with real depth</h3>
+          <p>Start with the idea, then follow it down to the protocol detail that actually matters.</p>
+        </article>
+        <article>
+          <span aria-hidden="true">02</span>
+          <h3>Requests you can see</h3>
+          <p>curl, small Python scripts, and raw HTTP instead of a stream of unexplained Repeater screenshots.</p>
+        </article>
+        <article>
+          <span aria-hidden="true">03</span>
+          <h3>Exploits and fixes</h3>
+          <p>Solve PortSwigger labs, then look at the parser, validation, or design mistake a builder should fix.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="labs" id="labs" aria-labelledby="labs-title">
+    <div class="home-shell">
+      <header class="labs__header">
+        <h2 id="labs-title">Lab writeups</h2>
+        <p>Pick a category. Every writeup rebuilds the attack one request at a time and explains why it works.</p>
+      </header>
+      {groupedPosts.map(({ category, categoryPosts }) => (
+        <PostList category={category} posts={categoryPosts} />
+      ))}
+    </div>
+  </section>
+
+  <section class="home-discord" id="discord" aria-label="Talk through a lab">
+    <div class="home-shell">
+      <DiscordCta />
+    </div>
+  </section>
+</main>
 </Layout>

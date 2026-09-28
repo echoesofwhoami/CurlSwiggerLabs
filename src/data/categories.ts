@@ -54,3 +54,8 @@ export function getCategory(id: CategoryId) {
     ogImage: category.ogImage,
   };
 }
+
+export function categoryForLabel(label: string) {
+  const categoryId = getCategoryId(label);
+  return categoryId ? getCategory(categoryId) : undefined;
+}

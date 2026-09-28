@@ -1,8 +1,12 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 
-function getPostSlug(id: string): string {
+export function getPostSlug(id: string): string {
   return id.replace(/\.mdx?$/, '');
+}
+
+export function siteBase(): string {
+  return import.meta.env.BASE_URL.replace(/\/$/, '');
 }
 
 function byNewestFirst(

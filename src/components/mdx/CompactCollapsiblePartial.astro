@@ -2,12 +2,7 @@
 import { getEntry, render } from 'astro:content';
 import Term from './Term.astro';
 import RequestDiff from './RequestDiff.astro';
-
-interface Props {
-  partial: string;
-  title: string;
-  collection?: string;
-}
+import type { CompactCollapsiblePartialProps as Props } from '@types';
 
 const { partial, title, collection } = Astro.props;
 

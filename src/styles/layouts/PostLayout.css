@@ -1,0 +1,17 @@
+.post-layout > main {
+  width: min(var(--content-max-width), calc(100% - 40px));
+  max-width: none;
+  box-sizing: border-box;
+  padding-inline: 0;
+  padding-bottom: 4rem;
+}
+
+.post-content > * + * {
+  margin-top: var(--content-gap);
+}
+
+@media (max-width: 640px) {
+  .post-layout > main {
+    width: min(var(--content-max-width), calc(100% - 28px));
+  }
+}

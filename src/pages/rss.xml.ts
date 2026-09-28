@@ -1,6 +1,7 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import type { APIContext } from 'astro';
+import { getPostSlug } from '../utils';
 
 export async function GET(context: APIContext) {
   const posts = await getCollection('blog');
@@ -13,7 +14,7 @@ export async function GET(context: APIContext) {
     description: 'PortSwigger Web Security Academy labs solved with curl.',
     site: context.site!,
     items: sorted.map((post) => {
-      const slug = post.id.replace(/\.mdx?$/, '');
+      const slug = getPostSlug(post.id);
       return {
         title: post.data.title,
         description: post.data.description,

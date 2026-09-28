@@ -1,0 +1,252 @@
+.home-page {
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.home-page .home-shell {
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.home-page .home-hero {
+  position: relative;
+  display: grid;
+  min-height: min(760px, calc(100vh - 64px));
+  align-items: center;
+  isolation: isolate;
+}
+
+.home-page .home-hero::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(circle at 82% 28%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 31rem),
+    linear-gradient(115deg, color-mix(in srgb, var(--surface-elevated) 30%, transparent), transparent 55%);
+  content: '';
+}
+
+.home-page .home-hero::after {
+  position: absolute;
+  z-index: -1;
+  right: 7vw;
+  bottom: 12%;
+  width: min(36vw, 430px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+  box-shadow: 0 -88px 0 color-mix(in srgb, var(--border-muted) 35%, transparent), 0 -176px 0 color-mix(in srgb, var(--border-muted) 18%, transparent);
+  content: '';
+  transform: rotate(-8deg);
+}
+
+.home-page .home-hero__content {
+  padding-block: 5rem;
+}
+
+.home-page .home-hero h1 {
+  margin: 0 0 1.5rem;
+  color: var(--heading);
+  font-size: clamp(2.8rem, 8vw, 6.5rem);
+  letter-spacing: -0.07em;
+}
+
+.home-page .home-hero h1 span {
+  color: var(--accent);
+}
+
+.home-page .home-hero h2 {
+  max-width: 850px;
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 3.35rem);
+  letter-spacing: -0.035em;
+}
+
+.home-page .home-hero p {
+  max-width: 720px;
+  margin-top: 1.4rem;
+  color: var(--text);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+}
+
+.home-page .home-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.home-page .home-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 1rem;
+  border: 1px solid var(--border-muted);
+  border-radius: 5px;
+  color: var(--heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.home-page .home-button:visited {
+  color: var(--heading);
+}
+
+.home-page .home-button:hover {
+  border-color: var(--text-muted);
+  color: var(--heading);
+}
+
+.home-page .home-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.home-page .home-button--primary {
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent-hover);
+}
+
+.home-page .home-button--primary:visited {
+  color: var(--accent-hover);
+}
+
+.home-page .home-button--primary:hover,
+.home-page .home-button--primary:focus-visible {
+  border-color: var(--accent-hover);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-soft);
+}
+
+.home-page .home-link {
+  padding: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.home-page .intent {
+  border-block: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.home-page .intent .home-shell {
+  display: grid;
+  grid-template-columns: 0.7fr 2.3fr;
+  gap: 3rem;
+  padding-block: 3.5rem;
+}
+
+.home-page .intent h2 {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.home-page .intent__items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.home-page .intent article {
+  position: relative;
+  padding-left: 1rem;
+  border-left: 1px solid var(--border-muted);
+}
+
+.home-page .intent article > span {
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.home-page .intent h3 {
+  margin: 0.35rem 0 0.6rem;
+  font-size: 1.05rem;
+}
+
+.home-page .intent p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.home-page .labs {
+  scroll-margin-top: 84px;
+  padding-block: 6rem;
+}
+
+.home-page .labs__header {
+  max-width: 720px;
+  margin-bottom: 3.5rem;
+}
+
+.home-page .labs__header h2 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.home-page .labs__header p {
+  margin-top: 0.8rem;
+  font-size: 1.05rem;
+}
+
+.home-page .home-discord {
+  border-top: 1px solid var(--border);
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 45%),
+    var(--surface);
+}
+
+.home-page .home-discord .home-shell {
+  padding-block: 4rem;
+}
+
+@media (max-width: 820px) {
+  .home-page .intent .home-shell {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .home-page .intent__items {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-page .home-shell {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .home-page .home-hero {
+    min-height: auto;
+  }
+
+  .home-page .home-hero__content {
+    padding-block: 4.5rem;
+  }
+
+  .home-page .home-hero h1 {
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .home-page .home-hero__actions {
+    align-items: stretch;
+  }
+
+  .home-page .home-button {
+    flex: 1 1 auto;
+  }
+
+  .home-page .labs {
+    padding-block: 4.5rem;
+  }
+
+  .home-page .home-discord .home-shell {
+    padding-block: 3rem;
+  }
+}

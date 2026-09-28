@@ -1,0 +1,38 @@
+.post-list + .post-list {
+  margin-top: 4rem;
+}
+
+.post-list > h2 {
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.post-list > h2::before {
+  content: '/';
+  margin-right: 0.55rem;
+  color: var(--accent);
+}
+
+.post-list .post-list__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+
+@media (max-width: 860px) {
+  .post-list .post-list__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .post-list + .post-list {
+    margin-top: 3rem;
+  }
+
+  .post-list .post-list__grid {
+    grid-template-columns: 1fr;
+  }
+}

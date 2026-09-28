@@ -1,19 +1,14 @@
 import { diffLines, diffWordsWithSpace, type Change } from 'diff';
+import type {
+  DiffMark,
+  DiffRow,
+  DiffToken,
+  JwtParts,
+  JwtTipRange,
+  TextPart,
+} from '@types';
 
-export type DiffMark = 'eq' | 'add' | 'del';
-
-export interface DiffToken {
-  value: string;
-  type: DiffMark;
-}
-
-export interface DiffRow {
-  kind: 'eq' | 'add' | 'del' | 'change';
-  left: DiffToken[];
-  right: DiffToken[];
-  /** Single stream for the mobile unified view (eq + del + add in order). */
-  unified: DiffToken[];
-}
+export type { DiffMark, DiffRow, DiffToken, JwtParts, JwtTipRange, TextPart };
 
 function changeLines(change: Change): string[] {
   return change.value.replace(/\n$/, '').split('\n');
@@ -123,11 +118,6 @@ export function alignRequestDiff(left: string, right: string): DiffRow[] {
 
 const PLACEHOLDER = /<[A-Za-z][A-Za-z0-9_-]*>/g;
 
-export interface TextPart {
-  text: string;
-  placeholder: boolean;
-}
-
 /** Split script placeholders like `<lab-url>` so the renderer can restyle them. */
 export function splitPlaceholders(value: string): TextPart[] {
   const parts: TextPart[] = [];
@@ -166,21 +156,6 @@ export function prettyIfJson(code: string, file: string): string {
 const JWT_SEGMENT = /^[A-Za-z0-9_-]+$/;
 const JWT_COMPACT = /[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
 const JWT_LONE = /[A-Za-z0-9_-]+/g;
-
-export interface JwtParts {
-  header: string;
-  payload: string;
-  signature: string;
-  headerJson: string | null;
-  payloadJson: string | null;
-}
-
-export interface JwtTipRange {
-  start: number;
-  end: number;
-  kind: 'header' | 'payload' | 'signature';
-  decoded: string | null;
-}
 
 function overlapsRange(
   a: { start: number; end: number },

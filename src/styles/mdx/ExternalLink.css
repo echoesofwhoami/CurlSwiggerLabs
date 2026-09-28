@@ -1,0 +1,8 @@
+.external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.external-link:hover {
+  text-decoration: underline;
+}

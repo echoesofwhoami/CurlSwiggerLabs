@@ -1,13 +1,6 @@
 ---
 import { GLOSSARY, localizedText } from '@data/glossary';
-
-interface ClientTip {
-  kind: 'syntax' | 'concept';
-  term: string;
-  short: string;
-  code?: string;
-  refs?: { title: string; url: string }[];
-}
+import type { ClientTip } from '@types';
 
 const payload: Record<string, ClientTip> = {};
 for (const entry of GLOSSARY) {
@@ -38,13 +31,7 @@ const glossaryJson = JSON.stringify(payload).replace(/</g, '\\u003c');
 </div>
 
 <script>
-  type ClientTip = {
-    kind: 'syntax' | 'concept';
-    term: string;
-    short: string;
-    code?: string;
-    refs?: { title: string; url: string }[];
-  };
+  import type { ClientTip } from '@types';
 
   const SHOW_DELAY_MS = 180;
   const HIDE_DELAY_MS = 140;

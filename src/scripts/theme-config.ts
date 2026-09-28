@@ -1,34 +1,11 @@
 import { getShikiTheme, type ShikiThemeId, type ShikiVarMap } from '../styles/shiki-themes';
+import type { FontOption, ThemeConfig, ThemePreset } from '@types';
+
+export type { FontOption, ThemeConfig, ThemePreset };
 
 export const STORAGE_ACTIVE = 'csl-theme-active';
 export const STORAGE_SAVED = 'csl-theme-saved';
 export const STORAGE_VARS = 'csl-theme-vars';
-
-export interface ThemeConfig {
-  pageBg: string;
-  surface: string;
-  surfaceElevated: string;
-  border: string;
-  borderMuted: string;
-  text: string;
-  textMuted: string;
-  heading: string;
-  accent: string;
-  accentHover: string;
-  accentSoft: string;
-  fontSans: string;
-  fontSizeBase: number;
-  lineHeight: number;
-  contentMaxWidth: number;
-  contentGap: number;
-  radius: number;
-  codeBg: string;
-  codeInlineBg: string;
-  codeInlineFg: string;
-  codeFontSize: number;
-  codePlaceholder: string;
-  shikiTheme: ShikiThemeId;
-}
 
 /** Quiz success/error foreground colors derived from surface luminance. */
 export function quizVarsFromConfig(config: ThemeConfig): {
@@ -46,20 +23,6 @@ export function quizVarsFromConfig(config: ThemeConfig): {
     '--success-border': '#22c55e',
     '--error-fg': light ? config.accent : config.accentSoft,
   };
-}
-
-export interface FontOption {
-  id: string;
-  label: string;
-  family: string;
-  /** Google Fonts family query segment, or null for system / already loaded */
-  google: string | null;
-}
-
-export interface ThemePreset {
-  id: string;
-  label: string;
-  config: ThemeConfig;
 }
 
 export const FONT_OPTIONS: FontOption[] = [

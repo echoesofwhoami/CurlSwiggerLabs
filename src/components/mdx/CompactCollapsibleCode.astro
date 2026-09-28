@@ -1,13 +1,6 @@
 ---
 import CodeSnippet from './CodeSnippet.astro';
-import type { CodeLanguage } from 'astro';
-
-interface Props {
-  /** Path relative to `src/data/scripts/` */
-  file: string;
-  title: string;
-  codeLang?: CodeLanguage;
-}
+import type { CompactCollapsibleCodeProps as Props } from '@types';
 
 const { file, title, codeLang } = Astro.props;
 ---

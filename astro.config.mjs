@@ -29,6 +29,8 @@ export default defineConfig({
       alias: {
         '@components': path.resolve(projectRoot, 'src/components'),
         '@data': path.resolve(projectRoot, 'src/data'),
+        '@styles': path.resolve(projectRoot, 'src/styles'),
+        '@types': path.resolve(projectRoot, 'src/types'),
       },
     },
   },

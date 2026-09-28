@@ -1,0 +1,33 @@
+.tooltip-references {
+  margin: 2.5rem 0 0;
+}
+
+.tooltip-references h2 {
+  margin: 0 0 0.5rem;
+}
+
+.tooltip-references > p {
+  margin: 0 0 1rem;
+}
+
+.tooltip-references .tooltip-references-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+}
+
+.tooltip-references .tooltip-references-list > li strong {
+  color: var(--heading);
+}
+
+.tooltip-references .tooltip-references-list > li p {
+  margin: 0.25rem 0 0.35rem;
+}
+
+.tooltip-references .tooltip-references-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+}

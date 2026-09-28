@@ -1,8 +1,32 @@
 ---
-import AboutPage from '../components/pages/AboutPage.astro';
 import Layout from '../layouts/Layout.astro';
+import DiscordCta from '../components/home/DiscordCta.astro';
+import '@styles/pages/about.css';
+
 ---
 
 <Layout title="About CurlSwiggerLabs" description="Why these PortSwigger writeups start with the request, not the tool." wide>
-  <AboutPage />
+<main class="about-page">
+  <header>
+    <h1>About CurlSwiggerLabs</h1>
+    <p class="lede">CurlSwiggerLabs is a notebook for learning web security from the protocol upward. Each writeup solves a PortSwigger Web Security Academy lab while slowing down at the parts that are usually hidden behind a graphical client.</p>
+  </header>
+
+  <section>
+    <h2>Why curl?</h2>
+    <p>curl makes every important choice visible: the URL, method, headers, body, cookies, redirects, and TLS behavior. That constraint is useful. If a request only works after a particular flag or byte changes, the writeup has to explain why instead of hiding the detail in a saved Burp tab.</p>
+  </section>
+
+  <section>
+    <h2>How the writeups work</h2>
+    <p>The goal is not to avoid Burp. It remains the right proxy for inspecting traffic and the labs are solved through it when interception matters. The goal is to separate what the server receives from what any one client displays, then rebuild the exploit with small, repeatable commands or scripts.</p>
+  </section>
+
+  <section>
+    <h2>Beginner-friendly, without skipping the protocol</h2>
+    <p>Each article introduces the background needed for the lab, walks through the HTTP exchange, and finishes with mitigations for people building applications. Explanations begin with the approachable version, then keep going when headers, encodings, signatures, or parser differences deserve a closer look.</p>
+  </section>
+
+  <DiscordCta />
+</main>
 </Layout>

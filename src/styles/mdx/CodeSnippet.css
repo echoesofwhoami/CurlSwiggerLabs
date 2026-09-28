@@ -1,0 +1,60 @@
+.code-snippet {
+  margin: 18px 0;
+}
+
+.code-snippet .code-wrapper,
+.code-snippet pre {
+  margin: 0;
+}
+
+.code-snippet .request-body {
+  margin-top: 0.5rem;
+}
+
+.code-snippet .compact-collapsible-content .code-wrapper,
+.code-snippet .compact-collapsible-content pre {
+  margin: 0;
+}
+
+/* Toggle tabs */
+.code-snippet .http-toggle-tabs {
+  display: flex;
+  gap: 0px;
+  margin-bottom: -1px; /* overlap the code block border */
+  position: relative;
+  z-index: 1;
+}
+
+.code-snippet .http-tab {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background-color: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.code-snippet .http-tab:first-child {
+  border-right: none;
+}
+
+.code-snippet .http-tab:hover {
+  background-color: var(--surface-elevated);
+  color: var(--text);
+}
+
+.code-snippet .http-tab.is-active {
+  background-color: var(--code-bg);
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+/* Panels: remove top-left radius so it connects cleanly to the active tab */
+.code-snippet .http-panel pre {
+  border-top-left-radius: 0;
+}

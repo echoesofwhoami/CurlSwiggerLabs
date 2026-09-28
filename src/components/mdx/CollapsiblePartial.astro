@@ -3,11 +3,7 @@ import { getEntry, render } from 'astro:content';
 import Quiz from '../post/Quiz.astro';
 import Term from './Term.astro';
 import RequestDiff from './RequestDiff.astro';
-
-interface Props {
-  partial: string;
-  title: string;
-}
+import type { CollapsiblePartialProps as Props } from '@types';
 
 const { partial, title } = Astro.props;
 

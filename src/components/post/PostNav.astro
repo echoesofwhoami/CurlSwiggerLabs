@@ -1,27 +1,23 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-
-interface Props {
-  older?: CollectionEntry<'blog'>;
-  newer?: CollectionEntry<'blog'>;
-}
+import { getPostSlug, siteBase } from '../../utils';
+import type { PostNavProps as Props } from '@types';
+import '@styles/post/PostNav.css';
 
 const { older, newer } = Astro.props;
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const slugFor = (post: CollectionEntry<'blog'>) =>
-  post.id.replace(/\.mdx?$/, '');
+const base = siteBase();
+
 ---
 
 {(older || newer) && (
   <nav class="post-nav" aria-label="Lab navigation">
     {older ? (
-      <a class="post-nav-link older" href={`${base}/${slugFor(older)}`}>
+      <a class="post-nav-link older" href={`${base}/${getPostSlug(older.id)}`}>
         <span>Older lab</span>
         <strong>{older.data.title}</strong>
       </a>
     ) : <span />}
     {newer && (
-      <a class="post-nav-link newer" href={`${base}/${slugFor(newer)}`}>
+      <a class="post-nav-link newer" href={`${base}/${getPostSlug(newer.id)}`}>
         <span>Newer lab</span>
         <strong>{newer.data.title}</strong>
       </a>
@@ -29,50 +25,3 @@ const slugFor = (post: CollectionEntry<'blog'>) =>
   </nav>
 )}
 
-<style>
-  .post-nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    margin: 3rem 0 2rem;
-  }
-
-  .post-nav-link {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-  }
-
-  .post-nav-link span {
-    margin-bottom: 0.35rem;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .post-nav-link strong {
-    color: var(--heading);
-  }
-
-  .post-nav-link.newer {
-    text-align: right;
-  }
-
-  @media (max-width: 640px) {
-    .post-nav {
-      grid-template-columns: 1fr;
-    }
-
-    .post-nav > span {
-      display: none;
-    }
-
-    .post-nav-link.newer {
-      text-align: left;
-    }
-  }
-</style>

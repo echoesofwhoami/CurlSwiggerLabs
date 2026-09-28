@@ -1,0 +1,45 @@
+---
+import { categoryForLabel } from '../../data/categories';
+import { formatDate, getPostSlug, siteBase } from '../../utils';
+import type { PostCardProps as Props } from '@types';
+import '@styles/home/PostCard.css';
+
+const { post } = Astro.props;
+const base = siteBase();
+const slug = getPostSlug(post.id);
+const href = `${base}/${slug}/`;
+const category = categoryForLabel(post.data.category);
+
+---
+
+<article class="post-card">
+  {category && (
+    <a class="post-card__image-link" href={href} tabindex="-1" aria-hidden="true">
+      <img
+        class="post-card__image"
+        src={category.coverImage}
+        alt=""
+        width="720"
+        height="405"
+        loading="lazy"
+      />
+    </a>
+  )}
+
+  <div class="post-card__body">
+    <div class="post-card__meta">
+      <time datetime={post.data.date}>{formatDate(post.data.date)}</time>
+      <span aria-hidden="true">·</span>
+      <span class:list={['post-card__difficulty', `post-card__difficulty--${post.data.difficulty.toLowerCase()}`]}>
+        {post.data.difficulty}
+      </span>
+    </div>
+
+    <h3><a href={href}>{post.data.title}</a></h3>
+    <p>{post.data.description}</p>
+    <a class="post-card__read-more" href={href}>
+      Read writeup
+    </a>
+  </div>
+</article>
+

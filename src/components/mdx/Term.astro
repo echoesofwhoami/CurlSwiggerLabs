@@ -1,10 +1,6 @@
 ---
 import { getEntry, localizedText } from '@data/glossary';
-
-interface Props {
-  id: string;
-  /** Optional custom visible text; default localized term */
-}
+import type { TermProps as Props } from '@types';
 
 const { id } = Astro.props;
 const entry = getEntry(id);

@@ -1,0 +1,22 @@
+---
+import PostCard from './PostCard.astro';
+import type { PostListProps as Props } from '@types';
+import '@styles/home/PostList.css';
+
+const { category, posts } = Astro.props;
+const sectionId = `category-${category
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/(^-|-$)/g, '')}`;
+
+---
+
+<section class="post-list" aria-labelledby={sectionId}>
+  <h2 id={sectionId}>{category}</h2>
+  <div class="post-list__grid">
+    {posts.map((post) => <PostCard post={post} />)}
+  </div>
+</section>
+

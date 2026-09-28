@@ -1,3 +1,7 @@
+import type { HttpConversion } from '@types';
+
+export type { HttpConversion };
+
 /**
  * curl-to-http.ts
  *
@@ -130,11 +134,6 @@ function parseUrlParts(url: string): { host: string; path: string } | null {
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
-
-export interface HttpConversion {
-  /** The raw HTTP request as a plain string ready for display. */
-  raw: string;
-}
 
 /**
  * Parse `curlCmd` and return an `HttpConversion`, or `null` when the command

@@ -1,4 +1,4 @@
-import type { ImageMetadata } from 'astro';
+import type { ChipVisual } from '@types';
 import CurlIcon from '../assets/logos/curl.svg';
 import PythonIcon from '../assets/logos/python.svg';
 import NodeIcon from '../assets/logos/nodedotjs.svg';
@@ -9,11 +9,7 @@ import ChromiumIcon from '../assets/logos/chromium.svg';
 import JavaScriptIcon from '../assets/logos/javascript.svg';
 import psLogo from '../assets/ps_logo.png';
 
-type SvgIcon = typeof CurlIcon;
-
-export type ChipVisual =
-  | { kind: 'svg'; Icon: SvgIcon; accent: string }
-  | { kind: 'image'; src: ImageMetadata; accent: string };
+export type { ChipVisual };
 
 const visuals: Record<string, ChipVisual> = {
   curl: { kind: 'svg', Icon: CurlIcon, accent: '#5EC8F0' },

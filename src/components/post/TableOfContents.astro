@@ -1,16 +1,10 @@
 ---
-interface Heading {
-  depth: number;
-  slug: string;
-  text: string;
-}
-
-interface Props {
-  headings: Heading[];
-}
+import type { TableOfContentsProps as Props } from '@types';
+import '@styles/post/TableOfContents.css';
 
 const { headings } = Astro.props;
 const visibleHeadings = headings.filter(({ depth }) => depth === 2 || depth === 3);
+
 ---
 
 {visibleHeadings.length > 0 && (
@@ -26,31 +20,3 @@ const visibleHeadings = headings.filter(({ depth }) => depth === 2 || depth === 
   </nav>
 )}
 
-<style>
-  .table-of-contents {
-    margin: 2rem 0;
-    padding: 1rem 1.25rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--code-bg);
-  }
-
-  .table-of-contents h2 {
-    margin: 0 0 0.75rem;
-    font-size: 1.1rem;
-  }
-
-  .table-of-contents ol {
-    margin: 0;
-    padding-left: 1.25rem;
-  }
-
-  .table-of-contents li {
-    margin: 0.25rem 0;
-  }
-
-  .table-of-contents li.nested {
-    margin-left: 1.25rem;
-    font-size: 0.95rem;
-  }
-</style>

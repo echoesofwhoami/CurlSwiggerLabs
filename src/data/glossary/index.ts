@@ -5,9 +5,16 @@ import { HTTP_SYNTAX } from './syntax/http';
 import { JAVASCRIPT_SYNTAX } from './syntax/javascript';
 import { NODE_SYNTAX } from './syntax/node';
 import { PYTHON_SYNTAX } from './syntax/python';
-import type { CodeLang, GlossaryEntry } from './types';
+import type { CodeLang, GlossaryEntry } from '../../types/glossary';
 
-export * from './types';
+export type {
+  TipKind,
+  CodeLang,
+  GlossaryRef,
+  Localized,
+  GlossaryMatch,
+  GlossaryEntry,
+} from '../../types/glossary';
 
 const LANG_ALIASES: Record<string, CodeLang> = {
   bash: 'bash',

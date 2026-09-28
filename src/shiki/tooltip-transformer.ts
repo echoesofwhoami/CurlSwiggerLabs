@@ -4,56 +4,22 @@ import {
   entriesMatching,
   getEntry,
   isFirstOnly,
-  type GlossaryEntry,
 } from '../data/glossary';
+import type {
+  Candidate,
+  GlossaryEntry,
+  GlossaryWrap,
+  JwtWrap,
+  Leaf,
+  LineWrap,
+  TextRange,
+  TransformerOpts,
+} from '@types';
 import { findJwtTips } from '../utils/request-diff';
 
 const PLACEHOLDER = /<[A-Za-z][A-Za-z0-9_-]*>/g;
 const SEEN_KEY = '__curlswiggerTipSeen';
 const WORD_CHAR = /[A-Za-z0-9_]/;
-
-interface TransformerOpts {
-  codeLang?: string;
-  extraTips?: Record<string, string>;
-  collector?: Set<string>;
-}
-
-interface Candidate {
-  token: string;
-  entry: GlossaryEntry;
-  fromExtra: boolean;
-}
-
-interface Leaf {
-  start: number;
-  end: number;
-  value: string;
-  style: string;
-  inComment: boolean;
-}
-
-interface TextRange {
-  start: number;
-  end: number;
-}
-
-interface GlossaryWrap {
-  start: number;
-  end: number;
-  text: string;
-  entry: GlossaryEntry;
-  fromExtra: boolean;
-}
-
-interface JwtWrap {
-  start: number;
-  end: number;
-  term: string;
-  decoded?: string;
-  short?: string;
-}
-
-type LineWrap = GlossaryWrap | JwtWrap;
 
 function isJwtWrap(wrap: LineWrap): wrap is JwtWrap {
   return !('entry' in wrap);
